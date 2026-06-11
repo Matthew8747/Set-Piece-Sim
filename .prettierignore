@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+coverage
+.venv
+__pycache__
+data/raw
+data/staging
+data/marts
+*.md
+uv.lock
+package-lock.json

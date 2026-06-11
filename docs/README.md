@@ -18,10 +18,19 @@ This directory is the design package for the platform. Read in order:
 | 7 | [UI/UX Design Plan](07-ui-ux-design.md) | Design language, information architecture, visualization |
 | 8 | [12-Week Development Roadmap](08-roadmap.md) | Phases, milestones, acceptance criteria, cut lines |
 
+## Living guides (kept current with the implementation)
+
+| Document | Purpose |
+|---|---|
+| [Setup Guide](setup-guide.md) | Zero → verified local environment |
+| [Development Guide](development-guide.md) | Commands, conventions, architecture rules, tech-debt register |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Workflow and review standards |
+| [../CHANGELOG.md](../CHANGELOG.md) | Per-phase change history |
+
 ## Status
 
-- **Stage:** Design review (no implementation code yet, by design)
-- **Next gate:** Stakeholder review of this package → implementation plan → Phase 0
+- **Stage:** Phase 0 (repository foundation) complete — design ratified, scaffold verified green
+- **Next gate:** Phase 0 approval → Phase 1 (ball physics core, design doc 05 §2 + roadmap)
 
 ## Document conventions
 

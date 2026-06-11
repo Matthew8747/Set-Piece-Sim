@@ -1,0 +1,102 @@
+# Workspace root: not an installable package (tool.uv.package = false).
+# Owns the uv workspace definition and all shared tool configuration, so every
+# member package is linted/typed/tested under identical rules.
+
+[project]
+name = "restart-lab"
+version = "0.1.0"
+description = "Restart Lab - AI-assisted set-piece optimization for international football (workspace root)"
+requires-python = ">=3.12"
+dependencies = [
+    "restart-simulation-core",
+    "restart-backend",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "apps/backend",
+    "packages/simulation-core",
+]
+
+[tool.uv.sources]
+restart-simulation-core = { workspace = true }
+restart-backend = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",        # FastAPI TestClient transport
+    "ruff>=0.8",
+    "black>=24.10",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+]
+
+# ---------------------------------------------------------------------------
+# Lint / format / type / test configuration (single source of truth)
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps/backend/src", "packages/simulation-core/src"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # bugbear
+    "C4",  # comprehensions
+    "SIM", # simplify
+    "RET", # return discipline
+    "PTH", # pathlib over os.path
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501", # line length is Black's job
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["B011"] # assert-related relaxations for tests only
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+warn_unreachable = true
+warn_redundant_casts = true
+show_error_codes = true
+plugins = ["pydantic.mypy"]
+mypy_path = ["apps/backend/src", "packages/simulation-core/src"]
+explicit_package_bases = true
+files = [
+    "apps/backend/src",
+    "apps/backend/tests",
+    "packages/simulation-core/src",
+    "packages/simulation-core/tests",
+    "tests",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "packages/simulation-core/tests",
+    "apps/backend/tests",
+    "tests",
+]
+# importlib mode: test dirs are namespace-style (no __init__.py), which keeps
+# mypy module names collision-free across the monorepo's three tests/ trees.
+addopts = "-q --strict-markers --import-mode=importlib"
+markers = [
+    "integration: cross-package integration tests",
+]

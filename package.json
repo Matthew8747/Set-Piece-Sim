@@ -1,0 +1,23 @@
+{
+  "name": "restart-lab",
+  "private": true,
+  "description": "Restart Lab monorepo root: npm workspaces for the TypeScript side (frontend, shared-types). Python packages are managed by uv (see pyproject.toml).",
+  "workspaces": [
+    "apps/frontend",
+    "packages/shared-types"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  },
+  "overrides": {
+    "postcss": ">=8.5.10"
+  }
+}

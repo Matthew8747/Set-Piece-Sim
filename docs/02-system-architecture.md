@@ -39,30 +39,33 @@ flowchart LR
 
 ## 2. Codebase layout (Clean Architecture, dependency rule enforced)
 
+*(As built in Phase 0; revised from the original sketch — the simulation core was promoted to a
+standalone installable package under `packages/`, which makes the dependency rule a packaging
+fact rather than a convention.)*
+
 ```
 restart-lab/
 ├── apps/
-│   └── web/                  # Next.js 16 + TypeScript + Tailwind (frontend)
+│   ├── backend/              # FastAPI app (restart_api): routers, DTOs, settings — web adapter
+│   │   ├── src/restart_api/  #   depends on restart-simulation-core via uv workspace
+│   │   └── tests/
+│   └── frontend/             # Next.js 16 + TypeScript + Tailwind v4 (App Router, Turbopack)
 ├── packages/
-│   └── pitch-kit/            # Shared TS: pitch SVG components, replay player, chart wrappers
-├── backend/
-│   ├── restart/              # THE DOMAIN CORE — pure Python, no FastAPI/SQLAlchemy imports
-│   │   ├── physics/          # ball flight, bounce, contact impulse models
-│   │   ├── agents/           # player capability envelopes, behaviors, roles
-│   │   ├── tactics/          # Routine Spec, defensive schemes, scenario assembly
-│   │   ├── montecarlo/       # batch runner, RNG streams, outcome extraction, CIs
-│   │   ├── ml/               # xG models, optimizers, surrogate, explainability
-│   │   └── domain/           # entities, value objects, units, ids
-│   ├── etl/                  # ingestion pipelines (StatsBomb, profiles), data tests
-│   ├── api/                  # FastAPI app: routers, schemas (pydantic), auth, rate limiting
-│   ├── worker/               # Arq task definitions wrapping restart.montecarlo / restart.ml
-│   ├── storage/              # SQLAlchemy models, repositories, Parquet I/O (adapters)
-│   └── tests/                # unit / integration / e2e, calibration suite
-├── docs/                     # this design package + living docs
-├── notebooks/                # validation & calibration notebooks (committed, executed in CI)
-├── docker-compose.yml        # pg + redis + api + worker for local dev
-└── .github/workflows/        # CI/CD
+│   ├── simulation-core/      # THE DOMAIN CORE (python pkg `restart`) — pure, no web/DB imports
+│   │   ├── src/restart/      #   physics/ agents/ tactics/ montecarlo/ ml/ domain/ (phased in)
+│   │   └── tests/
+│   └── shared-types/         # TS mirrors of the API contract (pitch-kit joins in Phase 6)
+├── data/                     # raw → staging → marts lake (git-ignored, rebuildable via ETL)
+├── docs/                     # design package + living guides
+├── infra/                    # docker-compose: Postgres 16 + Redis 7 (localhost-bound)
+├── scripts/                  # verify.{sh,ps1} — full CI suite locally
+├── tests/                    # cross-package integration tests
+└── .github/workflows/        # CI: python + frontend jobs
 ```
+
+Later phases add (per design): `etl/` and `worker/` as backend modules or sibling packages,
+`notebooks/` for validation, and a `pitch-kit` TS package — each lands in the phase that
+introduces its first real consumer.
 
 **Dependency rule:** `restart/` (domain) imports nothing from `api/`, `storage/`, or `worker/`.
 Adapters depend inward. Enforced in CI with `import-linter` contracts — a portfolio-visible

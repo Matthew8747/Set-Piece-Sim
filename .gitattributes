@@ -1,0 +1,13 @@
+# Normalize line endings: LF in the repository, LF on checkout everywhere.
+# (Cross-platform team + CI on Linux; Windows toolchains all handle LF.)
+* text=auto eol=lf
+
+# PowerShell prefers CRLF on disk
+*.ps1 text eol=crlf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+*.parquet binary

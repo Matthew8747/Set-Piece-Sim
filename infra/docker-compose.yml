@@ -1,0 +1,38 @@
+# Local development infrastructure. Postgres and Redis are not consumed by any
+# code in Phase 0; they exist so `docker compose up` works from day one and
+# later phases wire against a known-good stack.
+#
+# Credentials below are LOCAL-DEV ONLY by policy (see SECURITY section of
+# docs/development-guide.md): they bind to localhost and must never be reused
+# in any deployed environment.
+name: restart-lab
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: restart
+      POSTGRES_PASSWORD: restart
+      POSTGRES_DB: restart
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restart -d restart"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

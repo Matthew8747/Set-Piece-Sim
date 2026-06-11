@@ -1,0 +1,22 @@
+[project]
+name = "restart-backend"
+version = "0.1.0"
+description = "Restart Lab API: FastAPI application exposing the simulation core over REST."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    "restart-simulation-core",
+]
+
+[tool.uv.sources]
+restart-simulation-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/restart_api"]

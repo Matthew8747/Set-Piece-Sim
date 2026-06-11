@@ -1,0 +1,45 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- Environment & secrets (never commit real env files) ---
+.env
+.env.*
+!.env.example
+
+# --- Data lake: rebuildable from sources via restart-etl; structure kept via .gitkeep ---
+data/raw/*
+data/staging/*
+data/marts/*
+!data/raw/.gitkeep
+!data/staging/.gitkeep
+!data/marts/.gitkeep
+
+# --- ML artifacts (registered in DB, stored outside git) ---
+mlruns/
+models/
+
+# --- Local tooling artifacts (Claude Code plugins etc.) ---
+ruvector.db
+graphify-out/
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
