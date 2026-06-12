@@ -55,16 +55,21 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
 - `npm audit` / dependency hygiene is part of verification; CI fails on lint, types, or tests —
   vulnerability scanning gets a dedicated job when the first deployment lands (Phase 8).
 
-## Known tech debt (Phase 0)
+## Known tech debt
 
-| Item | Why accepted | Exit plan |
-|---|---|---|
-| `shared-types` mirrors DTOs by hand | 3 DTOs today; codegen infra isn't worth it yet | OpenAPI codegen when domain endpoints land (Phase 6) |
-| No import-linter contract yet | Nothing to violate: core has no adapters | Add with first physics module (Phase 1) |
-| Starlette TestClient deprecation warning (`httpx` → `httpx2`) | Functional; upstream migration is young | Migrate test transport when FastAPI's guidance settles |
-| postcss `overrides` pin | Upstream Next 16 stable not yet patched | Drop on first Next release containing the fix |
-| `readyz` checks report `skipped` | No Postgres/Redis consumers exist yet | Real checks wired in Phase 4/6 |
-| No Dockerfile for the apps themselves | Nothing to deploy yet | Phase 8 (deployment) |
+| Item | Introduced | Why accepted | Exit plan |
+|---|---|---|---|
+| `shared-types` mirrors DTOs by hand | P0 | 3 DTOs today; codegen infra isn't worth it yet | OpenAPI codegen when domain endpoints land (Phase 6) |
+| No import-linter contract yet | P0 | Core purity held by review so far | Add in Phase 2 when agents/tactics multiply module count |
+| Starlette TestClient deprecation warning (`httpx` → `httpx2`) | P0 | Functional; upstream migration is young | Migrate test transport when FastAPI's guidance settles |
+| postcss `overrides` pin | P0 | Upstream Next 16 stable not yet patched | Drop on first Next release containing the fix |
+| `readyz` checks report `skipped` | P0 | No Postgres/Redis consumers exist yet | Real checks wired in Phase 4/6 |
+| No Dockerfile for the apps themselves | P0 | Nothing to deploy yet | Phase 8 (deployment) |
+| Single-trajectory simulator is slow (~0.4 s/trajectory) | P1 | It's the replay/analysis path, not the Monte Carlo path; readability is its job | Acceptable until Phase 3 replay sampling; fuse a kernel variant only if profiling demands |
+| Physics formulas duplicated in JIT kernel (`_kernels.py`) vs `forces.py` | P1 | Numba can't call the class-based force objects; duplication is the cost of the 6.9× speedup | Kernel↔reference equivalence test (1e-9) fails CI on any drift — change both together |
+| Batch engine stops at first ground contact (no bounce chains / plane crossings) | P1 | Phase-3 Monte Carlo layer owns batch event extraction (P-13) | Phase 3 |
+| `mu_roll = 0.06` produces generous roll-out distances | P1 | Literature-anchored prior; flagged during smoke testing | Early Phase-3 calibration target (P-8) |
+| Magnus constants (P-4) are priors with wide literature spread | P1 | Plausibility-banded by the Roberto Carlos test | Phase-3 calibration; constants are config, not code |
 
 ## Updating documentation
 

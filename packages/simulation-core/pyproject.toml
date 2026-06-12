@@ -5,6 +5,15 @@ description = "Pure-domain simulation core for Restart Lab: physics, agents, tac
 requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.1",
+    # Cold-path only, per ADR-001: scipy = validation oracle + statistics;
+    # pydantic = validated frozen configuration models (never hot-path state).
+    "scipy>=1.14",
+    "pydantic>=2.10",
+    # Adopted per ADR-001's "adopt-when-measured" clause: the NumPy batch path
+    # measured 6.8s for 10k flights vs the 1s budget (memory-traffic bound).
+    # The fused JIT kernel is the production batch path; NumPy remains the
+    # equivalence-tested reference. See ADR-001 addendum.
+    "numba>=0.61",
 ]
 
 [build-system]

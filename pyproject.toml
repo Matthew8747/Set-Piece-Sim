@@ -34,6 +34,9 @@ dev = [
     "black>=24.10",
     "mypy>=1.13",
     "pre-commit>=4.0",
+    "hypothesis>=6.115",
+    "pytest-benchmark>=5.1",
+    "scipy-stubs>=1.14",
 ]
 
 # ---------------------------------------------------------------------------
@@ -87,6 +90,10 @@ files = [
     "packages/simulation-core/tests",
     "tests",
 ]
+
+[[tool.mypy.overrides]]
+module = ["numba.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = [
