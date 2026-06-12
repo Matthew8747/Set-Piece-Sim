@@ -6,6 +6,35 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 2: Agents & Tactical Engine (2026-06-12) · `ENGINE_VERSION sim/0.2.0`
+
+- `restart.players`: validated attribute model with kernel-facing column contract
+  (`Attr` IntEnum — compiled-program ABI), `Player`/`Team` entities, deterministic synthetic
+  demo squads (no licensed ratings data).
+- `restart.agents`: accel/turn-rate-limited kinematics, reaction-latency gating,
+  accelerate-then-cruise interception solver, soft-disc separation (G-1..G-7).
+- `restart.tactics`: Routine Spec `rs/1.0` (validating, rejecting), defensive schemes
+  (zonal/man/hybrid + FK wall), `compile_scenario` → SoA `SimProgram` (ADR-004); library of
+  5 corner routines + 3 schemes + direct free kick.
+- `restart.engine`: `SetPieceEngine` — delivery execution (range-solved elevation, curl
+  pre-aim, skill noise), pre-kick run development, kick-instant interception planning,
+  Gumbel-max aerial contests, header/clearance/GK-claim contact resolution, logistic GK save
+  model, second-ball classification; typed match events (`FirstContactEvent`, `ShotEvent`
+  with embedded xG features, etc.) and `SetPieceOutcome`; deterministic replay payloads
+  (agent tracks + trajectories) per seed.
+- ADR-003 (agent architecture for Monte Carlo throughput), ADR-004 (Routine Spec contract),
+  Phase-2 design review with throughput-risk assessment; `docs/handoff/` package (7 docs).
+- G-1..G-13 registered in the assumptions registry. Free-kick feasibility validated (PRD A-3).
+- ~120 new tests (251 total).
+
+### Fixed
+- Inswinger/outswinger spin-sign convention (verified against Magnus force direction).
+- Corner kick position moved onto the corner arc (0.3 m inside both lines).
+
+### Known limitations (Phase-3 targets)
+- Outcome rates uncalibrated (keeper-claim share high; goal rate ~5% vs real 2–3%); all
+  rate-shaping constants are named `EngineConfig` calibration knobs.
+
 ### Added — Phase 1: Ball Physics Core (2026-06-12) · `ENGINE_VERSION sim/0.1.0`
 
 - **Build-vs-buy assessment** for the physics/simulation stack:

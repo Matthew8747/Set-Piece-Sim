@@ -1,4 +1,4 @@
-"""Restart Lab simulation core.
+﻿"""Restart Lab simulation core.
 
 The pure domain heart of the platform: ball physics, player agents, tactical
 compilation, and Monte Carlo execution will live here. This package must never
@@ -12,5 +12,5 @@ docs/02-system-architecture.md, "Determinism & versioning").
 
 __version__ = "0.2.0"
 
-#: Bumped for Phase 1: ball physics (RK4 flight, drag crisis, Magnus, bounce).
-ENGINE_VERSION = "sim/0.1.0"
+#: Bumped for Phase 2: agents, tactics, set-piece engine.
+ENGINE_VERSION = "sim/0.2.0"

@@ -74,3 +74,64 @@ class OutOfPlayEvent(SimEvent):
 @dataclass(frozen=True, slots=True)
 class RestEvent(SimEvent):
     """Ball decelerated to rest on the pitch."""
+
+
+# --- Match events (Phase 2: set-piece engine vocabulary) ---------------------
+
+
+class SetPieceOutcome(StrEnum):
+    """Terminal classification of one simulated set piece (ADR-003 d10)."""
+
+    GOAL = "goal"
+    SAVED = "saved"
+    OFF_TARGET = "off_target"
+    CLEARED = "cleared"
+    KEEPER_CLAIM = "keeper_claim"
+    SECOND_BALL_ATTACK = "second_ball_attack"
+    SECOND_BALL_DEFENSE = "second_ball_defense"
+    OUT_OF_PLAY = "out_of_play"
+
+
+@dataclass(frozen=True, slots=True)
+class FirstContactEvent(SimEvent):
+    """First deliberate touch on the delivered ball."""
+
+    player_id: str
+    team: str  # 'attack' | 'defense'
+    contact_height_m: float
+
+
+@dataclass(frozen=True, slots=True)
+class ShotEvent(SimEvent):
+    """Shot attempt; fields double as xG features (design review §1)."""
+
+    player_id: str
+    distance_m: float
+    angle_rad: float  # goal-mouth opening angle from shot location
+    is_header: bool
+    speed_ms: float
+    defenders_within_3m: int
+
+
+@dataclass(frozen=True, slots=True)
+class ClearanceEvent(SimEvent):
+    player_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class KeeperClaimEvent(SimEvent):
+    player_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class SaveEvent(SimEvent):
+    player_id: str  # the goalkeeper
+    shot_speed_ms: float
+
+
+@dataclass(frozen=True, slots=True)
+class SecondBallEvent(SimEvent):
+    """Untouched delivery resolved at landing: nearest-player recovery."""
+
+    player_id: str
+    team: str  # 'attack' | 'defense'

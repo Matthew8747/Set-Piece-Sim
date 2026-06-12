@@ -21,8 +21,14 @@ reference and a SciPy oracle). See the
 [ADR-001](docs/adr/ADR-001-physics-stack-build-vs-buy.md) /
 [ADR-002](docs/adr/ADR-002-integration-strategy.md).
 
-🏗️ **Next: Phase 2** — player agents and the tactical engine (Routine Spec, defensive schemes,
-a full corner playing out headlessly).
+✅ **Phase 2 complete** (`sim/0.2.0`) — player agents and the tactical engine: validated player
+attributes, Routine Spec `rs/1.0` compiled to array-form SimPrograms, defensive schemes with
+marking and free-kick walls, and a deterministic set-piece engine that plays full corners to
+terminal outcomes (goal/saved/cleared/keeper-claim/second-ball) with typed events and replay
+tracks. Outcome rates intentionally uncalibrated until Phase 3.
+
+🏗️ **Next: Phase 3** — Monte Carlo batches, outcome statistics with confidence intervals,
+optimization interfaces, and the first end-to-end MVP (API + Scenario Workbench).
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
 simulation architecture, ML architecture, UI/UX plan, and 12-week roadmap — lives in

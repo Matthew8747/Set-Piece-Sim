@@ -1,0 +1,12 @@
+# ADR Summary
+
+Full records: [docs/adr/](../adr/README.md). One row per ADR; read the full ADR before
+revisiting any of these decisions.
+
+| ADR | Decision | Status | Core rationale | Key consequences |
+|---|---|---|---|---|
+| [001](../adr/ADR-001-physics-stack-build-vs-buy.md) | Physics stack build-vs-buy: custom football aerodynamics on **NumPy**; **SciPy** as validation oracle + stats (never hot path); **pydantic** for frozen config; **Numba** adopt-when-measured; PyBullet/Pymunk/JAX **rejected**; Optuna/cmaes earmarked Phase 5 | Accepted (P1) + Addendum | The hard 20% (drag crisis, Magnus) is exactly what engines don't provide; throughput comes from batching across sims, which engines can't do | Owned RK4/bounce code is small, oracle-validated, pedagogically central; kernels must stay array-in/array-out (Numba-ready) |
+| [001-addendum](../adr/ADR-001-physics-stack-build-vs-buy.md) | Numba **adopted** mid-Phase-1: fused JIT kernel is the single production batch path; NumPy retained as reference | Accepted (P1) | Measured trigger: NumPy 6.76 s vs 1 s budget for 10k flights; kernel: 0.98 s | Formula duplication kernel↔reference policed by ≤1e-9 equivalence test in CI |
+| [002](../adr/ADR-002-integration-strategy.md) | Fixed-step RK4 (dt 5 ms), 9-dim state incl. spin; broadcast-polymorphic kernels (one implementation, single+batch); events via in-step linear interpolation; batch = flight-to-first-contact until Phase 3 | Accepted (P1) | Adaptive steppers break batch lockstep; interpolation error ≪ model error at 5 ms | dt change on persisted results = engine-version bump; golden/convergence/oracle test trio is the permanent regression net |
+| [003](../adr/ADR-003-agent-architecture.md) | Agent & engine architecture for throughput (Phase 2): scripted+reactive two-layer agents, precomputed-flight planning oracle, 20 ms agent tick, SoA `SimProgram`, softmax contests, discrete GK model, Philox stream spawning | Accepted (P2) | 100k-sim budget forbids per-agent object graphs and per-agent ball integration | Realism cuts registered as G-assumptions; batch kernel port pre-shaped for Phase 3 |
+| [004](../adr/ADR-004-routine-spec.md) | Routine Spec `rs/1.0` as validated pydantic document, compiled to array-form `SimProgram`; marking assignments resolved at compile time | Accepted (P2) | One artifact = UI format + optimizer genome + replay metadata; compile-time resolution keeps the hot loop branch-light | Spec schema versioned; infeasible specs rejected at validation, never silently fixed |

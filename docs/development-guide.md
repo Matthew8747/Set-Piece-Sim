@@ -70,6 +70,9 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
 | Batch engine stops at first ground contact (no bounce chains / plane crossings) | P1 | Phase-3 Monte Carlo layer owns batch event extraction (P-13) | Phase 3 |
 | `mu_roll = 0.06` produces generous roll-out distances | P1 | Literature-anchored prior; flagged during smoke testing | Early Phase-3 calibration target (P-8) |
 | Magnus constants (P-4) are priors with wide literature spread | P1 | Plausibility-banded by the Roberto Carlos test | Phase-3 calibration; constants are config, not code |
+| Engine outcome rates uncalibrated (keeper-claim high, goal ~5%) | P2 | All rate-shaping constants are named EngineConfig knobs; calibration is Phase 3's whole job | Phase-3 calibration vs real corner base rates |
+| Interception planned once at kick (G-13), no in-flight re-planning | P2 | One (n,m) solve per sim; corner timescales forgive it | Revisit only if Phase-3 face-validity flags it |
+| Engine is single-sim NumPy (~30-80 ms/sim) | P2 | It is the reference implementation by design (ADR-003 d8) | Phase-3 fused batch kernel ports its semantics |
 
 ## Updating documentation
 
