@@ -10,6 +10,7 @@ simulation result carries it; physics-affecting changes must bump it (see
 docs/02-system-architecture.md, "Determinism & versioning").
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-ENGINE_VERSION = "sim/0.0.1"
+#: Bumped for Phase 1: ball physics (RK4 flight, drag crisis, Magnus, bounce).
+ENGINE_VERSION = "sim/0.1.0"

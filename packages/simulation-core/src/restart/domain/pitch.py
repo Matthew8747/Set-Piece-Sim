@@ -24,6 +24,34 @@ HALF_LENGTH_M: Final[float] = PITCH_LENGTH_M / 2
 HALF_WIDTH_M: Final[float] = PITCH_WIDTH_M / 2
 
 
+#: Goal mouth half-width (posts at y = +/- 3.66 m on the goal line).
+GOAL_HALF_WIDTH_M: Final[float] = GOAL_WIDTH_M / 2
+
+#: Crossbar underside height.
+CROSSBAR_HEIGHT_M: Final[float] = GOAL_HEIGHT_M
+
+
+def is_in_goal_mouth(y: float, z: float) -> bool:
+    """Return ``True`` if a point on a goal-line plane (x = +/-52.5) lies
+    inside the goal mouth: between the posts and under the bar.
+
+    Ball-center based (the ~"whole ball over the line" subtlety of Law 10 is
+    below this model's fidelity — assumption P-15 in the assumptions registry).
+    """
+    return abs(y) <= GOAL_HALF_WIDTH_M and 0.0 <= z <= CROSSBAR_HEIGHT_M
+
+
+def corner_position(left_side: bool, attacking_positive_x: bool = True) -> tuple[float, float]:
+    """Corner-flag coordinates (x, y) for the attacking team's corner kick.
+
+    ``left_side`` is from the attacking team's perspective facing the goal
+    they attack (+x by project convention).
+    """
+    x = HALF_LENGTH_M if attacking_positive_x else -HALF_LENGTH_M
+    y = HALF_WIDTH_M if left_side else -HALF_WIDTH_M
+    return (x, y)
+
+
 def is_on_pitch(x: float, y: float) -> bool:
     """Return ``True`` if the point (x, y) lies on the playing surface.
 

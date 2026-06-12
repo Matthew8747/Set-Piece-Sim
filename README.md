@@ -13,8 +13,16 @@ corner, free kick, or throw-in?*
 simulation-core package), Next.js frontend, shared API types, CI, pre-commit, full
 lint/type/test gates green.
 
-🏗️ **Next: Phase 1** — ball physics core (RK4 flight, drag, Magnus, bounce) with validation
-suite.
+✅ **Phase 1 complete** (`sim/0.1.0`) — ball physics core: RK4 flight with drag-crisis drag and
+Magnus lift, Coulomb bounce with spin transfer, event-extracting trajectory simulator, and a
+fused JIT batch engine (10k flights < 1 s single-core, equivalence-tested against a NumPy
+reference and a SciPy oracle). See the
+[assumptions registry](docs/simulation-assumptions.md) and
+[ADR-001](docs/adr/ADR-001-physics-stack-build-vs-buy.md) /
+[ADR-002](docs/adr/ADR-002-integration-strategy.md).
+
+🏗️ **Next: Phase 2** — player agents and the tactical engine (Routine Spec, defensive schemes,
+a full corner playing out headlessly).
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
 simulation architecture, ML architecture, UI/UX plan, and 12-week roadmap — lives in

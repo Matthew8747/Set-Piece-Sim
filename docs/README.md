@@ -24,13 +24,15 @@ This directory is the design package for the platform. Read in order:
 |---|---|
 | [Setup Guide](setup-guide.md) | Zero → verified local environment |
 | [Development Guide](development-guide.md) | Commands, conventions, architecture rules, tech-debt register |
+| [Simulation Assumptions Registry](simulation-assumptions.md) | Every physics assumption (P-1…P-15): value, citation, calibration status, validation evidence |
+| [ADRs](adr/README.md) | Architectural decision records (build-vs-buy, integration strategy) |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Workflow and review standards |
 | [../CHANGELOG.md](../CHANGELOG.md) | Per-phase change history |
 
 ## Status
 
-- **Stage:** Phase 0 (repository foundation) complete — design ratified, scaffold verified green
-- **Next gate:** Phase 0 approval → Phase 1 (ball physics core, design doc 05 §2 + roadmap)
+- **Stage:** Phase 1 (ball physics core, `sim/0.1.0`) complete on `feat/phase1-physics-core`
+- **Next gate:** Phase 1 review → Phase 2 (agents & tactical engine, roadmap Phase 2)
 
 ## Document conventions
 
