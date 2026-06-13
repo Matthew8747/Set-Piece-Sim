@@ -43,6 +43,28 @@ value/model, its literature anchor, and its calibration status:
 | P-12 | No Reynolds-dependence in C_l (Magnus) beyond the S-clamp | Data too sparse to fit responsibly; absorbed into P-4 calibration |
 | P-13 | Batch engine covers launch → first ground contact only (no batch bounce chains / plane crossings yet) | Phase-3 Monte Carlo layer owns batch event extraction; single-trajectory path is event-complete today |
 
+## Agents & engine (Phase 2, `sim/0.2.0`)
+
+| ID | Assumption | Implementation | Status |
+|----|-----------|----------------|--------|
+| G-1 | Capability envelope: top speed 5.5–9.8 m/s, accel 2–8 m/s², bounds from sprint literature **[fixed rails, per-player knobs]** | `PlayerAttributes`, enforced by `step_agents`; envelope property-tested from recorded tracks | validated |
+| G-2 | Turn-rate limit ∝ agility, tighter at speed **[knob]** | `step_agents` heading clamp | tested |
+| G-3 | Reaction latency gates *reading* the flight; pre-committed scripted runners pay none **[knob: jitter ±15%]** | ready-time gating in engine §4 | tested |
+| G-4′ | No airborne jump state: vertical = reach at contest + timing noise **[simplification vs design 05 jump-commit]** | contest model | registered |
+| G-5 | Two-layer behavior: scripts + earliest-feasible interception; no behavior trees | ADR-003 d1 | by design |
+| G-6 | Contest = feature-scored Gumbel-max; weights/window/scale **[knobs]**; window 0.20 s (static defenders otherwise unbeatable by arriving runners) | `EngineConfig`, `_contest_winner` | tested, uncalibrated |
+| G-7 | Soft-disc separation 0.4 m, no fouls/momentum exchange **[simplification]** | `separate()` | tested |
+| G-8 | Precomputed flight oracle; no player-air interaction **[simplification]** | engine flight table | by design |
+| G-9 | GK: contests claims as agent + logistic save model on shot features **[knobs c0..c3]** | `_resolve_shot` | tested, uncalibrated |
+| G-10 | First-contact-centric termination; untouched ball → proximity second-ball classification **[simplification]** | ADR-003 d10 | tested |
+| G-11 | Delivery execution: range-solved elevation (carry factor **[knob]**), curl pre-aim compensation **[knob]**, skill-scaled direction/speed noise **[knobs]** | `_execute_delivery` | tested |
+| G-12 | Header/clearance contact: P-12 speed cap, von Mises-ish aim noise by skill **[knobs]** | `_resolve_shot` | tested |
+| G-13 | Interception planned once from kick-instant states (no in-flight re-planning) **[simplification]** | engine §4 | registered |
+
+**Phase-2 honesty note:** outcome *rates* are not calibrated (keeper-claim share measurably
+high; goal rate ~5% vs real 2–3%). Every rate-shaping constant above is a named `EngineConfig`
+field — exactly the surface the Phase-3 calibration harness searches.
+
 ## Validation evidence (V1 gate, Phase 1)
 
 | Check | Result |
