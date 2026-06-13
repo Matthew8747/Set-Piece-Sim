@@ -26,7 +26,7 @@ from restart.agents.interception import earliest_interception
 from restart.agents.kinematics import separate, step_agents
 from restart.domain.vectors import FloatArray
 from restart.engine.config import EngineConfig
-from restart.physics import BallState, PhysicsConfig, TrajectorySimulator
+from restart.physics import BallState, IntegratorConfig, PhysicsConfig, TrajectorySimulator
 from restart.physics.trajectory import Trajectory
 from restart.players.attributes import Attr
 from restart.simulation.events import (
@@ -96,7 +96,20 @@ class SetPieceEngine:
         self._phys = physics if physics is not None else PhysicsConfig.default()
         self._cfg = engine if engine is not None else EngineConfig()
         self._agents = agents if agents is not None else AgentConfig()
-        self._ball_sim = TrajectorySimulator(self._phys)
+        # Horizon-capped ball sim: set pieces resolve in ~2-4 s; integrating
+        # roll-to-rest tails cost 10x per sim for nothing the engine reads.
+        capped = PhysicsConfig(
+            ball=self._phys.ball,
+            environment=self._phys.environment,
+            bounce=self._phys.bounce,
+            integrator=IntegratorConfig(
+                dt_s=self._phys.integrator.dt_s,
+                max_flight_time_s=min(
+                    self._phys.integrator.max_flight_time_s, self._cfg.ball_sim_horizon_s
+                ),
+            ),
+        )
+        self._ball_sim = TrajectorySimulator(capped)
 
     # ------------------------------------------------------------------ run
     def run(self, program: SimProgram, seed: int) -> SetPieceResult:

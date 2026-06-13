@@ -27,8 +27,20 @@ marking and free-kick walls, and a deterministic set-piece engine that plays ful
 terminal outcomes (goal/saved/cleared/keeper-claim/second-ball) with typed events and replay
 tracks. Outcome rates intentionally uncalibrated until Phase 3.
 
-🏗️ **Next: Phase 3** — Monte Carlo batches, outcome statistics with confidence intervals,
-optimization interfaces, and the first end-to-end MVP (API + Scenario Workbench).
+✅ **Phase 3 complete** (`sim/0.3.0`) — Monte Carlo batches with Wilson confidence intervals,
+outcome metrics, optimization interfaces (Optuna/CMA-ES-ready, no algorithms yet), and a working
+**MVP vertical slice**: REST API + Scenario Workbench (`/workbench`) — pick a corner routine and
+defensive scheme, simulate one delivery or a Monte Carlo batch, watch the animated pitch replay
+and read goal/shot/clearance probabilities with CIs.
+
+```bash
+# Run the MVP locally:
+uv run uvicorn restart_api.main:app --app-dir apps/backend/src   # API :8000
+npm run dev -w apps/frontend                                     # web :3000 -> /workbench
+```
+
+🏗️ **Next: Phase 4** — ETL + real player profiles + xG v1; and the fused Numba scenario kernel
+for 100k-sim batches.
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
 simulation architecture, ML architecture, UI/UX plan, and 12-week roadmap — lives in

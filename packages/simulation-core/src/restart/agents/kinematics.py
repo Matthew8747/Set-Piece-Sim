@@ -254,45 +254,47 @@ def separate(pos: FloatArray, radius: float, passes: int = 4) -> FloatArray:
     # Use slightly larger grid spacing than min_dist so grid-adjacent slots
     # start above the separation threshold and don't oscillate at the boundary.
     grid_spacing = min_dist * 1.05
+
     # Identify degenerate agents from ORIGINAL positions (before any moves),
     # then bulk-relocate. This avoids the problem where early moves un-mark
     # later agents that are still at the original overlapping position.
-    original = pos_out.copy()
-    for i in range(n):
-        # Check degeneracy in the original snapshot
-        degenerate = False
-        for j in range(n):
-            if j == i:
-                continue
-            dx = original[i, 0] - original[j, 0]
-            dy = original[i, 1] - original[j, 1]
-            if dx * dx + dy * dy < _tiny * _tiny:
-                degenerate = True
-                break
-        if degenerate:
-            row = i // cols
-            col = i % cols
-            # Centre the grid at the centroid
-            offset_x = (col - (cols - 1) / 2.0) * grid_spacing
-            offset_y = (row - (cols - 1) / 2.0) * grid_spacing
-            pos_out[i, 0] = centroid[0] + offset_x
-            pos_out[i, 1] = centroid[1] + offset_y
+    # Vectorized pairwise distances drive both steps: this function runs every
+    # engine tick, and python n^2 scans dominated profiles (1.4 ms/call).
+    def _sq_dists(p: FloatArray) -> FloatArray:
+        diff = p[:, np.newaxis, :] - p[np.newaxis, :, :]
+        d2: FloatArray = np.sum(diff * diff, axis=-1)
+        np.fill_diagonal(d2, np.inf)
+        return d2
 
-    # --- Step 2: pairwise cleanup sweeps ------------------------------------
+    d2 = _sq_dists(pos_out)
+    if float(d2.min()) >= min_dist * min_dist:
+        return pos_out  # common case: nobody overlapping, nothing to do
+
+    # --- Step 1: grid-seed degenerate clusters (rare) ------------------------
+    if float(d2.min()) < _tiny * _tiny:
+        degenerate_idx = np.where((d2 < _tiny * _tiny).any(axis=1))[0]
+        for i in degenerate_idx:
+            row = int(i) // cols
+            col = int(i) % cols
+            pos_out[i, 0] = centroid[0] + (col - (cols - 1) / 2.0) * grid_spacing
+            pos_out[i, 1] = centroid[1] + (row - (cols - 1) / 2.0) * grid_spacing
+
+    # --- Step 2: cleanup sweeps over the (few) overlapping pairs only --------
     for _ in range(passes):
-        any_overlap = False
-        for i in range(n):
-            for j in range(i + 1, n):
-                diff = pos_out[j] - pos_out[i]  # (2,)
-                d = float(np.sqrt(diff[0] ** 2 + diff[1] ** 2))
-                if d < min_dist:
-                    any_overlap = True
-                    overlap = min_dist - d
-                    axis = np.array([1.0, 0.0]) if d < _tiny else diff / d
-                    push = 0.5 * overlap * axis
-                    pos_out[i] -= push
-                    pos_out[j] += push
-        if not any_overlap:
+        d2 = _sq_dists(pos_out)
+        ii, jj = np.where(np.triu(d2 < min_dist * min_dist, k=1))
+        if len(ii) == 0:
             break
+        # Ordered loop keeps push resolution deterministic (i < j ascending).
+        for i, j in zip(ii.tolist(), jj.tolist(), strict=True):
+            diff = pos_out[j] - pos_out[i]
+            d = float(np.sqrt(diff[0] ** 2 + diff[1] ** 2))
+            if d >= min_dist:
+                continue  # already resolved by an earlier push this sweep
+            overlap = min_dist - d
+            axis = np.array([1.0, 0.0]) if d < _tiny else diff / d
+            push = 0.5 * overlap * axis
+            pos_out[i] -= push
+            pos_out[j] += push
 
     return pos_out

@@ -10,9 +10,13 @@ export default function Home() {
         Monte Carlo experimentation, and machine-learning routine search — built around the 2026
         World Cup.
       </p>
-      <p className="font-mono text-sm opacity-60">
-        Phase 0 scaffold · the Scenario Workbench arrives in Phase 6
-      </p>
+      <a
+        href="/workbench"
+        className="w-fit rounded bg-(--color-signal) px-4 py-2 font-medium text-black"
+      >
+        Open the Scenario Workbench →
+      </a>
+      <p className="font-mono text-sm opacity-60">Phase 3 MVP · corner simulation + Monte Carlo</p>
     </main>
   );
 }

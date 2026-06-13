@@ -6,6 +6,34 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 3: Monte Carlo, Analytics & MVP (2026-06-13) · `ENGINE_VERSION sim/0.3.0`
+
+- `restart.montecarlo`: seeded batch runner (`sim_seeds` — per-sim seeds stable across batch
+  sizes, any sim replayable singly), outcome aggregation with **Wilson 95% CIs** (SciPy, M-2),
+  serializable `SimulationReport` (goal / shot / header / first-contact / clearance /
+  possession-recovery probabilities, PRD FR-4.2).
+- `restart.optimize`: optimization *interfaces only* (no algorithms, per phase scope) —
+  `SearchSpace`, `ContinuousParam`, `ObjectiveFunction` protocol, `RoutineObjective`
+  (delivery-param mutation → compile → Monte Carlo → P(goal), deterministic per seed for CRN).
+  Optuna/CMA-ES/GA plug in here in Phase 5.
+- **MVP vertical slice (integration proof):** REST API `/api/v1/setpieces/{routines,schemes,
+  simulate,montecarlo}` (n_sims hard-bounded for cost-bomb protection) + typed `shared-types`
+  mirrors + Next.js **Scenario Workbench** (`/workbench`): routine/scheme selector, single-sim
+  and Monte Carlo triggers, CI results panel, event timeline, animated SVG pitch replay with
+  scrubber.
+- ~30 new tests (410 Python + 3 frontend, all green).
+
+### Changed
+- Engine ball-flight horizon capped at 4 s (`EngineConfig.ball_sim_horizon_s`): set pieces
+  resolve in 2–4 s, and integrating roll-to-rest tails cost ~10× per sim. Shifts some
+  untouched-ball second-ball classifications → `ENGINE_VERSION` bump to `sim/0.3.0`.
+
+### Performance
+- `domain.vectors.cross` hand-expanded (np.cross routes through moveaxis, ~100× slower on
+  small arrays; was ~25% of engine time) and `agents.separate` vectorized to process only
+  overlapping pairs — both equivalence-preserving. Reference-engine MC ≈ 3 sims/s; the fused
+  batch scenario kernel (ADR-003 d8) remains the 100k-sim answer (Phase-3 follow-up).
+
 ### Added — Phase 2: Agents & Tactical Engine (2026-06-12) · `ENGINE_VERSION sim/0.2.0`
 
 - `restart.players`: validated attribute model with kernel-facing column contract

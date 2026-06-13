@@ -7,8 +7,10 @@ exit criteria* and is refreshed each phase. Priorities: 🔴 blocks an upcoming 
 
 | Pri | Item | Exit criterion | Owner phase |
 |---|---|---|---|
-| 🔴 | `mu_roll`, Magnus constants, contest/agent parameters are uncalibrated priors | All [knob] params fitted to real corner base rates; held-out check vs Euro 2024 | Phase 3 |
-| 🔴 | Batch engine stops at first ground contact; no batch event logs | Batch scenario kernel with full event extraction (the Phase-3 deliverable itself) | Phase 3 |
+| 🔴 | `mu_roll`, Magnus constants, contest/agent/GK parameters uncalibrated (goal ~5% vs 2–3% real) | All [knob] params fitted to real corner base rates; held-out check vs Euro 2024 | Phase 4–5 (data first) |
+| 🔴 | Reference engine ~3 sims/s; no fused batch scenario kernel | Numba scenario kernel (ADR-003 d8) porting engine semantics; needed before Phase-5 optimization studies (10⁵–10⁶ sims) | Phase 4/5 |
+| 🟡 | API catalog uses fixed demo squads; no persistence/custom routines/async jobs | Postgres + Arq worker + real teams | Phase 4/6 |
+| 🟡 | shared-types DTOs hand-mirrored (now 8 interfaces) | OpenAPI codegen | Phase 6 |
 | 🟡 | Physics formulas duplicated in JIT kernel vs `forces.py` | Hold: equivalence test (≤1e-9) polices drift; revisit only if a third copy appears | standing |
 | 🟡 | No import-linter contract | Contract added once `restart.{agents,tactics,engine}` land (module count justifies it) | Phase 2/3 |
 | 🟡 | `shared-types` hand-mirrored | OpenAPI codegen when domain endpoints land | Phase 6 |

@@ -43,8 +43,18 @@ def unit(v: FloatArray) -> FloatArray:
 
 
 def cross(a: FloatArray, b: FloatArray) -> FloatArray:
-    """Cross product along the last axis (thin typed wrapper over np.cross)."""
-    result: FloatArray = np.cross(a, b).astype(np.float64, copy=False)
+    """Cross product along the last axis.
+
+    Hand-expanded rather than ``np.cross``: numpy's implementation routes
+    through moveaxis machinery that costs ~100x on small arrays, and this
+    sits inside the per-step force evaluation (profiled: ~25% of engine
+    time before the rewrite).
+    """
+    shape = np.broadcast_shapes(a.shape, b.shape)
+    result: FloatArray = np.empty(shape, dtype=np.float64)
+    result[..., 0] = a[..., 1] * b[..., 2] - a[..., 2] * b[..., 1]
+    result[..., 1] = a[..., 2] * b[..., 0] - a[..., 0] * b[..., 2]
+    result[..., 2] = a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
     return result
 
 
