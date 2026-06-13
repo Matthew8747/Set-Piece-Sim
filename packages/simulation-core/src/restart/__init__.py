@@ -10,7 +10,7 @@ simulation result carries it; physics-affecting changes must bump it (see
 docs/02-system-architecture.md, "Determinism & versioning").
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
-#: Bumped for Phase 2: agents, tactics, set-piece engine.
-ENGINE_VERSION = "sim/0.2.0"
+#: Bumped for Phase 3: engine ball-horizon cap (4s) shifts some outcomes.
+ENGINE_VERSION = "sim/0.3.0"

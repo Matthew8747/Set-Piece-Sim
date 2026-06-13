@@ -46,8 +46,12 @@ v1 (one-shot design problem; Tier-3 research note).
 
 | Package | Depends on |
 |---|---|
-| `restart` (simulation-core) | numpy, scipy (oracle/stats), numba (JIT kernels), pydantic (config) |
-| `restart_api` (backend) | fastapi, uvicorn, pydantic-settings, **restart** |
-| `apps/frontend` | next 16, react 19, tailwind v4, **@restart/shared-types** |
+| `restart` (simulation-core) | numpy, scipy (oracle/stats incl. Wilson CIs), numba (JIT kernels), pydantic (config) |
+| `restart_api` (backend) | fastapi, uvicorn, pydantic-settings, **restart** (engine + montecarlo) |
+| `apps/frontend` | next 16, react 19, tailwind v4, **@restart/shared-types** (fetches restart_api) |
+
+Subpackage map (as built, P3): `restart.{domain, physics, simulation, players, agents,
+tactics, engine, montecarlo, optimize}`. Layer order: domain ← physics ← simulation/players ←
+agents/tactics ← engine ← montecarlo ← optimize. `optimize` has interfaces only (Phase 5 fills).
 | Dev gates | ruff, black, mypy(strict), pytest(+benchmark), hypothesis, eslint, prettier, vitest |
 | Phase 4+ (planned) | SQLAlchemy/Alembic, Arq+Redis, Postgres, DuckDB, MLflow, Optuna, cmaes |

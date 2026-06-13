@@ -28,7 +28,7 @@ Summary:
 from __future__ import annotations
 
 import dataclasses
-from typing import Literal, Self, TypeVar
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -47,8 +47,6 @@ from restart.tactics.routine import (
     SetPiece,
 )
 from restart.tactics.scheme import DefensiveScheme
-
-_AnyArray = TypeVar("_AnyArray", bound=npt.NDArray[np.generic])
 
 # ---------------------------------------------------------------------------
 # Scenario — validated "compile input"
@@ -255,7 +253,7 @@ def _spin_sign_and_rps(
     return 0.0, 0.0
 
 
-def _ro(arr: _AnyArray) -> _AnyArray:
+def _ro[A: npt.NDArray[np.generic]](arr: A) -> A:
     """Make an array read-only and return it (in-place flag set)."""
     arr.setflags(write=False)
     return arr

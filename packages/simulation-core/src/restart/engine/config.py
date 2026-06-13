@@ -12,6 +12,10 @@ class EngineConfig(BaseModel):
 
     # --- timing [fixed by ADR-003 d3] ---
     agent_dt_s: float = Field(default=0.02, ge=0.005, le=0.05)
+    # Ball-trajectory horizon inside the engine. Set-piece resolution needs
+    # ~2-4 s; without this cap untouched/cleared balls roll to rest (~15 s of
+    # 5 ms RK4 steps) and dominated per-sim cost 10x (measured 0.6 s/sim).
+    ball_sim_horizon_s: float = Field(default=4.0, ge=2.0, le=15.0)
     # Runs need ~1.2 s of development: accel-limited agents cover <1 m in
     # 0.5 s, which made arriving runners universally late to contests.
     prekick_lead_s: float = Field(default=1.5, ge=0.2, le=3.0)

@@ -2,51 +2,51 @@
 
 > Rewritten at the end of every completed phase.
 
-## Last completed phase: Phase 2 — Agents & tactical engine (`sim/0.2.0`)
+## Last completed phase: Phase 3 — Monte Carlo, analytics & MVP (`sim/0.3.0`)
 
 ### What shipped
-`restart.players` (attribute column ABI, entities, demo squads) · `restart.agents`
-(kinematics/interception/separation kernels) · `restart.tactics` (Routine Spec `rs/1.0`,
-schemes incl. FK wall, compile→SoA SimProgram, content library) · `restart.engine`
-(SetPieceEngine: delivery execution, pre-kick run development, Gumbel-max contests, GK save
-model, typed match events with embedded xG features, deterministic replay tracks) ·
-ADR-003/004 · G-1..G-13 registered. Details: [CHANGELOG](../../CHANGELOG.md) Phase-2 entry.
+- `restart.montecarlo`: `MonteCarloRunner` (seeded batches), `aggregate`/`OutcomeStats` (Wilson
+  CIs via SciPy), `build_report`/`SimulationReport` (serializable, the API/UI payload).
+- `restart.optimize`: interfaces only — `SearchSpace`, `ContinuousParam`, `ObjectiveFunction`
+  protocol, `RoutineObjective`, `corner_delivery_space()`. No optimizers (Phase 5).
+- Backend: `apps/backend/.../routers/v1/setpieces.py` (catalog/simulate/montecarlo, n_sims
+  bounded), DTOs in `schemas.py`.
+- Frontend: `apps/frontend/src/{lib/api.ts, components/Pitch.tsx, components/Workbench.tsx,
+  app/workbench/page.tsx}`. shared-types DTO mirrors added.
+- Details: [CHANGELOG](../../CHANGELOG.md) Phase-3 entry.
 
 ### Validation evidence
-251 tests green (mypy strict, ruff, black clean). Phase-2 acceptance held: 10 routine×scheme
-corners run start-to-terminal; kinematic envelope never violated (track-derived speeds);
-bitwise determinism per seed; seeds vary outcomes; FK compiles & runs (PRD A-3 "configuration
-not construction" confirmed); ShotEvent features sane; event streams time-ordered.
+413 tests green (410 py + 3 fe). mypy --strict, ruff, black, eslint, tsc, prettier, next build
+all clean. Live boot confirmed: `/api/v1/setpieces/routines` → 200 (5 routines);
+simulate/montecarlo round-trip deterministic per seed over HTTP.
 
 ### Debugging history worth knowing (saves future sessions time)
-1. Spin-sign convention was inverted (inswinger curled out of play) — fixed in
-   `tactics/compile._spin_sign_and_rps` with derivation comment; verify against Magnus
-   direction if touched again.
-2. Corner kick position must sit INSIDE the goal-line plane (52.2, ±33.7) or every inswinger
-   exits play immediately.
-3. Fixed delivery elevation underflew 30 m targets — elevation now range-solved with carry
-   factor (G-11).
-4. Static zonal defenders beat arriving runners with a 60 ms contest window — widened to
-   0.20 s [knob]; runners' pre-kick development needs ≥1.2 s lead (accel-limited agents move
-   <1 m in 0.5 s).
+1. Reference engine measured ~2–3 sims/s; the dominant cost was `np.cross` (moveaxis overhead)
+   inside the per-step force eval and `separate()` scanning all 231 pairs every tick. Both
+   rewritten (equivalence-preserving). The ball-flight horizon cap (4 s) cut roll-to-rest tails.
+   The *real* 100k answer is the fused Numba scenario kernel (ADR-003 d8), not micro-opt of the
+   reference engine — don't rabbit-hole optimizing the reference.
+2. `ruff --fix` stripped a `# noqa: UP047` on `tactics/compile._ro`; converted it to PEP 695
+   `def _ro[A: npt.NDArray[np.generic]](arr: A) -> A` and dropped the dead `_AnyArray` TypeVar.
+3. ESLint "setState in effect": Pitch resets replay state by **remount key**
+   (`<Pitch key=... />` in Workbench), not a reset effect.
 
 ### Open decisions carried forward
-- Contest weights, GK save coefficients, keeper-claim bonus, carry factor: all uncalibrated
-  `EngineConfig` knobs — the Phase-3 calibration surface.
-- G-13 (plan-once interception) revisit only if face-validity fails.
+- Calibration still owed (engine `[knob]`s vs real base rates) — the roadmap week-5 credibility
+  gate, deferred behind the MVP per the product-owner directive. Goal rate ~5% vs 2–3% real.
+- Fused batch scenario kernel deferred (reference engine adequate for MVP batch sizes ≤ ~1000).
 
-## Current phase: Phase 3 — Monte Carlo, analytics, optimization interfaces, MVP
+## Next phase: Phase 4 — Data platform, player profiles, xG v1 (roadmap §Phase 4)
 
-Scope per product-owner directive: batch runner (seeded streams, aggregation), outcome
-metrics (goal/first-contact/header/shot/clearance/possession-recovery probabilities) with
-Wilson + bootstrap CIs, simulation reports, optimization extension points (interfaces only —
-no algorithms), AND the MVP vertical slice: REST endpoints (routines, simulate, batch) +
-Scenario Workbench MVP (routine selector, sim trigger, results panel, event timeline, basic
-pitch SVG). Simplified data acceptable; integration proof is the objective.
+Scope: `etl` package (StatsBomb Open Data → raw → staging → marts; license gate in CI),
+`mart_setpiece_shots`, derived provenance-tagged player attributes for launch teams, xG models
+(LR baseline + GBM sweep, grouped-by-match CV, calibration), MLflow, simulator integration
+(engine emits shot contexts → real-data xG scores them instead of the placeholder GK/aim model).
 
-### Risks for this phase
-1. Single-sim engine is ~30–80 ms ⇒ NumPy-loop batches of 10k ≈ 5–13 min. Acceptable for MVP
-   (run 200–1000 sims synchronously); the fused Numba scenario kernel remains the documented
-   Phase-3 performance deliverable (ADR-003 d8) and can follow the MVP.
-2. API must enforce sim-count bounds (cost-bomb protection per security checklist).
-3. Frontend MVP should consume typed shared-types mirrors of the new DTOs.
+### Risks for Phase 4
+1. Set-piece shot sample size (measure first — design doc 04 §2); feature plan degrades
+   gracefully if freeze-frame coverage is thin.
+2. Licensing: no scraped ratings (EA/sofifa forbidden); StatsBomb attribution; the CI license
+   gate must be mechanical (doc 04 §5).
+3. xG↔engine circularity trap: xG trains on REAL data only (design doc 06 §1) — never on
+   simulator output.
