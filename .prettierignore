@@ -10,6 +10,8 @@ data/marts
 data/mlflow.db
 # Generated xG model artifacts (Python-emitted JSON; not prettier-formatted).
 models
+# Generated optimization study artifacts (Python-emitted JSON; not prettier-formatted).
+optimization_studies
 *.md
 uv.lock
 package-lock.json
