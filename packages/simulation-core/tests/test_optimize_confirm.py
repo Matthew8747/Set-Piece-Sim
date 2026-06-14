@@ -1,8 +1,11 @@
 """Screen-then-confirm statistics: mean-xG CIs, the non-overlap decision rule,
 and CRN-deterministic confirmation."""
 
+from collections.abc import Mapping
+
 import numpy as np
 
+from restart.domain.vectors import FloatArray
 from restart.optimize.confirm import (
     beats_baseline,
     confirm_candidates,
@@ -36,10 +39,11 @@ class TestBeatsBaseline:
 
 class TestConfirmCandidates:
     @staticmethod
-    def _make_samples(params: dict[str, object], n: int, seed: int) -> np.ndarray:
+    def _make_samples(params: Mapping[str, object], n: int, seed: int) -> FloatArray:
         # Deterministic per (params, seed) -> stands in for the xG objective.
         rng = np.random.default_rng(seed + int(params["k"]))  # type: ignore[call-overload]
-        return rng.uniform(0.0, 0.3, n)
+        out: FloatArray = rng.uniform(0.0, 0.3, n)
+        return out
 
     def test_common_random_numbers_deterministic(self) -> None:
         cands = [{"k": 1}, {"k": 2}]

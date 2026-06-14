@@ -9,3 +9,4 @@ Numbered, immutable once accepted; superseded ADRs are marked, never deleted.
 | [ADR-003](ADR-003-agent-architecture.md) | Agent & engine architecture for Monte Carlo throughput | Accepted (Phase 2) |
 | [ADR-004](ADR-004-routine-spec.md) | Routine Spec `rs/1.0` and compile-to-SimProgram contract | Accepted (Phase 2) |
 | [ADR-005](ADR-005-data-platform-and-xg.md) | Data platform & the xG ↔ engine integration | Accepted (Phase 4) |
+| [ADR-006](ADR-006-routine-optimizer.md) | System B: the routine optimizer (Optuna over the pure objective) | Accepted (Phase 5) |

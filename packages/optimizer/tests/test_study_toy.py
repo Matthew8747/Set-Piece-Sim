@@ -28,7 +28,9 @@ _OPT6 = (7.0, 3.0, 2.0, 8.0, 5.0, 1.0)
 
 
 def peak6(params: Mapping[str, object]) -> float:
-    sq = sum((float(params[f"d{i}"]) - c) ** 2 for i, c in enumerate(_OPT6))  # type: ignore[arg-type]
+    sq = 0.0
+    for i, c in enumerate(_OPT6):
+        sq += (float(params[f"d{i}"]) - c) ** 2  # type: ignore[arg-type]
     return math.exp(-0.2 * sq)
 
 

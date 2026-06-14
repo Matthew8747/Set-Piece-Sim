@@ -31,6 +31,7 @@ def cmd_canonical(args: argparse.Namespace) -> int:
         n_screen=args.screen,
         k=args.k,
         n_confirm=args.confirm,
+        sensitivity_sims=args.sens,
         seed=args.seed,
         prune=not args.no_prune,
     )
@@ -75,6 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--screen", type=int, default=250, help="sims per screen trial")
     pc.add_argument("--confirm", type=int, default=3000, help="sims per confirm candidate")
     pc.add_argument("--k", type=int, default=3, help="top-k confirmed")
+    pc.add_argument("--sens", type=int, default=200, help="sims per sensitivity evaluation")
     pc.add_argument("--no-prune", action="store_true", help="disable median pruning on the screen")
     pc.add_argument("--no-mlflow", action="store_true", help="skip MLflow logging")
     pc.add_argument("--out", help="study output root (default optimization_studies/)")

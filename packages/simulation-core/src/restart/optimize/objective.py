@@ -46,9 +46,14 @@ class EvaluationResult:
 
 @runtime_checkable
 class ObjectiveFunction(Protocol):
-    """What any Phase-5 optimizer needs: params in, scalar out (higher better)."""
+    """What any Phase-5 optimizer needs: params in, scalar out (higher better).
 
-    def __call__(self, values: Mapping[str, object]) -> float: ...
+    The argument is positional-only: any single-argument ``(mapping) -> float``
+    callable is a valid objective (the driver passes a plain dict positionally),
+    regardless of its parameter name.
+    """
+
+    def __call__(self, values: Mapping[str, object], /) -> float: ...
 
 
 class RoutineObjective:
