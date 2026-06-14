@@ -2,72 +2,76 @@
 
 > Rewritten at the end of every completed phase.
 
-## Last completed phase: Phase 4 — Data platform, player profiles & xG v1 (`sim/0.4.0`)
+## Last completed phase: Phase 5 — Optimization engine, System B (`restart_opt 0.1.0`)
 
 ### What shipped
-- **`etl` (`restart_etl`, CLI `restart-etl`)** — pure-data raw→staging→marts pipeline.
-  `fetch statsbomb` (byte-exact cache + manifest, git-ignored), `stage` (one owned 105×68 m
-  coordinate transform, property-tested; typed Parquet), `marts` (+ file-based DuckDB), `gates`
-  (mechanical license + distribution), `all`. Built on **real StatsBomb WC2022 + Euro2024**:
-  975 corner/FK shots (75 goals), 1,259 players.
-- **Marts:** `mart_setpiece_shots` (xG training table, freeze-frame traffic features),
-  `mart_calibration_targets`, `mart_players`, `mart_player_attributes` (12 derived,
-  provenance-tagged `{source, method, license}` attributes — aerial-derived heading,
-  set-piece-completion-derived delivery, literature/curated priors otherwise; bounds-clamped),
-  `mart_defensive_schemes`.
-- **`ml` (`restart_ml`, CLI `restart-xg`)** — System A xG on **real data only**. `xg-header` +
-  `xg-foot` calibrated logistic models; full method comparison (LR/HistGBM/RF/XGBoost/LightGBM)
-  under grouped-by-match CV; Platt calibration on OOF; MLflow (sqlite); generated model card.
-  Shipped logistic calibration slope ≈ **1.00** (both splits).
-- **Engine (pure):** `restart.engine.xg` (`ShotContext`, `XGScorer`, `LogisticXGScorer`,
-  `XGModelBundle`). `SetPieceEngine(xg_scorer=…)` scores shots → Bernoulli on real-data xG
-  (G-14/G-15). `ENGINE_VERSION` → `sim/0.4.0`; `ShotEvent.xg` added.
-- **API:** Monte Carlo report carries `mean_xg`/`n_xg_scored`/`xg_model`; backend loads the
-  committed `models/xg-v1.json` directly (no ML dep in the API runtime). shared-types updated.
-- Details: [CHANGELOG](../../CHANGELOG.md) Phase-4 entry; [ADR-005](../adr/ADR-005-data-platform-and-xg.md).
+- **Pure optimize core (`restart.optimize`)** — IO/ML-free, in the simulation core:
+  `genome.py` (typed mixed search space `ContinuousParam`/`IntParam`/`CategoricalParam`; the
+  ~13-dim `CornerGenome` over a fixed runner template + zone grid, with the genotype→`Scenario`
+  builder that raises on infeasible specs; `DeliveryGenome` keeps the v1 delivery sub-space);
+  the `RoutineObjective` now returns **mean xG per sim** (deterministic per (params, root_seed) for
+  common random numbers) and reports counterattack risk without optimizing it; `confirm.py`
+  (mean-xG CI, non-overlap decision rule, CRN confirm stage); `boundary.py` (anti-exploit
+  bound-pinning + face-validity ceiling).
+- **`optimizer` package (`restart_opt`, CLI `restart-opt`)** — all Optuna/LightGBM/SHAP/MLflow + IO,
+  isolated from the core: `study.py` (seeded Optuna TPE + mandatory random baseline; infeasible →
+  pruned, not crashed), `screen.py` (engine-backed screen with CRN + median pruning, confirm
+  orchestration vs the library baseline), `bundle.py` (loads the committed xG bundle via the pure
+  `from_dict` — no `restart_ml` dep), `surrogate.py` (LightGBM + SHAP → plain-language insights),
+  `sensitivity.py` (±10% curated-attribute perturbation → routine-precise vs report-classes),
+  `persist.py` + `mlflow_log.py` + `canonical.py` + `cli.py`.
+- **Canonical study:** *England corners vs Argentina zonal* (`restart-opt canonical`), persisted to
+  `optimization_studies/england-vs-argentina/study.json` and logged to MLflow. Demo squads
+  (mart-derived squads are Phase 6).
+- Docs: [ADR-006](../adr/ADR-006-routine-optimizer.md),
+  [optimization methodology](../09-optimization-methodology.md),
+  [the case-study writeup](../case-studies/england-vs-argentina.md);
+  [CHANGELOG](../../CHANGELOG.md) Phase-5 entry. `ENGINE_VERSION` **unchanged** (`sim/0.4.0`).
 
 ### Validation evidence
 All gates green (ruff, black, mypy --strict, pytest, next build, eslint, tsc, prettier, vitest).
-`restart-etl gates` → `== gates PASS ==` (license: all sources approved; coords on-pitch;
-goal rate 0.077 in band). `restart-xg train` → shipped logistic `cal_slope` 1.002 (header) /
-1.000 (foot). API acceptance: `montecarlo` returns `mean_xg > 0`, `xg_model="xg-v1"`.
+Optimizer-specific tests: planted-optimum recovery on a toy landscape with TPE **>** random at equal
+budget (6-D); CRN bit-identical determinism (objective, screen, confirm); infeasible-genome pruning;
+anti-exploit boundary + face-validity flags; mean-xG CI + non-overlap rule; LightGBM+SHAP surrogate
+recovers the driving feature; sensitivity verdict logic; end-to-end canonical smoke. Quantitative
+study results (TPE-vs-random, winner-vs-baseline CIs, insights, sensitivity verdict) are in the
+case-study writeup.
 
 ### Debugging history worth knowing (saves future sessions time)
-1. **Pure-domain vs ML.** The core must not import sklearn. Resolution: the LR model serializes
-   to plain coefficients consumed by a pure `LogisticXGScorer`; GBMs (if ever shipped) inject via
-   the `XGScorer` protocol from the adapter. The backend reads the bundle JSON directly — no
-   `restart_ml` import in the API.
-2. **Committed model, git-ignored data.** CI can't retrain (raw data git-ignored, 347 MB), so the
-   small derived bundle is committed under `models/` (`.gitignore` re-includes `models/*.json`);
-   the engine↔model integration test runs against it.
-3. **mypy + data libs.** pandas avoided (its inline types fight `--strict`); pyarrow/duckdb/sklearn
-   etc. are `ignore_missing_imports` overrides; a few targeted `type: ignore[no-untyped-call]` on
-   pyarrow read/write. Use `dict[str, Any]` for mart rows so `int()/float()` calls typecheck.
-4. **MLflow file store is deprecated/maintenance-mode** and raises; switched to a local
-   `sqlite:///data/mlflow.db` backend.
+1. **Throughput is the real constraint, measured.** Reference engine ≈ **3 sims/s** with xG wired
+   (not the ~30–80 ms/sim the runner docstring suggested — that predates the xG path). The full
+   reference budget (500 screen / 10k confirm / top-5 + equal random) ≈ 14 h and cannot run in CI;
+   budgets are scoped + configurable and the kernel is deferred (ADR-006).
+2. **Pure-domain forces the package split.** Optuna persistence (SQLite/JSON), MLflow, and
+   LightGBM+SHAP are all IO/ML, so they cannot live in `restart.optimize`. The pure contracts stay
+   in the core; the engine lives in `restart_opt`. (Confirms doc-06's "optimize is the home" — for
+   the *pure* surface.)
+3. **`Param` protocol vs frozen dataclasses.** mypy rejected `name: str` as a settable Protocol
+   member against frozen dataclass attributes; declare it as a read-only `@property` in the Protocol.
+4. **TPE-beats-random is landscape-dependent.** On a smooth 2-D peak random search is a strong
+   baseline (doc 06 says so); the advantage is robust in higher dims, so the unit test asserts it on
+   a 6-D landscape and keeps planted-optimum recovery as the 2-D guarantee.
+5. **SHAP encoding is pandas-free** (pandas fights mypy --strict): integer-code categoricals, pass
+   their indices to LightGBM, attribute SHAP per original feature.
 
 ### Open decisions carried forward
-- xG mapping is calibrated; the engine's **upstream** `[knob]`s are not, so the simulated
-  shot-context *distribution* is unvalidated — the owed week-5 calibration gate (now with real
-  base rates in `mart_calibration_targets` to fit against).
-- Off-manifold risk (G-15): population-stability check of simulated vs training feature
-  distributions is the planned mitigation.
-- Player attributes are derived but **not yet wired into the API squads** (still demo squads);
-  squad selection from `mart_players`/attributes is API/persistence work scoped to Phase 6.
+- **Fused Numba scenario kernel (🔴):** the path to 10⁵–10⁶-sim studies; deferred from P5 to keep
+  the phase tractable. Until it lands, studies are budget-limited (documented).
+- **Engine upstream `[knob]` calibration (🔴, still owed from P3/P4):** the simulated shot-context
+  *distribution* is unvalidated (goal ~5% sim vs 2–3% real); `mart_calibration_targets` holds the
+  real base rates to fit against.
+- **Demo squads:** the canonical study uses demo squads; mart-derived squad selection is Phase 6.
+- **CMA-ES / GA comparison + multi-objective (xG vs counterattack):** documented future work.
 
-## Next phase: Phase 5 — Optimization engine (roadmap weeks 7–8)
+## Next phase: Phase 6 — API & Scenario Workbench (roadmap weeks 9–10)
 
-Scope: System B — Optuna TPE over the Routine Spec sub-space; random-search baseline at equal
-budget; screen-then-confirm (500-sim screen → top-k confirm at 10k with common random numbers);
-anti-exploit flagging; study persistence; LightGBM surrogate + SHAP "insights"; the canonical
-*England corners vs Argentina zonal* study; attribute sensitivity analysis (doc 04 §3 guardrail).
-Objective = `mean_xg` (now produced by the real-data model) with counterattack risk reported.
+Scope: FastAPI surface (validation, rate limiting, API keys, problem-details, OpenAPI), Arq worker +
+progress, idempotency, the `pitch-kit` (SVG pitch, replay player, charts), the Scenario Workbench
+(Build/Simulate/Replay), Playwright E2E of the 3-minute journey. Wire **mart-derived squads** from
+`mart_players`/`mart_player_attributes` (replacing demo squads) and the Postgres loaders + persistence.
 
-### Risks for Phase 5
-1. Throughput: the reference engine is ≈ 3 sims/s — 10⁵–10⁶-sim studies need the fused Numba
-   scenario kernel (ADR-003 d8) first, or studies will be painfully slow.
-2. Optimizer exploits sim artifacts → anti-exploit rules + face-validity review of the top-k.
-3. TPE may underperform on the categorical-heavy space → the random-search baseline catches this
-   honestly.
-4. Attribute priors dominating rankings → the scheduled ±10% sensitivity analysis decides whether
-   to report routine *classes* vs player-precise prescriptions.
+### Risks for Phase 6
+1. Frontend scope explosion — the workbench is 80% of UI value; everything else is cuttable.
+2. Pitch-editor interaction polish is a time sink → snap-to-grid + constrained handles over
+   free-form gestures.
+3. Squad-from-marts wiring touches the API/persistence boundary not yet built (tech-debt P6).

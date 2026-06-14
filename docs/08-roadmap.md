@@ -161,7 +161,9 @@ input bounds verified by tests (oversized n_sims, out-of-bounds coordinates reje
 **Deliverables (priority order, cut from bottom):** Team Intelligence + mismatch matrix;
 nation-vs-nation comparison; exportable report page (print CSS); optimization UI (convergence,
 parallel-coords, insights panel); models/methods pages; **stretch:** free kicks (direct +
-crossed) using Phase-2 spike result; long throw-ins; 3D replay (R3F, camera presets).
+crossed) using Phase-2 spike result; long throw-ins; **3D replay (R3F, camera presets) — static
+player markers + the ball's full 3-D flight (z) for a single sim *and* the best-found optimized
+routine** (animation optional; the ball trajectory is the point).
 **Architecture decisions:** reports = server-rendered pages with print CSS (commit, no PDF lib).
 **Risks:** Stretch greed — rule: nothing from the stretch list starts unless every Tier-1 item
 above it is at acceptance; 3D is explicitly the *last* pull.
@@ -223,6 +225,7 @@ URL; security checklist 100% evidenced; case study reviewed by one outside reade
 | R7 | Optimizer exploits sim bugs | M | M | Anti-exploit flags + face-validity review of winners | 5 |
 | R8 | Solo bandwidth / life | M | M | Vertical slice = always shippable; Phase-8 buffer | all |
 | R9 | Attribute priors dominate results | M | M | Sensitivity analysis; report routine *classes* if unstable | 4–5 |
+| R10 | First-contact-only engine caps routine realism (no pass-then-shot combos, no shoot-vs-pass lookahead, no defender anticipation) | **H** | M | Registered fidelity cut (O-3); scoped as future engine work (doc 05 §8), to land with/after the Numba kernel | future |
 
 ## Documentation roadmap (PRD-required artifacts → where produced)
 

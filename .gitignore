@@ -41,6 +41,13 @@ mlruns/
 models/*
 !models/*.json
 
+# --- Optimization studies: rerunnable via `restart-opt canonical --seed N`; the
+#     one committed canonical study artifact backs the case-study writeup.
+optimization_studies/*
+!optimization_studies/england-vs-argentina/
+optimization_studies/england-vs-argentina/*
+!optimization_studies/england-vs-argentina/study.json
+
 # --- Local tooling artifacts (Claude Code plugins etc.) ---
 ruvector.db
 graphify-out/

@@ -6,6 +6,33 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 5: Optimization Engine (System B) (2026-06-14) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+
+- **Pure optimize core (`restart.optimize`)** — the genome, objective, statistics, and guards stay
+  IO/ML-free in the simulation core: `genome.py` (typed mixed search space —
+  Continuous/Int/Categorical — plus the ~13-dim `CornerGenome` over a zone grid and its
+  genotype→`Scenario` builder; `DeliveryGenome` keeps the v1 delivery sub-space); the
+  `RoutineObjective` now returns **mean xG per sim** (doc 06 §2.3), deterministic per
+  (params, root_seed) for common random numbers, and reports counterattack risk without optimizing
+  it; `confirm.py` (mean-xG CI, the non-overlap decision rule, the CRN confirm stage);
+  `boundary.py` (anti-exploit bound-pinning + face-validity ceiling).
+- **New `optimizer` package (`restart_opt`, CLI `restart-opt`)** — System B's search engine,
+  isolating all Optuna/LightGBM/SHAP/MLflow + IO from the pure core: seeded **Optuna TPE** with a
+  mandatory **random-search baseline at equal budget**; the engine-backed **screen-then-confirm**
+  pipeline (small-budget screen with median pruning under common random numbers → top-k confirmed
+  at a large budget; a discovery must beat the library baseline with non-overlapping 95% CIs);
+  a **LightGBM + SHAP surrogate** turning the trial cloud into plain-language insights; an
+  **±10% attribute sensitivity analysis** (routine-precise vs report-classes, doc 04 §3);
+  study persistence (`optimization_studies/<name>/study.json`) and MLflow logging (SQLite backend).
+- **Canonical study:** *England corners vs Argentina zonal* via `restart-opt canonical` (demo
+  squads; mart-derived squads are Phase 6). Methodology in
+  [docs/09-optimization-methodology.md](docs/09-optimization-methodology.md); writeup in
+  [docs/case-studies/england-vs-argentina.md](docs/case-studies/england-vs-argentina.md).
+- **Throughput decision (ADR-006):** the reference engine is ~3 sims/s (measured), so the fused
+  Numba scenario kernel (ADR-003 d8) is **deferred** and study budgets are **scoped + configurable**;
+  the 500-screen/10k-confirm figures remain the documented reference methodology. `ENGINE_VERSION`
+  is **unchanged** (`sim/0.4.0`) — the optimizer does not touch engine physics.
+
 ### Added — Phase 4: Data Platform, Player Profiles & xG v1 (2026-06-14) · `ENGINE_VERSION sim/0.4.0`
 
 - **`etl` package (`restart_etl`, CLI `restart-etl`)** — pure-data pipeline, raw → staging →

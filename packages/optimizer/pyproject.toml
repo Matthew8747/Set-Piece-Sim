@@ -1,0 +1,31 @@
+[project]
+name = "restart-optimizer"
+version = "0.1.0"
+description = "Restart Lab System B: the routine optimizer. Optuna TPE over a parameterized Routine Spec sub-space with a random-search baseline, screen-then-confirm with common random numbers, a LightGBM+SHAP surrogate, and attribute sensitivity analysis (design doc 06 sec3). Consumes the pure simulation core; isolates all Optuna/ML/IO from it."
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.1",
+    # Earmarked for Phase 5 in ADR-001: black-box search over the pure objective.
+    "optuna>=4.0",
+    # Surrogate + explainability of accumulated trials (doc 06 sec3.3).
+    "lightgbm>=4.5",
+    "shap>=0.46",
+    # Every study logged (doc 06 sec4); sqlite backend (the file store is
+    # deprecated, mirrors the ml package's choice).
+    "mlflow>=2.18",
+    # The pure objective/genome/confirm surface (no reverse dependency).
+    "restart-simulation-core",
+]
+
+[project.scripts]
+restart-opt = "restart_opt.cli:main"
+
+[tool.uv.sources]
+restart-simulation-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/restart_opt"]

@@ -232,3 +232,43 @@ nothing about teams, specs, or databases.
 Physics `P-1..P-13`, agents `G-1..G-7`, Monte Carlo `M-1..M-3` as numbered above; the full
 prose register with literature citations becomes `docs/simulation-assumptions.md` in Phase 1
 and is the canonical home (this section then links rather than duplicates).
+
+## 8. Future engine fidelity (Tier-3 research — not yet built)
+
+The Phase-2..5 engine is **first-contact-centric** (assumption O-3): a delivery resolves to a single
+first attacking contact that becomes a shot, plus a loose-ball/second-ball step. That is a
+deliberate, registered fidelity cut. The following extensions are scoped here so the optimizer's
+limits are explicit; each is a future engine phase, not Phase 6 (API/Workbench) work.
+
+### 8.1 Multi-touch pass-then-shot sequences
+
+Real set pieces routinely score off a *combination*: a cross to the back post is headed/cut back
+across the six-yard box for a tap-in. The current engine cannot represent this — the first contact
+terminates the play. Planned model: after an attacker wins the first contact, they may **lay off /
+pass** to a better-placed teammate instead of shooting; the teammate's strike becomes the scored
+shot context. A pass has a **success probability** (passer skill, distance, defender pressure,
+angle); a failed pass becomes a loose ball (the existing second-ball path). This raises the xG
+ceiling for routines that manufacture a tap-in and is the single biggest realism gap today.
+
+### 8.2 Sequential decision lookahead (shoot vs pass)
+
+With §8.1 in place, the ball-winner faces a **decision**, not a fixed action: shoot now for
+`E[xG | shoot]`, or pass for `E[pass_success] · E[xG | teammate's contact]`. This is a small,
+depth-limited **expectimax / game-tree search** over the post-contact phase (chess-engine in spirit,
+but shallow — 1–2 plies), choosing the higher expected value while pricing in pass-failure risk.
+The agent picks the action a real attacker would; the optimizer then discovers routines that *create*
+the high-value second action. Must stay cheap (it runs inside the hot Monte Carlo loop) and seeded
+(determinism contract).
+
+### 8.3 Defender anticipation under partial observability
+
+Defenders currently react to the ball and their marks only. Real defenders **anticipate** common
+patterns (a back-post overload, a cut-back runner) without knowing the exact plan. Planned model: a
+**noisy prior over attacker intents** (partial observability) that biases defender positioning —
+strong enough to punish telegraphed routines, noisy enough that disguise/decoys still work. This
+closes the loop on §8.1–8.2 so the optimizer cannot exploit omniscient-or-blind defenders.
+
+### 8.4 Throughput note
+
+All three increase per-sim cost, which sharpens the existing throughput constraint (ADR-006): they
+should land **with or after** the fused Numba scenario kernel (ADR-003 d8), not before.

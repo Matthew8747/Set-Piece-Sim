@@ -8,7 +8,7 @@ import pytest
 from restart.montecarlo import MonteCarloRunner, aggregate, build_report
 from restart.montecarlo.aggregate import wilson
 from restart.montecarlo.runner import sim_seeds
-from restart.optimize import ObjectiveFunction, RoutineObjective, corner_delivery_space
+from restart.optimize import DeliveryGenome, ObjectiveFunction, RoutineObjective
 from restart.players.demo import demo_team
 from restart.players.player import PositionGroup
 from restart.tactics.compile import Scenario, SimProgram, compile_scenario
@@ -98,23 +98,23 @@ class TestAggregation:
 
 class TestOptimizationInterface:
     def test_routine_objective_satisfies_protocol(self) -> None:
-        obj = RoutineObjective(make_scenario(), corner_delivery_space(), n_sims=10)
+        obj = RoutineObjective(make_scenario(), DeliveryGenome(), n_sims=10)
         assert isinstance(obj, ObjectiveFunction)
 
     def test_objective_deterministic_and_bounded(self) -> None:
-        obj = RoutineObjective(make_scenario(), corner_delivery_space(), n_sims=15, root_seed=4)
+        obj = RoutineObjective(make_scenario(), DeliveryGenome(), n_sims=15, root_seed=4)
         params = {"target_x": 48.0, "target_y": -2.0, "speed_ms": 24.0, "spin_rps": 8.0}
         a, b = obj(params), obj(params)
         assert a == b
         assert 0.0 <= a <= 1.0
 
     def test_out_of_bounds_rejected(self) -> None:
-        obj = RoutineObjective(make_scenario(), corner_delivery_space(), n_sims=5)
+        obj = RoutineObjective(make_scenario(), DeliveryGenome(), n_sims=5)
         with pytest.raises(ValueError, match="outside"):
             obj({"target_x": 60.0})
 
     def test_unknown_param_rejected(self) -> None:
-        obj = RoutineObjective(make_scenario(), corner_delivery_space(), n_sims=5)
+        obj = RoutineObjective(make_scenario(), DeliveryGenome(), n_sims=5)
         with pytest.raises(ValueError, match="unknown"):
             obj({"nonsense": 1.0})
 
