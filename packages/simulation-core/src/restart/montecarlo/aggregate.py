@@ -46,11 +46,18 @@ class OutcomeStats:
     p_clearance: ProportionCI
     p_possession_recovered: ProportionCI  # attack keeps/regains the ball
     outcome_counts: dict[str, int]
+    # Mean scored xG per simulation (doc 06 §2.3): 0 contributed by sims without
+    # a shot, and by shots scored before an xG model was wired (xg is None).
+    mean_xg: float
+    # How many shots actually carried an xG score (xg is not None).
+    n_xg_scored: int
 
 
 def aggregate(batch: BatchResult) -> OutcomeStats:
     n = batch.n_sims
     goals = shots = headers = fc_attack = clearances = recovered = 0
+    xg_sum = 0.0
+    n_xg_scored = 0
     counts: dict[str, int] = {}
 
     for r in batch.results:
@@ -66,6 +73,9 @@ def aggregate(batch: BatchResult) -> OutcomeStats:
             shots += 1
             if shot.is_header:
                 headers += 1
+            if shot.xg is not None:
+                xg_sum += shot.xg
+                n_xg_scored += 1
         fc = next((e for e in r.events if isinstance(e, FirstContactEvent)), None)
         if fc is not None and fc.team == "attack":
             fc_attack += 1
@@ -79,4 +89,6 @@ def aggregate(batch: BatchResult) -> OutcomeStats:
         p_clearance=wilson(clearances, n),
         p_possession_recovered=wilson(recovered, n),
         outcome_counts=counts,
+        mean_xg=(xg_sum / n if n else 0.0),
+        n_xg_scored=n_xg_scored,
     )

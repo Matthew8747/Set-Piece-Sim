@@ -81,3 +81,18 @@ class TestMonteCarlo:
             json={"routine_id": rid, "scheme_id": sid, "n_sims": 999999},
         )
         assert resp.status_code == 422  # cost-bomb protection
+
+    def test_montecarlo_reports_real_data_xg(self) -> None:
+        """Phase-4 acceptance: a corner batch reports mean xG from the active
+        real-data model (the model is committed under models/)."""
+        rid, sid = _ids()
+        resp = CLIENT.post(
+            "/api/v1/setpieces/montecarlo",
+            json={"routine_id": rid, "scheme_id": sid, "n_sims": 60, "root_seed": 2},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "mean_xg" in body and 0.0 <= body["mean_xg"] <= 1.0
+        # A model is wired in this build, so shots carry an xG and it is named.
+        assert body["xg_model"] == "xg-v1"
+        assert body["n_xg_scored"] >= 0

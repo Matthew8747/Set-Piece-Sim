@@ -6,6 +6,48 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 4: Data Platform, Player Profiles & xG v1 (2026-06-14) · `ENGINE_VERSION sim/0.4.0`
+
+- **`etl` package (`restart_etl`, CLI `restart-etl`)** — pure-data pipeline, raw → staging →
+  marts (design doc 04). `fetch statsbomb` pulls WC 2022 + Euro 2024 to a byte-exact, manifested,
+  git-ignored raw cache; `stage` applies the single owned coordinate transform
+  (StatsBomb 120×80 → canonical 105×68 m, center origin, attack L→R; property-tested) and writes
+  typed Parquet; `marts` builds the five products below + loads a file-based DuckDB warehouse;
+  `gates` runs the mechanical license + distribution checks; `all` rebuilds the world.
+- **Marts (real data):** `mart_setpiece_shots` (975 corner/FK shots, 75 goals, freeze-frame
+  traffic features + goal label, grouped by match), `mart_calibration_targets` (real base
+  rates), `mart_players` + `mart_player_attributes` (1,259 players × 12 derived,
+  **provenance-tagged** `{source, method, license}` attributes — aerial-duel-derived heading,
+  set-piece-completion-derived delivery, position-group literature/curated priors for the rest;
+  clamped to engine bounds), `mart_defensive_schemes` (curated zonal/man/hybrid + empirical
+  corner reference).
+- **Mechanical license gate:** every mart row's `source` ∈ approved allow-list; forbidden
+  scraped-ratings sources (EA/sofifa) named and rejected. Enforced in CI via unit tests, not a
+  policy doc.
+- **`ml` package (`restart_ml`, CLI `restart-xg`)** — System A xG, trained on **real data only**
+  (never simulator output, doc 06 §1). `xg-header` + `xg-foot` calibrated logistic models with a
+  full method comparison (LR vs HistGBM vs RandomForest vs XGBoost vs LightGBM) under
+  **grouped-by-match CV**; Platt calibration on out-of-fold predictions; MLflow (SQLite backend)
+  logs every run; generated **model card** (`docs/model-cards/xg-v1.md`). Shipped logistic
+  calibration slope **1.00** (header & foot) — meets the 0.9–1.1 acceptance target. The decision
+  to ship the logistic (keeping the core dependency-free) over the marginally-better RF is
+  recorded with evidence.
+- **Engine integration (pure-domain preserved):** new `restart.engine.xg` (`ShotContext`,
+  `XGScorer` protocol, pure-NumPy `LogisticXGScorer`, `XGModelBundle`). `SetPieceEngine` accepts
+  an injected scorer; shots emit a `ShotContext`, are scored, and resolve by Bernoulli on the
+  real-data xG (G-14/G-15). The shipped coefficient bundle is committed under `models/` and
+  loaded by the backend directly as JSON — no ML framework in the API runtime.
+- **API:** Monte Carlo report now carries `mean_xg`, `n_xg_scored`, and `xg_model`; `ShotEvent`
+  (and `EventDTO`) carry per-shot `xg`. shared-types mirrors updated.
+- Docs: data dictionary v1 (CI-checked), ETL runbook, model card, ADR-005, assumptions G-14/G-15.
+- New tests across `etl`, `ml`, engine xG, and the API xG acceptance path (all green).
+
+### Changed — Engine `sim/0.3.0` → `sim/0.4.0`
+- `ShotEvent` gained an `xg` field and the engine gained an xG-scored shot path (injected
+  `XGScorer`). The default (no-scorer) path is unchanged and deterministic, but the engine's
+  behavior set changed → `ENGINE_VERSION` bump. The placeholder GK-save logit (G-9) is retained
+  as the fallback when no model is wired.
+
 ### Added — Phase 3: Monte Carlo, Analytics & MVP (2026-06-13) · `ENGINE_VERSION sim/0.3.0`
 
 - `restart.montecarlo`: seeded batch runner (`sim_seeds` — per-sim seeds stable across batch

@@ -26,6 +26,7 @@ from restart.agents.interception import earliest_interception
 from restart.agents.kinematics import separate, step_agents
 from restart.domain.vectors import FloatArray
 from restart.engine.config import EngineConfig
+from restart.engine.xg import ShotContext, XGScorer
 from restart.physics import BallState, IntegratorConfig, PhysicsConfig, TrajectorySimulator
 from restart.physics.trajectory import Trajectory
 from restart.players.attributes import Attr
@@ -47,6 +48,8 @@ from restart.tactics.compile import SimProgram
 from restart.tactics.routine import INTENT_CODES, TRIGGER_CODES, Intent, Trigger
 
 _GOAL_CENTER = np.array([52.5, 0.0])
+_POST_L = np.array([52.5, -3.66])
+_POST_R = np.array([52.5, 3.66])
 _ATTACK = "attack"
 _DEFENSE = "defense"
 
@@ -76,6 +79,20 @@ class SetPieceResult:
         return self.outcome is SetPieceOutcome.GOAL
 
 
+def _point_in_triangle(p: FloatArray, a: FloatArray, b: FloatArray, c: FloatArray) -> bool:
+    """True if 2-D point ``p`` lies within triangle ``a-b-c`` (shooting cone)."""
+
+    def sign(u: FloatArray, v: FloatArray, w: FloatArray) -> float:
+        return float((u[0] - w[0]) * (v[1] - w[1]) - (v[0] - w[0]) * (u[1] - w[1]))
+
+    d1 = sign(p, a, b)
+    d2 = sign(p, b, c)
+    d3 = sign(p, c, a)
+    has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+    has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+    return not (has_neg and has_pos)
+
+
 def _goal_opening_angle(pos: FloatArray) -> float:
     """Opening angle of the goal mouth (posts at (52.5, +/-3.66)) from pos."""
     a = np.array([52.5 - pos[0], -3.66 - pos[1]])
@@ -92,10 +109,15 @@ class SetPieceEngine:
         physics: PhysicsConfig | None = None,
         engine: EngineConfig | None = None,
         agents: AgentConfig | None = None,
+        xg_scorer: XGScorer | None = None,
     ) -> None:
         self._phys = physics if physics is not None else PhysicsConfig.default()
         self._cfg = engine if engine is not None else EngineConfig()
         self._agents = agents if agents is not None else AgentConfig()
+        # Optional real-data xG model (Phase 4). When present, shot outcomes are
+        # driven by the model's P(goal) (Bernoulli) instead of the placeholder
+        # geometry + GK-save logit; the shot's xG is recorded on the ShotEvent.
+        self._xg = xg_scorer
         # Horizon-capped ball sim: set pieces resolve in ~2-4 s; integrating
         # roll-to-rest tails cost 10x per sim for nothing the engine reads.
         capped = PhysicsConfig(
@@ -550,7 +572,15 @@ class SetPieceEngine:
         after = self._ball_sim.simulate(shot_state)
 
         dist = float(np.linalg.norm(_GOAL_CENTER - pos[:2]))
-        defenders_close = int(np.sum(np.linalg.norm(def_tracks[-1] - pos[:2], axis=1) < 3.0))
+        def_xy = def_tracks[-1]
+        defenders_close = int(np.sum(np.linalg.norm(def_xy - pos[:2], axis=1) < 3.0))
+
+        # Score the shot context with the real-data xG model when one is wired.
+        xg_val: float | None = None
+        if self._xg is not None:
+            ctx = self._shot_context(pos, def_xy, program.gk_index, is_header, defenders_close)
+            xg_val = float(self._xg.score(ctx))
+
         events.append(
             ShotEvent(
                 time_s=t_star,
@@ -561,9 +591,31 @@ class SetPieceEngine:
                 is_header=is_header,
                 speed_ms=speed,
                 defenders_within_3m=defenders_close,
+                xg=xg_val,
             )
         )
 
+        if xg_val is not None:
+            # xG-driven outcome (G-14): one Bernoulli draw on the scored P(goal),
+            # so replay goal events are consistent with the reported xG (doc 06).
+            return self._resolve_shot_xg(
+                xg_val,
+                after,
+                aim_y,
+                aim_z,
+                speed,
+                t_star,
+                program,
+                events,
+                seed,
+                track_times,
+                att_tracks,
+                def_tracks,
+                delivery,
+                rng,
+            )
+
+        # --- placeholder path (no xG model): geometry + GK-save logit (G-9) ---
         if not after.goal_scored:
             return self._finish(
                 SetPieceOutcome.OFF_TARGET,
@@ -611,6 +663,111 @@ class SetPieceEngine:
                 )
             )
             outcome = SetPieceOutcome.GOAL
+        return self._finish(
+            outcome, events, seed, track_times, att_tracks, def_tracks, delivery, after
+        )
+
+    def _shot_context(
+        self,
+        pos: FloatArray,
+        def_xy: FloatArray,
+        gk_index: int,
+        is_header: bool,
+        defenders_within_3m: int,
+    ) -> ShotContext:
+        """Build the xG :class:`ShotContext` from the strike geometry + traffic.
+
+        Same quantities as ``mart_setpiece_shots`` (one frame, one transform), so
+        simulated contexts and real training contexts are comparable.
+        """
+        shot_xy = np.asarray(pos[:2], dtype=np.float64)
+        n = def_xy.shape[0]
+        has_gk = 0 <= gk_index < n
+        in_cone = 0
+        nearest = math.inf
+        for j in range(n):
+            if has_gk and j == gk_index:
+                continue
+            p = def_xy[j]
+            if _point_in_triangle(p, shot_xy, _POST_L, _POST_R):
+                in_cone += 1
+            d = float(np.hypot(p[0] - shot_xy[0], p[1] - shot_xy[1]))
+            nearest = min(nearest, d)
+        if has_gk:
+            gk_xy = def_xy[gk_index]
+            gk_goal = float(np.linalg.norm(_GOAL_CENTER - gk_xy))
+            gk_lat = abs(float(gk_xy[1]))
+        else:
+            gk_goal = float(np.linalg.norm(_GOAL_CENTER - shot_xy))
+            gk_lat = 0.0
+        return ShotContext(
+            distance_m=float(np.linalg.norm(_GOAL_CENTER - shot_xy)),
+            angle_rad=_goal_opening_angle(pos),
+            is_header=is_header,
+            set_piece_phase="first_contact",
+            defenders_in_cone=in_cone,
+            nearest_def_dist_m=(0.0 if nearest == math.inf else nearest),
+            defenders_within_3m=defenders_within_3m,
+            gk_dist_to_goal_m=gk_goal,
+            gk_lateral_m=gk_lat,
+            under_pressure=defenders_within_3m > 0,
+        )
+
+    def _resolve_shot_xg(
+        self,
+        xg_val: float,
+        after: Trajectory,
+        aim_y: float,
+        aim_z: float,
+        speed: float,
+        t_star: float,
+        program: SimProgram,
+        events: list[SimEvent],
+        seed: int,
+        track_times: FloatArray,
+        att_tracks: FloatArray,
+        def_tracks: FloatArray,
+        delivery: Trajectory,
+        rng: np.random.Generator,
+    ) -> SetPieceResult:
+        scored = float(rng.uniform()) < xg_val
+        if scored:
+            if after.goal_scored:
+                goal_ev = after.events[-1]
+                assert isinstance(goal_ev, GoalEvent)
+                events.append(
+                    GoalEvent(
+                        time_s=goal_ev.time_s + t_star,
+                        position=goal_ev.position,
+                        entry_y_m=goal_ev.entry_y_m,
+                        entry_z_m=goal_ev.entry_z_m,
+                    )
+                )
+            else:
+                # xG says goal but the geometric trajectory missed: synthesize a
+                # replay-consistent goal at the aimed point.
+                events.append(
+                    GoalEvent(
+                        time_s=after.final_state.time_s + t_star,
+                        position=np.array([52.5, aim_y, aim_z]),
+                        entry_y_m=aim_y,
+                        entry_z_m=aim_z,
+                    )
+                )
+            outcome = SetPieceOutcome.GOAL
+        elif after.goal_scored:
+            # Non-goal but on target -> the keeper saved it.
+            events.append(
+                SaveEvent(
+                    time_s=after.final_state.time_s + t_star,
+                    position=after.final_state.position,
+                    player_id=program.def_player_ids[program.gk_index],
+                    shot_speed_ms=speed,
+                )
+            )
+            outcome = SetPieceOutcome.SAVED
+        else:
+            outcome = SetPieceOutcome.OFF_TARGET
         return self._finish(
             outcome, events, seed, track_times, att_tracks, def_tracks, delivery, after
         )

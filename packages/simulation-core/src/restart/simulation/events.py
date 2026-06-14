@@ -103,7 +103,12 @@ class FirstContactEvent(SimEvent):
 
 @dataclass(frozen=True, slots=True)
 class ShotEvent(SimEvent):
-    """Shot attempt; fields double as xG features (design review §1)."""
+    """Shot attempt; fields double as xG features (design review §1).
+
+    ``xg`` is the real-data model's scored P(goal) for this strike when a scorer
+    is wired into the engine (Phase 4), else ``None``. The Monte Carlo report
+    averages it into ``mean_xg``.
+    """
 
     player_id: str
     distance_m: float
@@ -111,6 +116,7 @@ class ShotEvent(SimEvent):
     is_header: bool
     speed_ms: float
     defenders_within_3m: int
+    xg: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
