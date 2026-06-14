@@ -46,6 +46,8 @@ class EventDTO(BaseModel):
     time_s: float
     player_id: str | None = None
     team: str | None = None
+    # Real-data xG of a shot event (None for non-shots or before a model is wired).
+    xg: float | None = None
 
 
 class SimulateRequest(BaseModel):
@@ -92,3 +94,8 @@ class MonteCarloResponse(BaseModel):
     p_clearance: ProportionCIDTO
     p_possession_recovered: ProportionCIDTO
     outcome_counts: dict[str, int]
+    # Mean real-data xG per simulation, the count of scored shots, and which
+    # model produced it (None when no xG model is active).
+    mean_xg: float
+    n_xg_scored: int
+    xg_model: str | None = None

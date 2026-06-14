@@ -10,6 +10,8 @@ requires-python = ">=3.12"
 dependencies = [
     "restart-simulation-core",
     "restart-backend",
+    "restart-etl",
+    "restart-ml",
 ]
 
 [tool.uv]
@@ -19,11 +21,15 @@ package = false
 members = [
     "apps/backend",
     "packages/simulation-core",
+    "packages/etl",
+    "packages/ml",
 ]
 
 [tool.uv.sources]
 restart-simulation-core = { workspace = true }
 restart-backend = { workspace = true }
+restart-etl = { workspace = true }
+restart-ml = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -46,7 +52,12 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["apps/backend/src", "packages/simulation-core/src"]
+src = [
+    "apps/backend/src",
+    "packages/simulation-core/src",
+    "packages/etl/src",
+    "packages/ml/src",
+]
 
 [tool.ruff.lint]
 select = [
@@ -81,13 +92,22 @@ warn_unreachable = true
 warn_redundant_casts = true
 show_error_codes = true
 plugins = ["pydantic.mypy"]
-mypy_path = ["apps/backend/src", "packages/simulation-core/src"]
+mypy_path = [
+    "apps/backend/src",
+    "packages/simulation-core/src",
+    "packages/etl/src",
+    "packages/ml/src",
+]
 explicit_package_bases = true
 files = [
     "apps/backend/src",
     "apps/backend/tests",
     "packages/simulation-core/src",
     "packages/simulation-core/tests",
+    "packages/etl/src",
+    "packages/etl/tests",
+    "packages/ml/src",
+    "packages/ml/tests",
     "tests",
 ]
 
@@ -95,9 +115,27 @@ files = [
 module = ["numba.*"]
 ignore_missing_imports = true
 
+# Data/ML third-party libs without mypy-strict-friendly stubs. Treated as Any at
+# their boundary; our own glue stays fully typed. (pandas is deliberately not a
+# dependency — its inline types fight strict mode; we use pyarrow + numpy.)
+[[tool.mypy.overrides]]
+module = [
+    "pyarrow.*",
+    "duckdb.*",
+    "sklearn.*",
+    "lightgbm.*",
+    "xgboost.*",
+    "catboost.*",
+    "mlflow.*",
+    "joblib.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = [
     "packages/simulation-core/tests",
+    "packages/etl/tests",
+    "packages/ml/tests",
     "apps/backend/tests",
     "tests",
 ]

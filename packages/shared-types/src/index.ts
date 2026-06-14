@@ -43,6 +43,7 @@ export interface EventDTO {
   time_s: number;
   player_id: string | null;
   team: string | null;
+  xg?: number | null;
 }
 
 export interface SimulateRequest {
@@ -89,4 +90,7 @@ export interface MonteCarloResponse {
   p_clearance: ProportionCI;
   p_possession_recovered: ProportionCI;
   outcome_counts: Record<string, number>;
+  mean_xg: number;
+  n_xg_scored: number;
+  xg_model?: string | null;
 }

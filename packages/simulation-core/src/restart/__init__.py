@@ -10,7 +10,9 @@ simulation result carries it; physics-affecting changes must bump it (see
 docs/02-system-architecture.md, "Determinism & versioning").
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
-#: Bumped for Phase 3: engine ball-horizon cap (4s) shifts some outcomes.
-ENGINE_VERSION = "sim/0.3.0"
+#: Bumped for Phase 4: the engine can score shots with a real-data xG model
+#: (injected XGScorer) and emits ShotEvent.xg; ShotEvent gained an xg field and
+#: shot outcomes follow a Bernoulli on scored xG when a model is wired (G-14).
+ENGINE_VERSION = "sim/0.4.0"

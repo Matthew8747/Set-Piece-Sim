@@ -1,0 +1,103 @@
+{
+  "bundle": {
+    "bundle_id": "xg-v1",
+    "foot": {
+      "calibration": {
+        "a": 0.7620253576085848,
+        "b": -0.46896324138310697,
+        "type": "platt"
+      },
+      "coef": [
+        -0.12176695390379444,
+        -4.1938125779121656,
+        1.1147959663619473,
+        0.663053961630332,
+        -0.3578630836103895,
+        0.07963736972041326,
+        -0.1783780046958909,
+        0.2227455687047016,
+        -0.1864974695910134,
+        -0.1871102143938365,
+        -0.48843551296816884,
+        -0.11493724554278696,
+        -1.978817328438621
+      ],
+      "feature_names": [
+        "distance",
+        "inv_distance",
+        "angle",
+        "angle_sq",
+        "defenders_in_cone",
+        "nearest_def_dist",
+        "defenders_within_3m",
+        "gk_dist_to_goal",
+        "gk_lateral",
+        "under_pressure",
+        "phase_first_contact",
+        "phase_second_ball",
+        "cone_x_inv_distance"
+      ],
+      "intercept": -0.7839044047958867,
+      "model_id": "xg-foot"
+    },
+    "header": {
+      "calibration": {
+        "a": 0.39037645685899375,
+        "b": -1.4631749224115929,
+        "type": "platt"
+      },
+      "coef": [
+        -0.36349380352355976,
+        0.04221276828858721,
+        1.9602362755651093,
+        -0.9769918308560963,
+        -0.1018000090698705,
+        0.3090965272685389,
+        0.08181497198586471,
+        0.22002956065651794,
+        -0.12392711249955127,
+        -0.6020022754643328,
+        -0.7947207089225938
+      ],
+      "feature_names": [
+        "distance",
+        "inv_distance",
+        "angle",
+        "angle_sq",
+        "defenders_in_cone",
+        "nearest_def_dist",
+        "defenders_within_3m",
+        "gk_dist_to_goal",
+        "gk_lateral",
+        "under_pressure",
+        "cone_x_inv_distance"
+      ],
+      "intercept": -1.043755652969022,
+      "model_id": "xg-header"
+    }
+  },
+  "created_at": "2026-06-14T10:29:43.379923+00:00",
+  "engine_version": "sim/0.4.0",
+  "metrics": {
+    "foot": {
+      "auc": 0.790396710208031,
+      "base_rate": 0.07828655834564253,
+      "brier": 0.060657832026572676,
+      "cal_intercept": 0.001633694095918149,
+      "cal_slope": 1.000493318325554,
+      "log_loss": 0.22597014436473156,
+      "n": 677.0
+    },
+    "header": {
+      "auc": 0.6584321475625823,
+      "base_rate": 0.0738255033557047,
+      "brier": 0.06793320796773206,
+      "cal_intercept": 0.004113006932507022,
+      "cal_slope": 1.001835252155944,
+      "log_loss": 0.2561248197599,
+      "n": 298.0
+    }
+  },
+  "schema": "xg-bundle/1",
+  "training_data_hash": "e0917e4ad04090947ec75aa8d7e2ffe438e3b78dbde6e78174a5f6a97d3c195c"
+}

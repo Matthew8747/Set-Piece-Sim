@@ -65,6 +65,23 @@ value/model, its literature anchor, and its calibration status:
 high; goal rate ~5% vs real 2–3%). Every rate-shaping constant above is a named `EngineConfig`
 field — exactly the surface the Phase-3 calibration harness searches.
 
+## Engine xG scoring (Phase 4, `sim/0.4.0`)
+
+| ID | Assumption | Implementation | Status |
+|----|-----------|----------------|--------|
+| G-14 | When a real-data xG model is injected, an attacker first-contact shot's goal/no-goal is a **Bernoulli draw on the model-scored P(goal)** (not the placeholder geometry + GK-save logit). Non-goals split saved vs off-target by whether the shot trajectory was on frame; a goal whose geometric trajectory missed is synthesized at the aimed point so the replay is xG-consistent **[simplification]** | `engine._resolve_shot_xg`; `restart.engine.xg` | tested |
+| G-15 | The simulated `ShotContext` (distance, goal angle, header flag, cone/nearest/within-3m traffic, GK geometry, under-pressure) is computed in the same metric frame and by the same closed-form feature function as `mart_setpiece_shots`, so simulated and real features are the same quantities. Documented off-manifold risk (doc 06 §2.3): simulated contexts can sit slightly outside the real-shot manifold **[simplification]** | `engine._shot_context`, `restart.engine.xg.shot_feature_vector` | tested |
+
+**Phase-4 honesty note:** the xG models are calibrated (shipped logistic slope ≈ 1.00) but the
+engine's *upstream* `[knob]`s (G-6/G-9/G-11 contest, delivery, traffic) remain uncalibrated, so
+the **distribution** of simulated shot contexts is not yet validated against reality — only the
+mapping from a context to P(goal) is. The G-9 GK-save logit is retained as the fallback when no
+xG model is wired. Closing the upstream calibration gap stays the owed week-5 credibility task.
+
+`ASSUMPTION D-1` (data, design doc 04 §2): StatsBomb Open Data remains available under current
+terms; the raw cache is downloaded once and kept locally (permitted for use, not redistribution —
+hence git-ignored). xG trains on **real data only**, never on simulator output (doc 06 §1).
+
 ## Validation evidence (V1 gate, Phase 1)
 
 | Check | Result |

@@ -47,11 +47,16 @@ v1 (one-shot design problem; Tier-3 research note).
 | Package | Depends on |
 |---|---|
 | `restart` (simulation-core) | numpy, scipy (oracle/stats incl. Wilson CIs), numba (JIT kernels), pydantic (config) |
-| `restart_api` (backend) | fastapi, uvicorn, pydantic-settings, **restart** (engine + montecarlo) |
+| `restart_etl` (etl) | httpx, pyarrow, duckdb, numpy, pydantic — **pure data**, no `restart` import on the fetch/staging path |
+| `restart_ml` (ml) | scikit-learn, xgboost, lightgbm, mlflow, pyarrow, **restart** (xG feature/scorer contract), **restart_etl** (mart readers) |
+| `restart_api` (backend) | fastapi, uvicorn, pydantic-settings, **restart** (engine + montecarlo + xg); loads the committed xG bundle JSON directly (no ML dep) |
 | `apps/frontend` | next 16, react 19, tailwind v4, **@restart/shared-types** (fetches restart_api) |
 
-Subpackage map (as built, P3): `restart.{domain, physics, simulation, players, agents,
-tactics, engine, montecarlo, optimize}`. Layer order: domain ← physics ← simulation/players ←
-agents/tactics ← engine ← montecarlo ← optimize. `optimize` has interfaces only (Phase 5 fills).
+Subpackage map (as built, P4): `restart.{domain, physics, simulation, players, agents,
+tactics, engine, montecarlo, optimize}`; `restart.engine.xg` is the pure xG scoring contract.
+Layer order: domain ← physics ← simulation/players ← agents/tactics ← engine ← montecarlo ←
+optimize. `optimize` has interfaces only (Phase 5 fills). New Phase-4 packages outside the core:
+`restart_etl` (data lake + CLI) and `restart_ml` (xG training + CLI); both adapter-tier, neither
+is imported by `restart`. The shipped xG bundle is committed under `models/`.
 | Dev gates | ruff, black, mypy(strict), pytest(+benchmark), hypothesis, eslint, prettier, vitest |
 | Phase 4+ (planned) | SQLAlchemy/Alembic, Arq+Redis, Postgres, DuckDB, MLflow, Optuna, cmaes |

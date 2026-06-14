@@ -1,0 +1,30 @@
+[project]
+name = "restart-etl"
+version = "0.1.0"
+description = "Restart Lab data platform: StatsBomb Open Data -> raw -> staging -> marts. Pure-data package, no simulation or web dependencies."
+requires-python = ">=3.12"
+dependencies = [
+    # HTTP client for the StatsBomb Open Data raw fetch (byte-exact cache).
+    "httpx>=0.28",
+    # Typed Parquet staging + analysis-ready mart materialization. DuckDB is the
+    # file-based analytics/loader engine (no server); a Postgres target is a
+    # drop-in later (tech-debt P4/6). pandas is deliberately avoided: its inline
+    # types fight mypy --strict; pyarrow + numpy cover the transforms.
+    "pyarrow>=18.0",
+    "duckdb>=1.1",
+    "numpy>=2.1",
+    # Staging-boundary validation + manifest models.
+    "pydantic>=2.10",
+]
+
+[project.scripts]
+# `restart-etl <command>` — the entire pipeline is a plain CLI (design doc 04
+# §4: a CLI rebuild beats an orchestrator at this scale).
+restart-etl = "restart_etl.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/restart_etl"]

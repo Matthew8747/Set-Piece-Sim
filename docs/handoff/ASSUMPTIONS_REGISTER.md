@@ -23,3 +23,6 @@ Legend: **[fixed]** physical constant · **[knob]** Phase-3 calibration paramete
 | P-14 | Events by in-step interpolation | simplification | n/a | sub-mm at 5 ms steps |
 | P-15 | Ball-center goal/out decisions | simplification | revisit if calibration shows edge effects | bounded by ball radius |
 | G-* | Agent assumptions (envelope, reaction latency, contest model, …) | mixed | **added in Phase 2** — see canonical registry after Phase-2 merge | Phase-2 invariant tests |
+| G-14 | Shot goal/no-goal = Bernoulli on injected real-data xG (replaces placeholder GK-save logit when a model is wired) | simplification | n/a (xG model calibrated) | engine xG integration tests |
+| G-15 | Simulated `ShotContext` features = same frame + closed-form function as `mart_setpiece_shots`; off-manifold risk registered | simplification | n/a | shared feature-fn tests; PSI check planned |
+| D-1 | StatsBomb Open Data available under current terms; raw cached locally (not redistributed); xG trains on real data only | data assumption | n/a | manifest + license gate |

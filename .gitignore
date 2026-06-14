@@ -29,10 +29,17 @@ data/marts/*
 !data/raw/.gitkeep
 !data/staging/.gitkeep
 !data/marts/.gitkeep
+# Local-only training artifacts under data/ (MLflow store, stale model dir).
+data/mlflow.db
+data/mlflow/
+data/models/
 
-# --- ML artifacts (registered in DB, stored outside git) ---
+# --- ML artifacts: heavy binaries stay out of git; the small derived xG
+#     coefficient bundle (JSON) IS committed so the engine ships a working model
+#     and CI can integration-test it (raw data is git-ignored, so CI can't retrain).
 mlruns/
-models/
+models/*
+!models/*.json
 
 # --- Local tooling artifacts (Claude Code plugins etc.) ---
 ruvector.db

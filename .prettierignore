@@ -7,6 +7,9 @@ __pycache__
 data/raw
 data/staging
 data/marts
+data/mlflow.db
+# Generated xG model artifacts (Python-emitted JSON; not prettier-formatted).
+models
 *.md
 uv.lock
 package-lock.json

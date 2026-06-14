@@ -31,6 +31,8 @@ class SimulationReport:
             "p_clearance": ci(s.p_clearance),
             "p_possession_recovered": ci(s.p_possession_recovered),
             "outcome_counts": dict(s.outcome_counts),
+            "mean_xg": s.mean_xg,
+            "n_xg_scored": s.n_xg_scored,
         }
 
 

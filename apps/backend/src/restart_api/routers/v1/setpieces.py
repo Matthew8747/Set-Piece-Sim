@@ -26,12 +26,16 @@ from restart_api.schemas import (
     SimulateRequest,
     SimulateResponse,
 )
+from restart_api.xg import active_model_id, load_active_scorer
 
 router = APIRouter(prefix="/setpieces", tags=["setpieces"])
 
 _ATTACKING = demo_team("ENG", "England (demo)", 1)
 _DEFENDING = demo_team("ARG", "Argentina (demo)", 2)
-_ENGINE = SetPieceEngine()
+# Inject the active real-data xG model when one has been trained (Phase 4).
+# Without it the engine falls back to the placeholder shot model and mean_xg=0.
+_XG_MODEL_ID = active_model_id()
+_ENGINE = SetPieceEngine(xg_scorer=load_active_scorer())
 _RUNNER = MonteCarloRunner(_ENGINE)
 
 
@@ -77,6 +81,7 @@ def _to_response(result: SetPieceResult) -> SimulateResponse:
             time_s=round(e.time_s, 3),
             player_id=getattr(e, "player_id", None),
             team=getattr(e, "team", None),
+            xg=getattr(e, "xg", None),
         )
         for e in result.events
     ]
@@ -117,4 +122,4 @@ def simulate(req: SimulateRequest) -> SimulateResponse:
 def montecarlo(req: MonteCarloRequest) -> MonteCarloResponse:
     program = _program(req.routine_id, req.scheme_id)
     report = build_report(_RUNNER.run(program, req.n_sims, req.root_seed))
-    return MonteCarloResponse(**report.to_dict())
+    return MonteCarloResponse(**report.to_dict(), xg_model=_XG_MODEL_ID)
