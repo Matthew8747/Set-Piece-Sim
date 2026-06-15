@@ -9,6 +9,22 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class ProblemFieldError(BaseModel):
+    loc: list[str | int]
+    msg: str
+    type: str
+
+
+class ProblemDetail(BaseModel):
+    """RFC 9457 problem-details body — the API's single error contract."""
+
+    type: str
+    title: str
+    status: int
+    detail: str
+    errors: list[ProblemFieldError] | None = None
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     api_version: str

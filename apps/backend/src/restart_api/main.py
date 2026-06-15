@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from restart_api import __version__
+from restart_api.errors import install_error_handlers
 from restart_api.routers import health, v1
 from restart_api.settings import Settings, get_settings
 
@@ -27,6 +28,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
     )
+
+    # One error contract for the whole surface (RFC 9457 problem-details).
+    install_error_handlers(app)
 
     if settings is not None:
         # Tests injected a Settings: make route dependencies see the same one.
