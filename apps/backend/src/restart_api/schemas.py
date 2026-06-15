@@ -8,6 +8,17 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+# Pitch is the canonical 105 x 68 m surface (doc 07). Coordinates are treated as
+# hostile input (sim inputs are effectively code — security checklist doc 02 9);
+# this point is reused by every scenario DTO that carries a position.
+PITCH_LENGTH_M = 105.0
+PITCH_WIDTH_M = 68.0
+
+
+class PitchPoint(BaseModel):
+    x: float = Field(ge=0.0, le=PITCH_LENGTH_M)
+    y: float = Field(ge=0.0, le=PITCH_WIDTH_M)
+
 
 class ProblemFieldError(BaseModel):
     loc: list[str | int]
