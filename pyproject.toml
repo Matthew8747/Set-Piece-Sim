@@ -140,6 +140,16 @@ module = [
 ]
 ignore_missing_imports = true
 
+# Web/infrastructure adapter libs without strict-friendly stubs (Phase 6). Our
+# own adapter glue stays fully typed; only the third-party boundary is Any.
+[[tool.mypy.overrides]]
+module = [
+    "slowapi.*",
+    "arq.*",
+    "psycopg.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = [
     "packages/simulation-core/tests",
