@@ -6,7 +6,9 @@
 
 **Architecture:** Ports-and-adapters everywhere infrastructure touches the web layer. `apps/backend` (`restart_api`) stays the only adapter; `packages/simulation-core` (`restart`) stays pure (no web/DB/ML/IO imports). Repositories and a `JobQueue` are Protocols with a **file-first default** (DuckDB/SQLite/Parquet — server-free CI) and tested **Postgres/Arq** drop-in adapters. `ENGINE_VERSION` does **not** change (`sim/0.4.0` — no engine behaviour touched). Determinism is preserved end to end: same `(scenario, seed, engine_version)` ⇒ identical surfaced result, enforced by the scenario hash used as the idempotency key.
 
-**Tech Stack:** FastAPI · pydantic v2 · slowapi (rate limit) · Arq + Redis (optional prod job adapter) · asyncpg/psycopg (optional Postgres adapter) · DuckDB/SQLite (default stores) · Next.js 16 / React 19 · visx (charts) · openapi-typescript (DTO codegen) · Playwright (E2E). uv for Python, npm workspaces for TS.
+**Tech Stack:** FastAPI · pydantic v2 · slowapi (rate limit) · Arq + Redis (optional prod job adapter) · psycopg (optional Postgres adapter) · DuckDB/SQLite (default stores) · Next.js 16 / React 19 · hand-rolled SVG chart primitives (see note) · openapi-typescript (DTO codegen) · Playwright (E2E). uv for Python, npm workspaces for TS.
+
+> **Deviation (recorded in ADR-007):** doc 07 names *visx* for charts, but visx 3.x peers cap at React 18 and the app is React 19 (hard `ERESOLVE`); no React-19-compatible visx release exists. Rather than loosen peer resolution repo-wide, the histogram / ECDF / KPI-CI-whisker — all simple — are hand-rolled as plain SVG in pitch-kit. This honors doc 07's stated intent ("custom SVG, React owns the DOM, not a charting template") and drops a blocked dependency.
 
 ---
 
@@ -68,7 +70,7 @@ cli.py                        # MODIFY: `restart-etl load-postgres` subcommand
 
 ### Frontend
 ```
-packages/pitch-kit/           # NEW workspace: SVG Pitch, ReplayPlayer, visx chart wrappers, tokens.css
+packages/pitch-kit/           # NEW workspace: SVG Pitch, ReplayPlayer, SVG chart primitives, tokens.css
 apps/frontend/src/app/scenarios/page.tsx            # NEW: scenario library
 apps/frontend/src/app/scenarios/[id]/page.tsx       # NEW: Scenario Workbench host
 apps/frontend/src/components/workbench/*            # NEW: Build/Simulate/Replay panels
@@ -131,13 +133,14 @@ arq = ["arq>=0.26", "redis>=5.2"]
 
 ### Task 0.3: Add frontend dependencies
 
-**Files:** Modify `apps/frontend/package.json`, `packages/shared-types/package.json`, root `package.json` (workspaces), add `packages/pitch-kit/package.json`.
+**Files:** Modify `apps/frontend/package.json`, `packages/shared-types/package.json`.
 
-- [ ] **Step 1:** `apps/frontend`: add `"@visx/scale"`, `"@visx/shape"`, `"@visx/axis"`, `"@visx/group"` (deps) and `"@restart/pitch-kit": "*"` (dep); devDeps `"@playwright/test"`.
+> The pitch-kit workspace + its frontend dep land in **M5** (where the package is created), so `npm install` stays green at every milestone. Charts are hand-rolled SVG (see Deviation), so no visx.
+
+- [ ] **Step 1:** `apps/frontend`: devDep `"@playwright/test"`.
 - [ ] **Step 2:** `packages/shared-types`: devDep `"openapi-typescript": "^7"`; script `"gen": "openapi-typescript ../../apps/backend/openapi.json -o src/generated.ts"`.
-- [ ] **Step 3:** Root `package.json`: add `"packages/pitch-kit"` to `workspaces`.
-- [ ] **Step 4:** `npm install` at root → succeeds.
-- [ ] **Step 5:** Commit: `chore(frontend): add visx, playwright, openapi-typescript, pitch-kit workspace`.
+- [ ] **Step 3:** `npm install` at root → succeeds.
+- [ ] **Step 4:** Commit: `chore(frontend): add playwright + openapi-typescript`.
 
 ### Task 0.4: Record ADR-007 (design before code)
 
@@ -393,7 +396,7 @@ def test_scenario_hash_is_canonical_and_stable():
 **Files:** Create `src/ReplayPlayer.tsx`, `src/charts/{Histogram,Ecdf,KpiCard}.tsx` + tests.
 
 - [ ] **Step 1 (test):** `ReplayPlayer` exposes play/pause + scrubber, steps frames on a fixed cadence, emits `onFrame`; `Histogram`/`Ecdf` render bars/steps for a sample array; `KpiCard` renders `p` with its CI whisker and a "how?" affordance.
-- [ ] **Step 2:** Implement with visx (`scaleLinear`, `Bar`, `LinePath`). Keyboard: space=play/pause, ←/→=scrub (doc 07).
+- [ ] **Step 2:** Implement as plain SVG (linear scale helpers, `<rect>` bars, `<polyline>` for the ECDF step). Keyboard: space=play/pause, ←/→=scrub (doc 07).
 - [ ] **Step 3:** Run vitest → PASS. **verify.ps1 green.** Commit: `feat(pitch-kit): replay player + visx histogram/ECDF/KPI wrappers`.
 
 ---
