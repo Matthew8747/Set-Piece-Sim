@@ -83,6 +83,11 @@ class MetaResponse(BaseModel):
 
 # --- Set-piece MVP DTOs (Phase 3) -------------------------------------------
 
+# Canonical matchup defaults so Phase-3 callers (no team ids) keep working while
+# the demo squads are retired; real squads come from the marts (ADR-007 d2).
+DEFAULT_ATTACKING_TEAM = "england"
+DEFAULT_DEFENDING_TEAM = "argentina"
+
 
 class RoutineSummary(BaseModel):
     routine_id: str
@@ -93,6 +98,25 @@ class RoutineSummary(BaseModel):
 class SchemeSummary(BaseModel):
     scheme_id: str
     name: str
+
+
+class TeamSummaryDTO(BaseModel):
+    team_id: str
+    name: str
+    country: str
+    n_players: int
+
+
+class PlayerDTO(BaseModel):
+    player_id: str
+    display_name: str
+    position_group: str
+    heading: float
+    delivery: float
+    jump_reach_m: float
+    height_m: float
+    # Provenance: every attribute is derived from open data, never scraped.
+    source: str
 
 
 class EventDTO(BaseModel):
@@ -107,6 +131,8 @@ class EventDTO(BaseModel):
 class SimulateRequest(BaseModel):
     routine_id: str
     scheme_id: str
+    attacking_team_id: str = DEFAULT_ATTACKING_TEAM
+    defending_team_id: str = DEFAULT_DEFENDING_TEAM
     seed: int = Field(default=0, ge=0, le=2**31 - 1)
 
 
@@ -132,6 +158,8 @@ class ProportionCIDTO(BaseModel):
 class MonteCarloRequest(BaseModel):
     routine_id: str
     scheme_id: str
+    attacking_team_id: str = DEFAULT_ATTACKING_TEAM
+    defending_team_id: str = DEFAULT_DEFENDING_TEAM
     # Hard upper bound = cost-bomb protection (security checklist doc 02 §9).
     n_sims: int = Field(default=200, ge=1, le=2000)
     root_seed: int = Field(default=0, ge=0, le=2**31 - 1)

@@ -1,8 +1,8 @@
-"""Set-piece MVP endpoints: routine catalog, single simulation, Monte Carlo.
+"""Set-piece endpoints: routine catalog, single simulation, Monte Carlo.
 
-MVP scope (Phase 3 integration proof): the catalog is the simulation-core
-content library against fixed demo teams; persistence, custom routines, and
-async job execution arrive with Phase 4/6 per the roadmap. Sim counts are
+The catalog is the simulation-core content library; squads are now the real
+mart-derived nations (demo squads retired from the runtime — ADR-007 d2).
+Async job execution + scenario persistence arrive in M3. Sim counts are
 hard-bounded (cost-bomb protection, security checklist doc 02 §9).
 """
 
@@ -13,10 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from restart import ENGINE_VERSION
 from restart.engine import SetPieceEngine, SetPieceResult
 from restart.montecarlo import MonteCarloRunner, build_report
-from restart.players.demo import demo_team
 from restart.players.player import PositionGroup
 from restart.tactics.compile import Scenario, SimProgram, compile_scenario
 from restart.tactics.library import all_corner_routines, all_schemes
+from restart_api.deps import team_repository
 from restart_api.ratelimit import limiter, write_limit
 from restart_api.schemas import (
     EventDTO,
@@ -32,8 +32,6 @@ from restart_api.xg import active_model_id, load_active_scorer
 
 router = APIRouter(prefix="/setpieces", tags=["setpieces"])
 
-_ATTACKING = demo_team("ENG", "England (demo)", 1)
-_DEFENDING = demo_team("ARG", "Argentina (demo)", 2)
 # Inject the active real-data xG model when one has been trained (Phase 4).
 # Without it the engine falls back to the placeholder shot model and mean_xg=0.
 _XG_MODEL_ID = active_model_id()
@@ -49,26 +47,29 @@ _ROUTINES = {_slug(r.name): r for r in all_corner_routines()}
 _SCHEMES = {_slug(s.name): s for s in all_schemes()}
 
 
-@lru_cache(maxsize=64)
-def _program(routine_id: str, scheme_id: str) -> SimProgram:
+@lru_cache(maxsize=128)
+def _program(routine_id: str, scheme_id: str, attacking_id: str, defending_id: str) -> SimProgram:
     routine = _ROUTINES.get(routine_id)
     scheme = _SCHEMES.get(scheme_id)
     if routine is None:
         raise HTTPException(status_code=404, detail=f"unknown routine_id {routine_id!r}")
     if scheme is None:
         raise HTTPException(status_code=404, detail=f"unknown scheme_id {scheme_id!r}")
-    kicker = max(_ATTACKING.players, key=lambda p: p.attributes.delivery).player_id
+    teams = team_repository()
+    attacking = teams.get(attacking_id)  # raises ValueError (-> 422) on unknown team
+    defending = teams.get(defending_id)
+    kicker = max(attacking.players, key=lambda p: p.attributes.delivery).player_id
     outfield = [
         p.player_id
-        for p in _ATTACKING.players
+        for p in attacking.players
         if p.position_group is not PositionGroup.GK and p.player_id != kicker
     ]
     roles = {a.role: outfield[i] for i, a in enumerate(routine.assignments)}
     return compile_scenario(
         Scenario(
             routine=routine,
-            attacking_team=_ATTACKING,
-            defending_team=_DEFENDING,
+            attacking_team=attacking,
+            defending_team=defending,
             kicker_id=kicker,
             role_assignments=roles,
             scheme=scheme,
@@ -119,7 +120,7 @@ def list_schemes() -> list[SchemeSummary]:
 )
 @limiter.limit(write_limit)
 def simulate(request: Request, req: SimulateRequest) -> SimulateResponse:
-    program = _program(req.routine_id, req.scheme_id)
+    program = _program(req.routine_id, req.scheme_id, req.attacking_team_id, req.defending_team_id)
     return _to_response(_ENGINE.run(program, req.seed))
 
 
@@ -128,6 +129,6 @@ def simulate(request: Request, req: SimulateRequest) -> SimulateResponse:
 )
 @limiter.limit(write_limit)
 def montecarlo(request: Request, req: MonteCarloRequest) -> MonteCarloResponse:
-    program = _program(req.routine_id, req.scheme_id)
+    program = _program(req.routine_id, req.scheme_id, req.attacking_team_id, req.defending_team_id)
     report = build_report(_RUNNER.run(program, req.n_sims, req.root_seed))
     return MonteCarloResponse(**report.to_dict(), xg_model=_XG_MODEL_ID)
