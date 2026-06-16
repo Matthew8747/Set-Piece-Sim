@@ -18,6 +18,7 @@ from restart_api.errors import install_error_handlers
 from restart_api.ratelimit import configure as configure_rate_limits
 from restart_api.ratelimit import limiter, rate_limit_handler
 from restart_api.routers import health, v1
+from restart_api.schemas import ERROR_RESPONSES
 from restart_api.settings import Settings, get_settings
 
 
@@ -27,10 +28,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title=cfg.api_title,
         version=__version__,
-        # OpenAPI/docs stay enabled in all environments for now: the API is
-        # read-only and the schema is a product feature (see design doc 02 §5).
+        summary="Set-piece simulation, Monte Carlo, and scenario API for Restart Lab.",
+        # OpenAPI/docs stay enabled in all environments: the schema is a product
+        # feature and the source for the generated TS client (design doc 02 §5).
         docs_url="/docs",
         openapi_url="/openapi.json",
+        servers=[{"url": "/", "description": "This deployment"}],
     )
 
     # One error contract for the whole surface (RFC 9457 problem-details).
@@ -56,8 +59,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Content-Type", "Authorization"],
     )
 
-    app.include_router(health.router)
-    app.include_router(v1.router)
+    app.include_router(health.router, responses=ERROR_RESPONSES)
+    app.include_router(v1.router, responses=ERROR_RESPONSES)
 
     return app
 

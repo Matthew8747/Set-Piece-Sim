@@ -36,6 +36,33 @@ class ProblemDetail(BaseModel):
     errors: list[ProblemFieldError] | None = None
 
 
+# Default error responses documented on every router, so OpenAPI (and the
+# generated TS client) advertise the problem+json contract per status code.
+ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
+    404: {
+        "model": ProblemDetail,
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+        },
+        "description": "Resource not found",
+    },
+    422: {
+        "model": ProblemDetail,
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+        },
+        "description": "Request validation failed",
+    },
+    429: {
+        "model": ProblemDetail,
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+        },
+        "description": "Rate limit exceeded",
+    },
+}
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     api_version: str
