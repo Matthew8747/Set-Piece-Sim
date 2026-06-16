@@ -1,22 +1,18 @@
 """Set-piece endpoints: routine catalog, single simulation, Monte Carlo.
 
-The catalog is the simulation-core content library; squads are now the real
-mart-derived nations (demo squads retired from the runtime — ADR-007 d2).
-Async job execution + scenario persistence arrive in M3. Sim counts are
-hard-bounded (cost-bomb protection, security checklist doc 02 §9).
+The catalog is the simulation-core content library; squads are the real
+mart-derived nations (demo squads retired from the runtime — ADR-007 d2). The
+engine/runner/catalog and the program builder are shared with the async job
+worker via ``restart_api.programs``. Sim counts are hard-bounded (cost-bomb
+protection, security checklist doc 02 §9).
 """
 
-from functools import lru_cache
-
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
 from restart import ENGINE_VERSION
-from restart.engine import SetPieceEngine, SetPieceResult
-from restart.montecarlo import MonteCarloRunner, build_report
-from restart.players.player import PositionGroup
-from restart.tactics.compile import Scenario, SimProgram, compile_scenario
-from restart.tactics.library import all_corner_routines, all_schemes
-from restart_api.deps import team_repository
+from restart.engine import SetPieceResult
+from restart.montecarlo import build_report
+from restart_api import programs
 from restart_api.ratelimit import limiter, write_limit
 from restart_api.schemas import (
     EventDTO,
@@ -28,53 +24,8 @@ from restart_api.schemas import (
     SimulateResponse,
 )
 from restart_api.security import require_write_access
-from restart_api.xg import active_model_id, load_active_scorer
 
 router = APIRouter(prefix="/setpieces", tags=["setpieces"])
-
-# Inject the active real-data xG model when one has been trained (Phase 4).
-# Without it the engine falls back to the placeholder shot model and mean_xg=0.
-_XG_MODEL_ID = active_model_id()
-_ENGINE = SetPieceEngine(xg_scorer=load_active_scorer())
-_RUNNER = MonteCarloRunner(_ENGINE)
-
-
-def _slug(name: str) -> str:
-    return name.lower().replace(" ", "-")
-
-
-_ROUTINES = {_slug(r.name): r for r in all_corner_routines()}
-_SCHEMES = {_slug(s.name): s for s in all_schemes()}
-
-
-@lru_cache(maxsize=128)
-def _program(routine_id: str, scheme_id: str, attacking_id: str, defending_id: str) -> SimProgram:
-    routine = _ROUTINES.get(routine_id)
-    scheme = _SCHEMES.get(scheme_id)
-    if routine is None:
-        raise HTTPException(status_code=404, detail=f"unknown routine_id {routine_id!r}")
-    if scheme is None:
-        raise HTTPException(status_code=404, detail=f"unknown scheme_id {scheme_id!r}")
-    teams = team_repository()
-    attacking = teams.get(attacking_id)  # raises ValueError (-> 422) on unknown team
-    defending = teams.get(defending_id)
-    kicker = max(attacking.players, key=lambda p: p.attributes.delivery).player_id
-    outfield = [
-        p.player_id
-        for p in attacking.players
-        if p.position_group is not PositionGroup.GK and p.player_id != kicker
-    ]
-    roles = {a.role: outfield[i] for i, a in enumerate(routine.assignments)}
-    return compile_scenario(
-        Scenario(
-            routine=routine,
-            attacking_team=attacking,
-            defending_team=defending,
-            kicker_id=kicker,
-            role_assignments=roles,
-            scheme=scheme,
-        )
-    )
 
 
 def _to_response(result: SetPieceResult) -> SimulateResponse:
@@ -106,13 +57,13 @@ def _to_response(result: SetPieceResult) -> SimulateResponse:
 def list_routines() -> list[RoutineSummary]:
     return [
         RoutineSummary(routine_id=rid, name=r.name, set_piece=r.set_piece.value)
-        for rid, r in _ROUTINES.items()
+        for rid, r in programs.ROUTINES.items()
     ]
 
 
 @router.get("/schemes", response_model=list[SchemeSummary])
 def list_schemes() -> list[SchemeSummary]:
-    return [SchemeSummary(scheme_id=sid, name=s.name) for sid, s in _SCHEMES.items()]
+    return [SchemeSummary(scheme_id=sid, name=s.name) for sid, s in programs.SCHEMES.items()]
 
 
 @router.post(
@@ -120,8 +71,10 @@ def list_schemes() -> list[SchemeSummary]:
 )
 @limiter.limit(write_limit)
 def simulate(request: Request, req: SimulateRequest) -> SimulateResponse:
-    program = _program(req.routine_id, req.scheme_id, req.attacking_team_id, req.defending_team_id)
-    return _to_response(_ENGINE.run(program, req.seed))
+    program = programs.build_program(
+        req.routine_id, req.scheme_id, req.attacking_team_id, req.defending_team_id
+    )
+    return _to_response(programs.ENGINE.run(program, req.seed))
 
 
 @router.post(
@@ -129,6 +82,8 @@ def simulate(request: Request, req: SimulateRequest) -> SimulateResponse:
 )
 @limiter.limit(write_limit)
 def montecarlo(request: Request, req: MonteCarloRequest) -> MonteCarloResponse:
-    program = _program(req.routine_id, req.scheme_id, req.attacking_team_id, req.defending_team_id)
-    report = build_report(_RUNNER.run(program, req.n_sims, req.root_seed))
-    return MonteCarloResponse(**report.to_dict(), xg_model=_XG_MODEL_ID)
+    program = programs.build_program(
+        req.routine_id, req.scheme_id, req.attacking_team_id, req.defending_team_id
+    )
+    report = build_report(programs.RUNNER.run(program, req.n_sims, req.root_seed))
+    return MonteCarloResponse(**report.to_dict(), xg_model=programs.XG_MODEL_ID)
