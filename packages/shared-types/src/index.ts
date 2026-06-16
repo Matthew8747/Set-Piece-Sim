@@ -1,96 +1,45 @@
 /**
- * API contract types, hand-mirrored from `apps/backend/src/restart_api/schemas.py`.
+ * API contract types for the frontend.
  *
- * KNOWN TECH DEBT (tracked in docs/development-guide.md): these are maintained
- * by hand until the API surface is large enough to justify OpenAPI codegen
- * (planned alongside Phase 6, when the real domain endpoints land). Until
- * then, the backend's `test_openapi_includes_all_routes` plus PR review keep
- * the two sides honest.
+ * These are now GENERATED from the backend's OpenAPI schema (ADR-007 d6): the
+ * source of truth is `apps/backend/openapi.json`, regenerated into
+ * `generated.ts` via `npm run gen -w @restart/shared-types`. CI fails on drift
+ * (scripts/verify.ps1), so the hand-mirroring tech-debt is retired.
+ *
+ * This module re-exports stable, curated aliases over the generated schemas so
+ * call sites keep using short names (e.g. `MonteCarloResponse`) instead of
+ * `components["schemas"][...]`.
  */
 
-export interface HealthResponse {
-  status: "ok";
-  api_version: string;
-  engine_version: string;
-}
+import type { components } from "./generated";
 
-export interface ReadyResponse {
-  status: "ready";
-  checks: Record<string, "ok" | "skipped">;
-}
+export type { components, paths, operations } from "./generated";
 
-export interface MetaResponse {
-  api_version: string;
-  engine_version: string;
-  environment: "dev" | "test" | "prod";
-}
+type Schemas = components["schemas"];
 
-// --- Set-piece MVP (Phase 3) ------------------------------------------------
+// Ops / meta
+export type HealthResponse = Schemas["HealthResponse"];
+export type ReadyResponse = Schemas["ReadyResponse"];
+export type MetaResponse = Schemas["MetaResponse"];
+export type ProblemDetail = Schemas["ProblemDetail"];
 
-export interface RoutineSummary {
-  routine_id: string;
-  name: string;
-  set_piece: string;
-}
+// Set-piece catalog + simulation
+export type RoutineSummary = Schemas["RoutineSummary"];
+export type SchemeSummary = Schemas["SchemeSummary"];
+export type EventDTO = Schemas["EventDTO"];
+export type SimulateRequest = Schemas["SimulateRequest"];
+export type SimulateResponse = Schemas["SimulateResponse"];
+export type ProportionCI = Schemas["ProportionCIDTO"];
+export type MonteCarloRequest = Schemas["MonteCarloRequest"];
+export type MonteCarloResponse = Schemas["MonteCarloResponse"];
 
-export interface SchemeSummary {
-  scheme_id: string;
-  name: string;
-}
+// Teams + players (real squads from the marts)
+export type TeamSummary = Schemas["TeamSummaryDTO"];
+export type PlayerDTO = Schemas["PlayerDTO"];
 
-export interface EventDTO {
-  kind: string;
-  time_s: number;
-  player_id: string | null;
-  team: string | null;
-  xg?: number | null;
-}
-
-export interface SimulateRequest {
-  routine_id: string;
-  scheme_id: string;
-  seed?: number;
-}
-
-/** att_tracks / def_tracks are [tick][player][x,y]; ball_path is [sample][x,y,z]. */
-export interface SimulateResponse {
-  engine_version: string;
-  seed: number;
-  outcome: string;
-  events: EventDTO[];
-  track_times_s: number[];
-  att_tracks: number[][][];
-  def_tracks: number[][][];
-  ball_path: number[][];
-}
-
-export interface ProportionCI {
-  p: number;
-  lo: number;
-  hi: number;
-  k: number;
-  n: number;
-}
-
-export interface MonteCarloRequest {
-  routine_id: string;
-  scheme_id: string;
-  n_sims?: number;
-  root_seed?: number;
-}
-
-export interface MonteCarloResponse {
-  engine_version: string;
-  root_seed: number;
-  n_sims: number;
-  p_goal: ProportionCI;
-  p_shot: ProportionCI;
-  p_header_shot: ProportionCI;
-  p_first_contact_attack: ProportionCI;
-  p_clearance: ProportionCI;
-  p_possession_recovered: ProportionCI;
-  outcome_counts: Record<string, number>;
-  mean_xg: number;
-  n_xg_scored: number;
-  xg_model?: string | null;
-}
+// Scenario persistence + async sim runs
+export type ScenarioCreate = Schemas["ScenarioCreate"];
+export type ScenarioDTO = Schemas["ScenarioDTO"];
+export type SimRunCreate = Schemas["SimRunCreate"];
+export type SimRunResult = Schemas["SimRunResultDTO"];
+export type SimRunStatus = Schemas["SimRunStatusDTO"];

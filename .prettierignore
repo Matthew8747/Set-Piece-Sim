@@ -12,6 +12,10 @@ data/mlflow.db
 models
 # Generated optimization study artifacts (Python-emitted JSON; not prettier-formatted).
 optimization_studies
+# Generated API contract: OpenAPI schema (Python-emitted) + its TS client
+# (openapi-typescript output). Guarded by the verify.ps1 drift gate, not prettier.
+apps/backend/openapi.json
+packages/shared-types/src/generated.ts
 *.md
 uv.lock
 package-lock.json
