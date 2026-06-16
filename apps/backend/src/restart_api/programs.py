@@ -13,7 +13,8 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from restart.engine import SetPieceEngine
+from restart import ENGINE_VERSION
+from restart.engine import SetPieceEngine, SetPieceResult
 from restart.montecarlo import MonteCarloRunner
 from restart.players.player import PositionGroup
 from restart.tactics.compile import Scenario, SimProgram, compile_scenario
@@ -21,6 +22,7 @@ from restart.tactics.library import all_corner_routines, all_schemes
 from restart_api.deps import team_repository
 from restart_api.jobs.runner import ProgressFn, run_batch
 from restart_api.repositories.ports import SimRunRecord
+from restart_api.schemas import EventDTO, SimulateResponse
 from restart_api.xg import active_model_id, load_active_scorer
 
 XG_MODEL_ID = active_model_id()
@@ -75,8 +77,40 @@ def program_from_spec(spec: dict[str, Any]) -> SimProgram:
     )
 
 
+def to_simulate_response(result: SetPieceResult) -> SimulateResponse:
+    """Decimate a single sim result into the replay DTO (shared by /simulate and
+    the sim-run replay endpoint)."""
+    events = [
+        EventDTO(
+            kind=e.kind,
+            time_s=round(e.time_s, 3),
+            player_id=getattr(e, "player_id", None),
+            team=getattr(e, "team", None),
+            xg=getattr(e, "xg", None),
+        )
+        for e in result.events
+    ]
+    # Replay payloads decimated for transport (every 5th agent tick; 5 Hz ball).
+    ball = result.delivery.samples.positions[::40].tolist()
+    return SimulateResponse(
+        engine_version=ENGINE_VERSION,
+        seed=result.seed,
+        outcome=result.outcome.value,
+        events=events,
+        track_times_s=result.track_times_s[::5].tolist(),
+        att_tracks=result.att_tracks[::5].tolist(),
+        def_tracks=result.def_tracks[::5].tolist(),
+        ball_path=ball,
+    )
+
+
 def default_executor(run: SimRunRecord, progress: ProgressFn) -> dict[str, Any]:
     """The production job body: compile the run's scenario and execute the batch."""
     program = program_from_spec(run.spec)
-    report, samples = run_batch(RUNNER, program, run.n_sims, run.root_seed, progress)
-    return {**report, "xg_model": XG_MODEL_ID, "xg_samples": samples}
+    outcome = run_batch(RUNNER, program, run.n_sims, run.root_seed, progress)
+    return {
+        **outcome.report,
+        "xg_model": XG_MODEL_ID,
+        "xg_samples": outcome.xg_samples,
+        "replay_seeds": outcome.replay_seeds,
+    }

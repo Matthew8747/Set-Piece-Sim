@@ -181,3 +181,49 @@ class MonteCarloResponse(BaseModel):
     mean_xg: float
     n_xg_scored: int
     xg_model: str | None = None
+
+
+# --- Scenario persistence + async sim-runs (Phase 6) ------------------------
+
+
+class ScenarioCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    routine_id: str
+    scheme_id: str
+    attacking_team_id: str = DEFAULT_ATTACKING_TEAM
+    defending_team_id: str = DEFAULT_DEFENDING_TEAM
+
+
+class ScenarioDTO(BaseModel):
+    scenario_id: str
+    name: str
+    spec: dict[str, str]  # routine/scheme/team ids (string-valued)
+    scenario_hash: str
+    created_at: str
+
+
+class SimRunCreate(BaseModel):
+    scenario_id: str
+    # Hard upper bound = cost-bomb protection (security checklist doc 02 §9).
+    n_sims: int = Field(default=1000, ge=1, le=2000)
+    root_seed: int = Field(default=0, ge=0, le=2**31 - 1)
+
+
+class SimRunResultDTO(MonteCarloResponse):
+    # Per-sim xG sample for the distribution charts + seeds the Replay picker
+    # re-runs for the worst/median/best trajectories.
+    xg_samples: list[float]
+    replay_seeds: dict[str, int]
+
+
+class SimRunStatusDTO(BaseModel):
+    run_id: str
+    scenario_id: str
+    status: Literal["queued", "running", "complete", "failed"]
+    progress: float
+    n_sims: int
+    root_seed: int
+    engine_version: str
+    created_at: str
+    result: SimRunResultDTO | None = None
+    error: dict[str, str] | None = None

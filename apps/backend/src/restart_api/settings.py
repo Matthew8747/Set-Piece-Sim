@@ -12,6 +12,7 @@ Conventions:
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import SecretStr
@@ -51,6 +52,14 @@ class Settings(BaseSettings):
     # Global cap on concurrently-running simulation jobs (cost-bomb protection,
     # enforced by the in-process JobQueue; doc 02 9).
     max_concurrent_jobs: int = 2
+
+    # Where the file stores live (scenarios + sim-runs SQLite). Overridden to a
+    # tmp dir in tests so runs never touch the developer's data directory.
+    data_dir: Path = Path("data")
+
+    @property
+    def app_db_path(self) -> Path:
+        return self.data_dir / "restart_app.sqlite"
 
 
 @lru_cache

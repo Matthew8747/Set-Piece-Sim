@@ -9,11 +9,13 @@ the distribution charts. No IO — this stays pure compute so determinism holds.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 
 from restart.montecarlo import BatchResult, MonteCarloRunner, build_report
+from restart.montecarlo.runner import sim_seeds
 from restart.tactics.compile import SimProgram
 
 # (done, total) progress callback, shared by the runner, executors, and queue.
@@ -21,6 +23,16 @@ ProgressFn = Callable[[int, int], None]
 
 # Enough points for a faithful histogram/ECDF without bloating the job payload.
 MAX_XG_SAMPLES = 500
+
+
+@dataclass(frozen=True)
+class BatchOutcome:
+    """Everything the job persists: aggregate report, distribution samples, and
+    the per-sim seeds the Replay sample-picker re-runs (best/worst/median xG)."""
+
+    report: dict[str, Any]
+    xg_samples: list[float]
+    replay_seeds: dict[str, int]
 
 
 def per_sim_xg(batch: BatchResult) -> list[float]:
@@ -53,15 +65,35 @@ def subsample(values: list[float], k: int, seed: int) -> list[float]:
     return [values[int(i)] for i in idx]
 
 
+def replay_seeds(xgs: list[float], root_seed: int) -> dict[str, int]:
+    """Per-sim seeds for the worst/median/best xG sims (the Replay picker).
+
+    A sim is replayable in isolation by its seed (runner determinism contract),
+    so storing three seeds is enough to reconstruct representative trajectories.
+    """
+    seeds = sim_seeds(root_seed, len(xgs))
+    order = sorted(range(len(xgs)), key=lambda i: (xgs[i], i))
+    return {
+        "worst": seeds[order[0]],
+        "median": seeds[order[len(order) // 2]],
+        "best": seeds[order[-1]],
+    }
+
+
 def run_batch(
     runner: MonteCarloRunner,
     program: SimProgram,
     n_sims: int,
     root_seed: int,
     progress: ProgressFn | None = None,
-) -> tuple[dict[str, Any], list[float]]:
-    """Run a Monte Carlo batch; return (aggregate report dict, xG samples)."""
+) -> BatchOutcome:
+    """Run a Monte Carlo batch; return its aggregate report, xG samples, and the
+    representative replay seeds."""
     batch = runner.run(program, n_sims, root_seed, on_progress=progress)
     report = build_report(batch)
-    samples = subsample(per_sim_xg(batch), MAX_XG_SAMPLES, root_seed)
-    return report.to_dict(), samples
+    xgs = per_sim_xg(batch)
+    return BatchOutcome(
+        report=report.to_dict(),
+        xg_samples=subsample(xgs, MAX_XG_SAMPLES, root_seed),
+        replay_seeds=replay_seeds(xgs, root_seed),
+    )

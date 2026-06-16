@@ -35,9 +35,9 @@ def _program() -> SimProgram:
 def test_run_batch_matches_build_report() -> None:
     runner = MonteCarloRunner()
     program = _program()
-    report, _ = run_batch(runner, program, n_sims=40, root_seed=7)
+    outcome = run_batch(runner, program, n_sims=40, root_seed=7)
     expected = build_report(runner.run(program, 40, 7)).to_dict()
-    assert report == expected
+    assert outcome.report == expected
 
 
 def test_progress_is_monotonic_and_completes() -> None:
@@ -56,9 +56,11 @@ def test_progress_is_monotonic_and_completes() -> None:
 
 
 def test_xg_samples_bounded() -> None:
-    _, samples = run_batch(MonteCarloRunner(), _program(), n_sims=40, root_seed=2)
-    assert len(samples) <= MAX_XG_SAMPLES
-    assert len(samples) == 40  # n_sims <= cap -> all kept
+    outcome = run_batch(MonteCarloRunner(), _program(), n_sims=40, root_seed=2)
+    assert len(outcome.xg_samples) <= MAX_XG_SAMPLES
+    assert len(outcome.xg_samples) == 40  # n_sims <= cap -> all kept
+    # Replay picker has the three representative seeds.
+    assert set(outcome.replay_seeds) == {"worst", "median", "best"}
 
 
 def test_per_sim_xg_length_matches_batch() -> None:

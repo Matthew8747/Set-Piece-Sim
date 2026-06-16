@@ -15,8 +15,11 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from restart_api import __version__
 from restart_api.errors import install_error_handlers
+from restart_api.jobs.queue import InProcessJobQueue
+from restart_api.programs import default_executor
 from restart_api.ratelimit import configure as configure_rate_limits
 from restart_api.ratelimit import limiter, rate_limit_handler
+from restart_api.repositories.file import SqliteScenarioRepository, SqliteSimRunRepository
 from restart_api.routers import health, v1
 from restart_api.schemas import ERROR_RESPONSES
 from restart_api.settings import Settings, get_settings
@@ -46,6 +49,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_handler)  # type: ignore[arg-type]
     app.add_middleware(SlowAPIMiddleware)
+
+    # File-based stores (default) + in-process job queue, read off app.state by
+    # the route dependencies. Tests point data_dir at a tmp dir and may swap the
+    # queue's executor (ADR-007 d1/d3).
+    app.state.scenarios = SqliteScenarioRepository(cfg.app_db_path)
+    app.state.sim_runs = SqliteSimRunRepository(cfg.app_db_path)
+    app.state.job_queue = InProcessJobQueue(
+        app.state.sim_runs, default_executor, cfg.max_concurrent_jobs
+    )
 
     if settings is not None:
         # Tests injected a Settings: make route dependencies see the same one.

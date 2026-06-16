@@ -11,7 +11,11 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from fastapi import Request
+
+from restart_api.jobs.queue import JobQueue
 from restart_api.repositories.file import MartTeamRepository
+from restart_api.repositories.ports import ScenarioRepository, SimRunRepository
 
 _MARTS_REL = Path("data") / "marts"
 
@@ -29,3 +33,20 @@ def default_marts_dir() -> Path:
 @lru_cache
 def team_repository() -> MartTeamRepository:
     return MartTeamRepository(default_marts_dir())
+
+
+# Per-app stores/queue are built in create_app and read off app.state, so tests
+# can point them at a tmp data dir (and swap in a fake job executor).
+def scenario_repo(request: Request) -> ScenarioRepository:
+    repo: ScenarioRepository = request.app.state.scenarios
+    return repo
+
+
+def sim_run_repo(request: Request) -> SimRunRepository:
+    repo: SimRunRepository = request.app.state.sim_runs
+    return repo
+
+
+def job_queue(request: Request) -> JobQueue:
+    queue: JobQueue = request.app.state.job_queue
+    return queue

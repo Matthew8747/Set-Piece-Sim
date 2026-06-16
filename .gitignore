@@ -33,6 +33,8 @@ data/marts/*
 data/mlflow.db
 data/mlflow/
 data/models/
+# Runtime app store (scenarios + sim-runs SQLite, created on first write).
+data/restart_app.sqlite*
 
 # --- ML artifacts: heavy binaries stay out of git; the small derived xG
 #     coefficient bundle (JSON) IS committed so the engine ships a working model
