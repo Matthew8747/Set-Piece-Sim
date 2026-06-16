@@ -8,6 +8,21 @@
 
 **Tech Stack:** FastAPI · pydantic v2 · slowapi (rate limit) · Arq + Redis (optional prod job adapter) · psycopg (optional Postgres adapter) · DuckDB/SQLite (default stores) · Next.js 16 / React 19 · hand-rolled SVG chart primitives (see note) · openapi-typescript (DTO codegen) · Playwright (E2E). uv for Python, npm workspaces for TS.
 
+## PROGRESS (2026-06-16)
+
+Branch `feat/phase6-api-workbench`. **Backend complete and verified green (M0–M4).** Frontend + E2E + adapter-drop-ins remain (M5–M7).
+
+- ✅ **M0** branch, deps, ADR-007.
+- ✅ **M1** API hardening: problem-details, pitch bounds, rate limiting (slowapi, hermetic test reset), API-key writes + demo mode, OpenAPI error schema/security. *Review checkpoint 1 passed.*
+- ✅ **M2** persistence ports + file adapters; `MartSquadLoader` → pure `Team`; demo squads retired from runtime; `/teams` + `/players`.
+- ✅ **M3** scenario hash + idempotency; chunked `run_batch` (+ replay seeds); `JobQueue` port + `InProcessJobQueue`; `/scenarios` + async `/sim-runs` (202/200 idempotency, polling, `/events` replay picker). *Review checkpoint 2 reached.*
+- ✅ **M4** OpenAPI codegen: committed `apps/backend/openapi.json` + generated `shared-types`; `verify.ps1` drift gate; hand-mirror tech-debt closed.
+- ⏭️ **M5** pitch-kit package (SVG pitch, replay player, hand-rolled SVG charts, tokens).
+- ⏭️ **M6** Scenario Workbench (library + Build/Simulate/Replay) on the new endpoints.
+- ⏭️ **M7** Playwright E2E (reduced budget); Postgres/Arq drop-in adapters + compose; docs/handoff/CHANGELOG; PR.
+
+**New deviations recorded since plan v1:** (1) charts hand-rolled SVG instead of visx (React-19 peer block); (2) global per-IP rate limit + stricter compute-POST bucket (concurrent-job cap is the JobQueue semaphore); (3) `idempotency_key` folds `n_sims` (a larger batch is a different result); (4) codegen run with `--default-non-nullable false` so defaulted request fields stay optional. All carried-forward 🔴/O-3 debt untouched; `ENGINE_VERSION` still `sim/0.4.0`.
+
 > **Deviation (recorded in ADR-007):** doc 07 names *visx* for charts, but visx 3.x peers cap at React 18 and the app is React 19 (hard `ERESOLVE`); no React-19-compatible visx release exists. Rather than loosen peer resolution repo-wide, the histogram / ECDF / KPI-CI-whisker — all simple — are hand-rolled as plain SVG in pitch-kit. This honors doc 07's stated intent ("custom SVG, React owns the DOM, not a charting template") and drops a blocked dependency.
 
 ---
