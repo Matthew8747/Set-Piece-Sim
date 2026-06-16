@@ -8,7 +8,7 @@ hard-bounded (cost-bomb protection, security checklist doc 02 §9).
 
 from functools import lru_cache
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from restart import ENGINE_VERSION
 from restart.engine import SetPieceEngine, SetPieceResult
@@ -27,6 +27,7 @@ from restart_api.schemas import (
     SimulateRequest,
     SimulateResponse,
 )
+from restart_api.security import require_write_access
 from restart_api.xg import active_model_id, load_active_scorer
 
 router = APIRouter(prefix="/setpieces", tags=["setpieces"])
@@ -113,14 +114,18 @@ def list_schemes() -> list[SchemeSummary]:
     return [SchemeSummary(scheme_id=sid, name=s.name) for sid, s in _SCHEMES.items()]
 
 
-@router.post("/simulate", response_model=SimulateResponse)
+@router.post(
+    "/simulate", response_model=SimulateResponse, dependencies=[Depends(require_write_access)]
+)
 @limiter.limit(write_limit)
 def simulate(request: Request, req: SimulateRequest) -> SimulateResponse:
     program = _program(req.routine_id, req.scheme_id)
     return _to_response(_ENGINE.run(program, req.seed))
 
 
-@router.post("/montecarlo", response_model=MonteCarloResponse)
+@router.post(
+    "/montecarlo", response_model=MonteCarloResponse, dependencies=[Depends(require_write_access)]
+)
 @limiter.limit(write_limit)
 def montecarlo(request: Request, req: MonteCarloRequest) -> MonteCarloResponse:
     program = _program(req.routine_id, req.scheme_id)
