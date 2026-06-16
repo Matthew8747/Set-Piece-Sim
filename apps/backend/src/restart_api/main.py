@@ -10,9 +10,13 @@ Run locally:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from restart_api import __version__
 from restart_api.errors import install_error_handlers
+from restart_api.ratelimit import configure as configure_rate_limits
+from restart_api.ratelimit import limiter, rate_limit_handler
 from restart_api.routers import health, v1
 from restart_api.settings import Settings, get_settings
 
@@ -31,6 +35,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # One error contract for the whole surface (RFC 9457 problem-details).
     install_error_handlers(app)
+
+    # Per-IP rate limiting (slowapi). The RateLimitExceeded handler is registered
+    # explicitly because that exception subclasses HTTPException and would
+    # otherwise be swallowed by the generic HTTP handler above.
+    configure_rate_limits(cfg)
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_handler)  # type: ignore[arg-type]
+    app.add_middleware(SlowAPIMiddleware)
 
     if settings is not None:
         # Tests injected a Settings: make route dependencies see the same one.

@@ -26,7 +26,7 @@ PROBLEM_JSON = "application/problem+json"
 _TYPE_BASE = "https://restart-lab.dev/problems"
 
 
-def _problem(
+def problem_response(
     status: int,
     title: str,
     detail: str,
@@ -55,7 +55,7 @@ def _validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse
         }
         for e in exc.errors()
     ]
-    return _problem(
+    return problem_response(
         422,
         "Request validation failed",
         "One or more fields are invalid; see 'errors' for specifics.",
@@ -65,7 +65,7 @@ def _validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse
 
 
 def _http_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-    return _problem(
+    return problem_response(
         exc.status_code,
         str(exc.detail) if exc.status_code < 500 else "Server error",
         str(exc.detail),
@@ -75,7 +75,7 @@ def _http_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
 
 def _value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
     # Domain validation (e.g. infeasible scenario at compile time) -> client error.
-    return _problem(
+    return problem_response(
         422,
         "Invalid scenario",
         str(exc),

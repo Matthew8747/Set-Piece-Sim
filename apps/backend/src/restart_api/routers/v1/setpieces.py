@@ -8,7 +8,7 @@ hard-bounded (cost-bomb protection, security checklist doc 02 §9).
 
 from functools import lru_cache
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from restart import ENGINE_VERSION
 from restart.engine import SetPieceEngine, SetPieceResult
@@ -17,6 +17,7 @@ from restart.players.demo import demo_team
 from restart.players.player import PositionGroup
 from restart.tactics.compile import Scenario, SimProgram, compile_scenario
 from restart.tactics.library import all_corner_routines, all_schemes
+from restart_api.ratelimit import limiter, write_limit
 from restart_api.schemas import (
     EventDTO,
     MonteCarloRequest,
@@ -113,13 +114,15 @@ def list_schemes() -> list[SchemeSummary]:
 
 
 @router.post("/simulate", response_model=SimulateResponse)
-def simulate(req: SimulateRequest) -> SimulateResponse:
+@limiter.limit(write_limit)
+def simulate(request: Request, req: SimulateRequest) -> SimulateResponse:
     program = _program(req.routine_id, req.scheme_id)
     return _to_response(_ENGINE.run(program, req.seed))
 
 
 @router.post("/montecarlo", response_model=MonteCarloResponse)
-def montecarlo(req: MonteCarloRequest) -> MonteCarloResponse:
+@limiter.limit(write_limit)
+def montecarlo(request: Request, req: MonteCarloRequest) -> MonteCarloResponse:
     program = _program(req.routine_id, req.scheme_id)
     report = build_report(_RUNNER.run(program, req.n_sims, req.root_seed))
     return MonteCarloResponse(**report.to_dict(), xg_model=_XG_MODEL_ID)
