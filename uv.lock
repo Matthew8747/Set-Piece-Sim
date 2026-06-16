@@ -2885,6 +2885,7 @@ name = "restart-backend"
 version = "0.1.0"
 source = { editable = "apps/backend" }
 dependencies = [
+    { name = "duckdb" },
     { name = "fastapi" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -2905,6 +2906,7 @@ postgres = [
 [package.metadata]
 requires-dist = [
     { name = "arq", marker = "extra == 'arq'", specifier = ">=0.26" },
+    { name = "duckdb", specifier = ">=1.1" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'postgres'", specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.10" },
