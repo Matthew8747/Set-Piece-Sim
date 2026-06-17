@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // shared-types ships TypeScript source; Next transpiles it in-place.
-  transpilePackages: ["@restart/shared-types"],
+  // Workspace packages ship TypeScript source; Next transpiles them in-place.
+  transpilePackages: ["@restart/shared-types", "@restart/pitch-kit"],
 };
 
 export default nextConfig;

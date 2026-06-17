@@ -1,0 +1,40 @@
+/**
+ * Restart Lab design tokens — single source of truth (design doc 07).
+ *
+ * Lives in pitch-kit so the canonical pitch, charts, and the app all draw from
+ * one scale; the frontend's globals.css imports this file. Expressed as a
+ * Tailwind v4 `@theme` block so utilities (`font-mono`, etc.) resolve AND the
+ * raw `--color-*` custom properties are emitted for arbitrary refs
+ * (`bg-(--color-signal)`) and for the SVG components that read the vars directly.
+ *
+ * Palette rationale (doc 07 §1): dark because the pitch is the hero surface and
+ * saturated trajectory/heat colors need a quiet ground; one signal green for
+ * attacking/positive, one amber for defensive/risk; team identity colors are
+ * used ONLY on pitch entities, never on chrome.
+ */
+@theme {
+  /* Surfaces — near-black, green-tinted neutrals (#0B0F0D family). */
+  --color-surface: #0b0f0d;
+  --color-surface-raised: #111714;
+  --color-surface-overlay: #19211c;
+
+  /* Chrome line — pitch-line off-white. */
+  --color-line: #e8ece9;
+  --color-line-muted: #8a938d;
+
+  /* Signals. Green = attacking/positive; amber = defensive/risk. */
+  --color-signal: #00e07b;
+  --color-signal-dim: #0a9b59;
+  --color-warn: #ffb454;
+
+  /* Danger red — a kinematically infeasible run renders red (doc 07 §3). */
+  --color-danger: #ff5d5d;
+
+  /* Confidence-interval whisker — distinct from signal so a CI never reads as
+     "positive"; muted blue keeps honest-uncertainty chrome quiet (doc 07 §4). */
+  --color-ci: #5aa9ff;
+
+  /* Type — Inter for UI, IBM Plex Mono for ALL numerals (tabular). */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
