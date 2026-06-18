@@ -147,6 +147,7 @@ module = [
     "slowapi.*",
     "arq.*",
     "psycopg.*",
+    "redis.*",
 ]
 ignore_missing_imports = true
 
