@@ -50,6 +50,11 @@ optimization_studies/*
 optimization_studies/england-vs-argentina/*
 !optimization_studies/england-vs-argentina/study.json
 
+# --- Playwright E2E (browsers, reports, and the isolated E2E app store) ---
+apps/frontend/test-results/
+apps/frontend/playwright-report/
+.e2e-data/
+
 # --- Local tooling artifacts (Claude Code plugins etc.) ---
 ruvector.db
 graphify-out/

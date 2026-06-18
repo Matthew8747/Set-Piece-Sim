@@ -85,17 +85,26 @@ class MartSquadLoader:
         if not self._players.is_file() or not self._attrs.is_file():
             msg = f"marts not found under {marts_dir}"
             raise FileNotFoundError(msg)
-        # One in-memory connection; parquet paths are read per query.
+        # One in-memory connection; parquet paths are read per query. The loader
+        # is a process-wide singleton AND the in-process job worker runs on a
+        # threadpool, so queries go through per-call cursors — a DuckDB connection
+        # is not safe to use concurrently from multiple threads, but cursors off
+        # it are independent (without this, a job thread and a polling request
+        # racing on the shared connection corrupt results -> "unknown team").
         self._con = duckdb.connect()
         self._players_src = f"read_parquet('{self._players.as_posix()}')"
         self._attrs_src = f"read_parquet('{self._attrs.as_posix()}')"
 
     # ---------------------------------------------------------------- public
     def list_teams(self) -> list[TeamSummary]:
-        rows = self._con.execute(
-            f"SELECT team, any_value(country) AS country, count(*) AS n "
-            f"FROM {self._players_src} GROUP BY team ORDER BY team"
-        ).fetchall()
+        rows = (
+            self._con.cursor()
+            .execute(
+                f"SELECT team, any_value(country) AS country, count(*) AS n "
+                f"FROM {self._players_src} GROUP BY team ORDER BY team"
+            )
+            .fetchall()
+        )
         return [TeamSummary(team_slug(t), t, c or "", int(n)) for t, c, n in rows]
 
     def team(self, name: str) -> Team:
@@ -117,7 +126,8 @@ class MartSquadLoader:
 
     # --------------------------------------------------------------- internals
     def _load_rows(self, name: str) -> list[_PlayerRow]:
-        players = self._con.execute(
+        cur = self._con.cursor()
+        players = cur.execute(
             f"SELECT player_id, player, position_group, "
             f"COALESCE(aerial_won,0)+COALESCE(aerial_lost,0)+COALESCE(delivery_attempts,0) "
             f"AS activity FROM {self._players_src} WHERE team = ?",
@@ -125,7 +135,7 @@ class MartSquadLoader:
         ).fetchall()
         if not players:
             return []
-        attr_rows = self._con.execute(
+        attr_rows = cur.execute(
             f"SELECT player_id, attribute, value FROM {self._attrs_src} WHERE team = ?",
             [name],
         ).fetchall()

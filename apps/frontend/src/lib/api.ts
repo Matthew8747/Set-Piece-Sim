@@ -92,7 +92,8 @@ export const api = {
       onProgress?.(status);
       if (TERMINAL.has(status.status)) {
         if (status.status === "failed") {
-          throw new Error(`sim run ${id} failed: ${status.error?.message ?? "unknown error"}`);
+          // The backend stores RFC-style {type, detail} on a failed run.
+          throw new Error(`sim run ${id} failed: ${status.error?.detail ?? "unknown error"}`);
         }
         return status;
       }
