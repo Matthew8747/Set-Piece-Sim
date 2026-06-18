@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from restart_etl import ETL_VERSION
 from restart_etl.config import default_paths, resolve_competitions
@@ -90,6 +91,20 @@ def cmd_all(args: argparse.Namespace) -> int:
     return cmd_gates(args)
 
 
+def cmd_load_postgres(args: argparse.Namespace) -> int:
+    # Drop-in Postgres target (ADR-007 d1); psycopg is the optional extra.
+    from restart_etl.marts.load_postgres import load_all_marts_postgres
+
+    marts = Path(args.marts_dir) if args.marts_dir else default_paths().marts
+    loaded = load_all_marts_postgres(args.dsn, marts)
+    for table, n in loaded.items():
+        _echo(f"load-postgres: {n} rows -> {table}")
+    if not loaded:
+        _echo(f"load-postgres: no mart parquet found under {marts}")
+        return 1
+    return 0
+
+
 def cmd_version(_: argparse.Namespace) -> int:
     print(ETL_VERSION)
     return 0
@@ -111,6 +126,13 @@ def build_parser() -> argparse.ArgumentParser:
     pa = sub.add_parser("all", help="fetch -> stage -> marts -> gates")
     pa.add_argument("--competitions", help="comma list of aliases (default: wc2022,euro2024)")
     pa.set_defaults(func=cmd_all)
+
+    pp = sub.add_parser("load-postgres", help="load committed marts into Postgres (drop-in)")
+    pp.add_argument(
+        "--dsn", required=True, help="Postgres DSN, e.g. postgresql://user:pass@host/db"
+    )
+    pp.add_argument("--marts-dir", help="override the marts directory (default: data/marts)")
+    pp.set_defaults(func=cmd_load_postgres)
 
     sub.add_parser("version", help="print ETL version").set_defaults(func=cmd_version)
     return p
