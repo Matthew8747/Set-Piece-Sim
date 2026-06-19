@@ -33,14 +33,22 @@ outcome metrics, optimization interfaces (Optuna/CMA-ES-ready, no algorithms yet
 defensive scheme, simulate one delivery or a Monte Carlo batch, watch the animated pitch replay
 and read goal/shot/clearance probabilities with CIs.
 
+✅ **Phase 4** (`sim/0.4.0`) — StatsBomb ETL → marts, derived player profiles, and a calibrated
+real-data xG model wired into the engine. ✅ **Phase 5** — the System B routine optimizer
+(`restart-opt`): Optuna TPE vs an equal-budget random baseline, screen-then-confirm under common
+random numbers, LightGBM+SHAP insights. ✅ **Phase 6** — the hardened API and the **Scenario
+Workbench** on real squads from the marts: Build → Simulate (async runs, polled progress, xG
+distributions + KPI/CI cards) → Replay (worst/median/best), with a Playwright E2E of the 3-minute
+journey.
+
 ```bash
-# Run the MVP locally:
+# Run the Scenario Workbench locally:
 uv run uvicorn restart_api.main:app --app-dir apps/backend/src   # API :8000
-npm run dev -w apps/frontend                                     # web :3000 -> /workbench
+npm run dev -w @restart/frontend                                 # web :3000 -> /scenarios
 ```
 
-🏗️ **Next: Phase 4** — ETL + real player profiles + xG v1; and the fused Numba scenario kernel
-for 100k-sim batches.
+🏗️ **Next: Phase 7** — optimization UI (study convergence, parallel-coords, top-k vs baseline) and
+3D replay (R3F) over the same replay JSON; team-intelligence and exportable reports.
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
 simulation architecture, ML architecture, UI/UX plan, and 12-week roadmap — lives in

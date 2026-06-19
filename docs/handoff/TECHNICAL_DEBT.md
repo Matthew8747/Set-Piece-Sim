@@ -14,15 +14,25 @@ exit criteria* and is refreshed each phase. Priorities: 🔴 blocks an upcoming 
 | 🟡 | **Defenders have no plan anticipation / partial observability** — they react to ball + marks, not to likely routine patterns; real defenders anticipate back-post/cut-back threats without full plan knowledge | Add a defender anticipation model: a noisy prior over attacker intents (partial observability) biasing positioning, without exposing the exact routine | future engine phase |
 | 🟡 | **No 3D visualization** — replay is 2D; the ball flight (z) and a static-model 3D view of a one-off / best-found routine would aid analysis | 3D replay (R3F): static player markers + the ball's 3D trajectory for a single sim and the best-found optimized routine | Phase 7 stretch (3D replay) |
 | 🟡 | xG off-manifold risk (G-15): simulated contexts vs real-shot manifold unverified | Population-stability index per feature reported in the model card | Phase 5 |
-| 🟡 | Derived player attributes not wired into API squads (still demo squads) | Squad selection from `mart_players`/`mart_player_attributes` via persistence layer | Phase 6 |
-| 🟡 | Marts are Parquet + file-based DuckDB; no Postgres loaders yet | `DELETE WHERE source=X` + insert idempotent Postgres loaders (drop-in) | Phase 6 |
-| 🟡 | API catalog uses fixed demo squads; no persistence/custom routines/async jobs | Postgres + Arq worker + real teams | Phase 6 |
-| 🟡 | shared-types DTOs hand-mirrored (now 8 interfaces) | OpenAPI codegen | Phase 6 |
 | 🟡 | Physics formulas duplicated in JIT kernel vs `forces.py` | Hold: equivalence test (≤1e-9) polices drift; revisit only if a third copy appears | standing |
 | 🟡 | No import-linter contract | Contract added once `restart.{agents,tactics,engine}` land (module count justifies it) | Phase 2/3 |
-| 🟡 | `shared-types` hand-mirrored | OpenAPI codegen when domain endpoints land | Phase 6 |
-| 🟡 | `readyz` reports `skipped` checks | Real Postgres/Redis probes when consumers exist | Phase 4/6 |
 | 🟢 | Single-trajectory simulator ~0.4 s/run | Only if replay sampling in Phase 3 measures as a bottleneck | monitor |
 | 🟢 | Starlette TestClient httpx deprecation warning | Upstream guidance settles | monitor |
 | 🟢 | postcss override pin under Next 16 | Next ships patched postcss in stable | monitor (check on Next upgrades) |
 | 🟢 | No app Dockerfiles | Deployment phase | Phase 8 |
+
+## Closed in Phase 6 (API & Scenario Workbench)
+
+- Derived player attributes wired into API squads — `MartSquadLoader` builds a pure `Team` from
+  `mart_players`/`mart_player_attributes`; demo squads retired from the runtime.
+- Idempotent Postgres mart loader shipped (`restart-etl load-postgres`, `DELETE WHERE source=X` +
+  insert) beside the DuckDB loader.
+- Persistence + async jobs landed (file-first repositories + in-process queue; Postgres + Arq
+  drop-ins selected by config).
+- shared-types hand-mirroring retired — generated from `openapi.json` with a `verify.ps1` drift gate.
+- `readyz` now probes the **configured** backends (Postgres/Redis); unconfigured deps stay `skipped`
+  by design.
+
+**Still open, explicitly NOT touched by Phase 6 (carried forward):** the 🔴 engine `[knob]`
+calibration, the 🔴 fused Numba scenario kernel, and the first-contact-only engine fidelity (O-3) —
+all future engine phases (ADR-007 §"Explicitly NOT in scope").
