@@ -1,6 +1,13 @@
-# Local development infrastructure. Postgres and Redis are not consumed by any
-# code in Phase 0; they exist so `docker compose up` works from day one and
-# later phases wire against a known-good stack.
+# Local development infrastructure. The default Restart Lab install is
+# server-free (SQLite + in-process queue); these back the Postgres + Arq/Redis
+# drop-in adapters (ADR-007 d1/d2), selected when their URLs are configured:
+#
+#   docker compose -f infra/docker-compose.yml up -d
+#   $env:RESTART_DATABASE_URL = "postgresql://restart:restart@localhost:5432/restart"
+#   $env:RESTART_REDIS_URL    = "redis://localhost:6379"
+#   uv run --extra postgres restart-etl load-postgres --dsn $env:RESTART_DATABASE_URL
+#   uv run uvicorn restart_api.main:app --app-dir apps/backend/src   # API
+#   uv run arq restart_api.jobs.arq_queue.WorkerSettings             # worker
 #
 # Credentials below are LOCAL-DEV ONLY by policy (see SECURITY section of
 # docs/development-guide.md): they bind to localhost and must never be reused

@@ -6,12 +6,15 @@ from fastapi import APIRouter, Depends
 
 from restart import ENGINE_VERSION
 from restart_api import __version__
-from restart_api.routers.v1 import setpieces
+from restart_api.routers.v1 import scenarios, setpieces, sim_runs, teams
 from restart_api.schemas import MetaResponse
 from restart_api.settings import Settings, get_settings
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(setpieces.router)
+router.include_router(teams.router)
+router.include_router(scenarios.router)
+router.include_router(sim_runs.router)
 
 
 @router.get("/meta", response_model=MetaResponse, tags=["meta"])

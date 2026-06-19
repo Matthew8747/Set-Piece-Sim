@@ -12,6 +12,7 @@ Conventions:
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import SecretStr
@@ -40,6 +41,25 @@ class Settings(BaseSettings):
 
     # API key for mutating endpoints (introduced with the first write endpoint).
     api_key: SecretStr | None = None
+
+    # Per-IP rate limits (slowapi format "<n>/<period>"). Reads get a generous
+    # global bucket; compute-triggering POSTs get a stricter one. Disable for
+    # benchmarks/load tests via RESTART_RATE_LIMIT_ENABLED=false.
+    rate_limit_enabled: bool = True
+    rate_limit_read: str = "120/minute"
+    rate_limit_write: str = "20/minute"
+
+    # Global cap on concurrently-running simulation jobs (cost-bomb protection,
+    # enforced by the in-process JobQueue; doc 02 9).
+    max_concurrent_jobs: int = 2
+
+    # Where the file stores live (scenarios + sim-runs SQLite). Overridden to a
+    # tmp dir in tests so runs never touch the developer's data directory.
+    data_dir: Path = Path("data")
+
+    @property
+    def app_db_path(self) -> Path:
+        return self.data_dir / "restart_app.sqlite"
 
 
 @lru_cache

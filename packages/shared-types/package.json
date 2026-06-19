@@ -10,9 +10,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen": "openapi-typescript ../../apps/backend/openapi.json -o src/generated.ts --default-non-nullable false"
   },
   "devDependencies": {
+    "openapi-typescript": "^7.4.0",
     "typescript": "^5.7.2"
   }
 }

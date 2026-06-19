@@ -4,7 +4,8 @@
   "description": "Restart Lab monorepo root: npm workspaces for the TypeScript side (frontend, shared-types). Python packages are managed by uv (see pyproject.toml).",
   "workspaces": [
     "apps/frontend",
-    "packages/shared-types"
+    "packages/shared-types",
+    "packages/pitch-kit"
   ],
   "scripts": {
     "lint": "npm run lint --workspaces --if-present",

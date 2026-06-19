@@ -6,6 +6,45 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+
+- **API hardening:** RFC 9457 problem-details for the whole surface; tightened input + pitch-coordinate
+  bounds; per-IP rate limiting (slowapi; in-memory default, Redis when configured); `X-API-Key` write
+  gate with bounded demo-mode; OpenAPI error schema + security metadata
+  ([ADR-007](docs/adr/ADR-007-api-workbench-and-persistence.md)).
+- **Real squads from the marts:** `MartSquadLoader` builds a pure `restart.Team` from
+  `mart_players` / `mart_player_attributes` via a fixed deterministic XI rule (assumption **R9**);
+  demo squads retired from the API runtime. `GET /api/v1/teams`, `GET /api/v1/players?team=<slug>`.
+- **Persistence ports + async jobs:** `TeamRepository` / `ScenarioRepository` / `SimRunRepository`
+  and a `JobQueue`, with server-free defaults (SQLite + in-process asyncio worker). `POST /scenarios`;
+  `POST /sim-runs` (`202`, or `200` on idempotency hit — key = canonical scenario hash + `n_sims` +
+  `seed` + `engine_version`); `GET /sim-runs/{id}` (status/progress/result with `xg_samples`);
+  `GET /sim-runs/{id}/events?sample=worst|median|best` (single-sim replay). Determinism preserved
+  end to end: same key ⇒ identical surfaced result.
+- **shared-types from OpenAPI:** `@restart/shared-types` is generated from the committed
+  `openapi.json`; `verify.ps1` fails on drift (hand-mirroring retired).
+- **`@restart/pitch-kit` (new workspace):** the canonical 105×68 SVG pitch, a `ReplayPlayer`
+  (scrubber, event markers, keyboard, `prefers-reduced-motion`), and hand-rolled SVG chart
+  primitives (`Histogram`, `Ecdf`, `KpiCard` with CI whisker + "how?"), plus the full doc-07
+  token scale. Charts are plain SVG, not visx (React-19 peer block — ADR-007 d7).
+- **Scenario Workbench:** `/scenarios` library + `/scenarios/[id]` host with Build / Simulate /
+  Replay modes (B/S/R keys), real-squad pickers, async-run polling, distribution charts +
+  KPI/CI cards, and replay with a worst/median/best sample picker. Determinism banner on every
+  result; empty states teach.
+- **Drop-in production adapters (tested, CI-skipped without a server):** idempotent Postgres mart
+  loader (`restart-etl load-postgres`); Postgres repositories + an Arq/Redis `JobQueue` selected by
+  `RESTART_DATABASE_URL` / `RESTART_REDIS_URL`; `infra/docker-compose.yml`; `/readyz` now really
+  probes the configured backends.
+- **E2E:** Playwright runs the 3-minute journey at a reduced deterministic budget (`n_sims=24`)
+  booting the backend + Next as web servers.
+- Docs: [API reference](docs/api/README.md), [frontend README](apps/frontend/README.md), ADR-007,
+  assumption R9. `ENGINE_VERSION` **unchanged** — Phase 6 touches no engine physics.
+
+### Fixed
+- `MartSquadLoader` shared a single DuckDB connection across threads; the in-process job worker and a
+  concurrent polling request could race on it and corrupt query results (a spurious "unknown team").
+  Each query now runs on its own DuckDB cursor.
+
 ### Added — Phase 5: Optimization Engine (System B) (2026-06-14) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
 - **Pure optimize core (`restart.optimize`)** — the genome, objective, statistics, and guards stay

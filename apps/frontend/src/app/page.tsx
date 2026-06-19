@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { EnvironmentBadge } from "@/components/EnvironmentBadge";
 
 export default function Home() {
@@ -10,13 +12,15 @@ export default function Home() {
         Monte Carlo experimentation, and machine-learning routine search — built around the 2026
         World Cup.
       </p>
-      <a
-        href="/workbench"
+      <Link
+        href="/scenarios"
         className="w-fit rounded bg-(--color-signal) px-4 py-2 font-medium text-black"
       >
-        Open the Scenario Workbench →
-      </a>
-      <p className="font-mono text-sm opacity-60">Phase 3 MVP · corner simulation + Monte Carlo</p>
+        Open a scenario →
+      </Link>
+      <p className="font-mono text-sm opacity-60">
+        Phase 6 · Scenario Workbench: build · simulate · replay
+      </p>
     </main>
   );
 }

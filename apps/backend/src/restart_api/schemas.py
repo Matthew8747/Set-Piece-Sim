@@ -8,6 +8,60 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+# Pitch is the canonical 105 x 68 m surface (doc 07). Coordinates are treated as
+# hostile input (sim inputs are effectively code — security checklist doc 02 9);
+# this point is reused by every scenario DTO that carries a position.
+PITCH_LENGTH_M = 105.0
+PITCH_WIDTH_M = 68.0
+
+
+class PitchPoint(BaseModel):
+    x: float = Field(ge=0.0, le=PITCH_LENGTH_M)
+    y: float = Field(ge=0.0, le=PITCH_WIDTH_M)
+
+
+class ProblemFieldError(BaseModel):
+    loc: list[str | int]
+    msg: str
+    type: str
+
+
+class ProblemDetail(BaseModel):
+    """RFC 9457 problem-details body — the API's single error contract."""
+
+    type: str
+    title: str
+    status: int
+    detail: str
+    errors: list[ProblemFieldError] | None = None
+
+
+# Default error responses documented on every router, so OpenAPI (and the
+# generated TS client) advertise the problem+json contract per status code.
+ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
+    404: {
+        "model": ProblemDetail,
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+        },
+        "description": "Resource not found",
+    },
+    422: {
+        "model": ProblemDetail,
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+        },
+        "description": "Request validation failed",
+    },
+    429: {
+        "model": ProblemDetail,
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+        },
+        "description": "Rate limit exceeded",
+    },
+}
+
 
 class HealthResponse(BaseModel):
     status: Literal["ok"]
@@ -29,6 +83,11 @@ class MetaResponse(BaseModel):
 
 # --- Set-piece MVP DTOs (Phase 3) -------------------------------------------
 
+# Canonical matchup defaults so Phase-3 callers (no team ids) keep working while
+# the demo squads are retired; real squads come from the marts (ADR-007 d2).
+DEFAULT_ATTACKING_TEAM = "england"
+DEFAULT_DEFENDING_TEAM = "argentina"
+
 
 class RoutineSummary(BaseModel):
     routine_id: str
@@ -39,6 +98,25 @@ class RoutineSummary(BaseModel):
 class SchemeSummary(BaseModel):
     scheme_id: str
     name: str
+
+
+class TeamSummaryDTO(BaseModel):
+    team_id: str
+    name: str
+    country: str
+    n_players: int
+
+
+class PlayerDTO(BaseModel):
+    player_id: str
+    display_name: str
+    position_group: str
+    heading: float
+    delivery: float
+    jump_reach_m: float
+    height_m: float
+    # Provenance: every attribute is derived from open data, never scraped.
+    source: str
 
 
 class EventDTO(BaseModel):
@@ -53,6 +131,8 @@ class EventDTO(BaseModel):
 class SimulateRequest(BaseModel):
     routine_id: str
     scheme_id: str
+    attacking_team_id: str = DEFAULT_ATTACKING_TEAM
+    defending_team_id: str = DEFAULT_DEFENDING_TEAM
     seed: int = Field(default=0, ge=0, le=2**31 - 1)
 
 
@@ -78,6 +158,8 @@ class ProportionCIDTO(BaseModel):
 class MonteCarloRequest(BaseModel):
     routine_id: str
     scheme_id: str
+    attacking_team_id: str = DEFAULT_ATTACKING_TEAM
+    defending_team_id: str = DEFAULT_DEFENDING_TEAM
     # Hard upper bound = cost-bomb protection (security checklist doc 02 §9).
     n_sims: int = Field(default=200, ge=1, le=2000)
     root_seed: int = Field(default=0, ge=0, le=2**31 - 1)
@@ -99,3 +181,49 @@ class MonteCarloResponse(BaseModel):
     mean_xg: float
     n_xg_scored: int
     xg_model: str | None = None
+
+
+# --- Scenario persistence + async sim-runs (Phase 6) ------------------------
+
+
+class ScenarioCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    routine_id: str
+    scheme_id: str
+    attacking_team_id: str = DEFAULT_ATTACKING_TEAM
+    defending_team_id: str = DEFAULT_DEFENDING_TEAM
+
+
+class ScenarioDTO(BaseModel):
+    scenario_id: str
+    name: str
+    spec: dict[str, str]  # routine/scheme/team ids (string-valued)
+    scenario_hash: str
+    created_at: str
+
+
+class SimRunCreate(BaseModel):
+    scenario_id: str
+    # Hard upper bound = cost-bomb protection (security checklist doc 02 §9).
+    n_sims: int = Field(default=1000, ge=1, le=2000)
+    root_seed: int = Field(default=0, ge=0, le=2**31 - 1)
+
+
+class SimRunResultDTO(MonteCarloResponse):
+    # Per-sim xG sample for the distribution charts + seeds the Replay picker
+    # re-runs for the worst/median/best trajectories.
+    xg_samples: list[float]
+    replay_seeds: dict[str, int]
+
+
+class SimRunStatusDTO(BaseModel):
+    run_id: str
+    scenario_id: str
+    status: Literal["queued", "running", "complete", "failed"]
+    progress: float
+    n_sims: int
+    root_seed: int
+    engine_version: str
+    created_at: str
+    result: SimRunResultDTO | None = None
+    error: dict[str, str] | None = None

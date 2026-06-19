@@ -140,6 +140,17 @@ module = [
 ]
 ignore_missing_imports = true
 
+# Web/infrastructure adapter libs without strict-friendly stubs (Phase 6). Our
+# own adapter glue stays fully typed; only the third-party boundary is Any.
+[[tool.mypy.overrides]]
+module = [
+    "slowapi.*",
+    "arq.*",
+    "psycopg.*",
+    "redis.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = [
     "packages/simulation-core/tests",
@@ -154,4 +165,6 @@ testpaths = [
 addopts = "-q --strict-markers --import-mode=importlib"
 markers = [
     "integration: cross-package integration tests",
+    "postgres: needs a Postgres server (RESTART_TEST_DATABASE_URL); skipped otherwise",
+    "redis: needs a Redis server (RESTART_TEST_REDIS_URL); skipped otherwise",
 ]

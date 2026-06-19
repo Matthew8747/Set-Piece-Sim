@@ -8,8 +8,17 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.10",
     "pydantic-settings>=2.6",
+    "slowapi>=0.1.9",
+    "duckdb>=1.1",
     "restart-simulation-core",
 ]
+
+# Optional infrastructure adapters. The default install is server-free (file
+# stores + in-process job queue, per ADR-007); these extras enable the Postgres
+# and Arq/Redis drop-in adapters in production deployments.
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2"]
+arq = ["arq>=0.26", "redis>=5.2"]
 
 [tool.uv.sources]
 restart-simulation-core = { workspace = true }

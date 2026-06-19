@@ -17,6 +17,12 @@ dependencies = [
     "pydantic>=2.10",
 ]
 
+# Optional Postgres target for the marts (ADR-007 d1). The default loader is the
+# file-based DuckDB warehouse (server-free CI); this drop-in loads the same marts
+# into Postgres for a server deployment.
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2"]
+
 [project.scripts]
 # `restart-etl <command>` — the entire pipeline is a plain CLI (design doc 04
 # §4: a CLI rebuild beats an orchestrator at this scale).
