@@ -7,8 +7,10 @@ package (Optuna / LightGBM / SHAP) into the request path.
 
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from restart_api.main import create_app
@@ -29,3 +31,62 @@ class TestDTOs:
 
         assert "stale" in OptimizationSummaryDTO.model_fields
         assert "convergence_tpe" in OptimizationDetailDTO.model_fields
+
+
+class TestDerivations:
+    def test_best_so_far_is_cumulative_max(self) -> None:
+        from restart_api.studies.loader import best_so_far
+
+        series = best_so_far([{"value": 0.1}, {"value": 0.3}, {"value": 0.2}, {"value": 0.5}])
+        assert [p.best_so_far for p in series] == [0.1, 0.3, 0.3, 0.5]
+        assert [p.trial for p in series] == [1, 2, 3, 4]
+
+    def test_best_so_far_empty(self) -> None:
+        from restart_api.studies.loader import best_so_far
+
+        assert best_so_far([]) == []
+
+    def test_axes_split_continuous_and_categorical_and_order_by_importance(self) -> None:
+        from restart_api.studies.loader import axes_from
+
+        trials = [
+            {"params": {"speed_ms": 22.0, "delivery_type": "inswinger"}},
+            {"params": {"speed_ms": 25.0, "delivery_type": "floated"}},
+        ]
+        axes = axes_from(trials, {"speed_ms": 0.4, "delivery_type": 0.1})
+        by_name = {a.name: a for a in axes}
+        assert by_name["speed_ms"].kind == "continuous"
+        assert by_name["speed_ms"].domain == [22.0, 25.0]
+        assert by_name["delivery_type"].kind == "categorical"
+        assert set(by_name["delivery_type"].categories or []) == {"inswinger", "floated"}
+        # Most important axis comes first (the wow-view reads left-to-right).
+        assert axes[0].name == "speed_ms"
+
+
+class TestLoader:
+    def test_loader_reads_canonical_study_as_data(self) -> None:
+        from restart_api.studies.loader import StudyLoader
+
+        detail = StudyLoader(REAL_STUDIES).get_detail(CANONICAL)
+        assert detail.id == CANONICAL
+        assert detail.matchup.attacking and detail.matchup.defending
+        # One convergence point per trial, for both samplers.
+        assert len(detail.convergence_tpe) == len(detail.trials)
+        assert len(detail.convergence_random) > 0
+        assert detail.axes and detail.insights
+        assert isinstance(detail.winner.beats_baseline, bool)
+        # Best-so-far is monotone non-decreasing (it is a running max).
+        bsf = [p.best_so_far for p in detail.convergence_tpe]
+        assert all(b >= a for a, b in itertools.pairwise(bsf))
+
+    def test_list_summaries_includes_canonical(self) -> None:
+        from restart_api.studies.loader import StudyLoader
+
+        ids = {s.id for s in StudyLoader(REAL_STUDIES).list_summaries()}
+        assert CANONICAL in ids
+
+    def test_unknown_study_raises_keyerror(self) -> None:
+        from restart_api.studies.loader import StudyLoader
+
+        with pytest.raises(KeyError):
+            StudyLoader(REAL_STUDIES).get_detail("does-not-exist")
