@@ -123,3 +123,34 @@ class TestCornerGenome:
             v[f"r{i}_intent"] = "decoy"
         with pytest.raises(ValueError):
             g.to_scenario(base_scenario(), v)
+
+
+class TestPhase8Realism:
+    """Scenario realism: off-ball zones + a wider attacker template."""
+
+    def test_off_ball_zones_present_and_on_pitch(self) -> None:
+        # Not every runner should attack the 6-yard box; off-ball zones give the
+        # optimizer lurk / recycle / half-space options.
+        for name in ("top_of_box", "left_half_space", "right_half_space", "deep_recycle"):
+            assert name in ZONE_GRID
+            pt = ZONE_GRID[name]  # constructs a valid (on-pitch) PitchPoint
+            assert -52.5 <= pt.x <= 52.5
+
+    def test_corner_template_supports_seven_attackers(self) -> None:
+        g = CornerGenome(n_runners=6)  # kicker + 6 runners = 7 attackers
+        scn = g.to_scenario(base_scenario(), g.defaults())
+        assert len(scn.routine.assignments) == 6
+        assert compile_scenario(scn).n_attackers == 6
+
+    def test_template_cap_is_seven_runners(self) -> None:
+        CornerGenome(n_runners=7)  # at the template ceiling: allowed
+        with pytest.raises(ValueError, match="n_runners"):
+            CornerGenome(n_runners=8)
+
+    def test_off_ball_zone_maps_to_runner_target(self) -> None:
+        g = CornerGenome(n_runners=6)
+        v = {**g.defaults(), "r5_zone": "deep_recycle"}
+        scn = g.to_scenario(base_scenario(), v)
+        recycle = ZONE_GRID["deep_recycle"]
+        last_leg = scn.routine.assignments[5].runs[-1]
+        assert (last_leg.to.x, last_leg.to.y) == (recycle.x, recycle.y)

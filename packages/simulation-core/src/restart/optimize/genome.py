@@ -136,6 +136,13 @@ ZONE_GRID: dict[str, PitchPoint] = {
     "penalty_spot": PitchPoint(x=41.5, y=0.0),
     "goalmouth": PitchPoint(x=50.0, y=0.0),
     "edge": PitchPoint(x=38.0, y=0.0),
+    # Off-ball zones (Phase 8): not every runner contests the 6-yard box — these
+    # let the optimizer place lurkers / recyclers / half-space arrivals for
+    # cut-backs and second balls.
+    "top_of_box": PitchPoint(x=35.0, y=0.0),
+    "left_half_space": PitchPoint(x=41.0, y=-10.0),
+    "right_half_space": PitchPoint(x=41.0, y=10.0),
+    "deep_recycle": PitchPoint(x=32.0, y=0.0),
 }
 ZONE_CHOICES: tuple[str, ...] = tuple(ZONE_GRID)
 
@@ -166,11 +173,31 @@ _DEFAULT_STARTS: tuple[PitchPoint, ...] = (
     PitchPoint(x=36.5, y=5.0),
     PitchPoint(x=42.0, y=-7.0),
     PitchPoint(x=39.0, y=2.0),
+    PitchPoint(x=34.0, y=-2.0),
 )
 
-_DEFAULT_ZONES = ("near_post", "far_post", "goalmouth", "edge", "six_left", "six_right")
-_DEFAULT_INTENTS = ("attack_ball", "attack_ball", "screen", "second_ball", "decoy", "second_ball")
-_DEFAULT_DELAYS = (0.0, 0.2, 0.0, 0.0, 0.1, 0.0)
+# Slots 0-3 contest the box; slots 4-6 default to off-ball roles (lurk / recycle
+# / half-space) so a widened template reads like a real overload, not seven
+# bodies in the six-yard box.
+_DEFAULT_ZONES = (
+    "near_post",
+    "far_post",
+    "goalmouth",
+    "six_right",
+    "top_of_box",
+    "left_half_space",
+    "deep_recycle",
+)
+_DEFAULT_INTENTS = (
+    "attack_ball",
+    "attack_ball",
+    "screen",
+    "attack_ball",
+    "second_ball",
+    "decoy",
+    "second_ball",
+)
+_DEFAULT_DELAYS = (0.0, 0.2, 0.0, 0.1, 0.3, 0.4, 0.5)
 
 
 @dataclass(frozen=True, slots=True)
