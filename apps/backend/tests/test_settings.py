@@ -1,5 +1,7 @@
 """Settings behavior: env-prefix isolation, secure defaults, secret masking."""
 
+from pathlib import Path
+
 import pytest
 
 from restart_api.settings import Settings
@@ -18,6 +20,10 @@ class TestDefaults:
     def test_dev_cors_default_is_localhost_only(self) -> None:
         s = Settings(_env_file=None)
         assert s.cors_origins == ["http://localhost:3000"]
+
+    def test_studies_dir_defaults_to_optimization_studies(self) -> None:
+        # Read-only optimization surface loads study.json from here as DATA.
+        assert Settings(_env_file=None).studies_dir == Path("optimization_studies")
 
 
 class TestEnvBinding:
