@@ -77,7 +77,7 @@ export function ConvergencePlot({
         x2={width - PAD}
         y1={sy(baseline.mean)}
         y2={sy(baseline.mean)}
-        stroke="var(--color-risk)"
+        stroke="var(--color-warn)"
         strokeWidth={1}
         strokeDasharray="4 3"
       />

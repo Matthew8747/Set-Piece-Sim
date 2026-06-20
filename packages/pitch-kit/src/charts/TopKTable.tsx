@@ -67,7 +67,7 @@ export function TopKTable({ rows, baseline, flags }: TopKTableProps) {
       {flags && (flags.boundary.length > 0 || flags.faceValidity.length > 0) ? (
         <tfoot>
           <tr>
-            <td colSpan={4} className="pt-2 text-[var(--color-risk)]" data-chart="topk-flags">
+            <td colSpan={4} className="pt-2 text-[var(--color-warn)]" data-chart="topk-flags">
               {[...flags.boundary, ...flags.faceValidity].join(" · ")}
             </td>
           </tr>
