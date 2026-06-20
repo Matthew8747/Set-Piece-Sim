@@ -6,6 +6,31 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 7: Optimization UI & 3D replay (2026-06-20) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+
+- **Read-only optimization surface:** a `StudyLoader` serves the persisted
+  `optimization_studies/<slug>/study.json` as typed DTOs at `GET /api/v1/optimizations` and `/{id}`
+  — trials, best-so-far convergence, parallel-coords axis metadata, top-k confirm vs baseline, SHAP
+  insights, sensitivity verdict, winner + anti-exploit flags. `restart_opt` (Optuna / LightGBM /
+  SHAP) is never imported into the request path — a guard test enforces the boundary
+  ([ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md), extends ADR-006).
+- **pitch-kit optimization primitives (hand-rolled SVG, React-19):** `ConvergencePlot` (best-so-far
+  TPE vs equal-budget random baseline + winner CI band + library-baseline reference),
+  `ParallelCoordinates` (the search-space "wow" view; mixed continuous/categorical axes ordered by
+  SHAP importance), `TopKTable` (a "beats baseline" marker only on non-overlapping CIs).
+- **`/optimize` + `/optimize/:id`:** study library (a beats-baseline badge only when significant) and
+  the detail page composing the primitives plus a plain-language SHAP insights panel and a
+  sensitivity honesty banner (reports routine *classes* when the ranking flips under ±10%).
+- **Workbench compare mode (`C`):** two scenarios run at the same seed + n_sims are paired by the
+  montecarlo determinism contract (common random numbers); `compareStats` returns the mean paired
+  difference and a 95% CI; a winner is shown **only when the CI excludes zero** (the doc 07 §4 /
+  Simulation-Architecture §5.4 stats policy). Distributions overlay on a shared x-scale.
+- **On-demand 3D replay (R3F):** `Replay3D` consumes the **same** `SimulateResponse` as the 2D player
+  (`ball_path` z → a real flight arc; player tracks on the ground plane); camera presets
+  (broadcast / behind-goal / GK); `prefers-reduced-motion` freezes on contact. Loaded via
+  `next/dynamic` (`ssr:false`) so `@react-three/fiber` + `three` stay in a lazy chunk; 2D remains the
+  default and SVG-only fallback. New deps live in the frontend workspace only.
+
 ### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
 - **API hardening:** RFC 9457 problem-details for the whole surface; tightened input + pitch-coordinate

@@ -12,14 +12,25 @@ exit criteria* and is refreshed each phase. Priorities: 🔴 blocks an upcoming 
 | 🟡 | **Engine models first-contact only** — no multi-touch pass-then-shot sequences (e.g. cross to back post → cut back for a tap-in), which are a real high-xG set-piece pattern (O-3) | Add a post-first-contact pass/lay-off resolution step: an attacker may pass to a better-placed teammate; that teammate's shot is the scored context. Pass success = skill/pressure model | future engine phase (doc 05 future work) |
 | 🟡 | **No sequential decision lookahead** — the ball-winner always shoots; no "shoot now vs pass for higher xG next step (with pass-failure risk)" choice (chess-engine-style shallow search over the plan) | Shallow expectimax/game-tree over the post-contact phase: compare E[xG \| shoot] vs E[pass]·E[xG \| next contact]; pick the higher. Depth-limited, pass-failure-weighted | future engine phase |
 | 🟡 | **Defenders have no plan anticipation / partial observability** — they react to ball + marks, not to likely routine patterns; real defenders anticipate back-post/cut-back threats without full plan knowledge | Add a defender anticipation model: a noisy prior over attacker intents (partial observability) biasing positioning, without exposing the exact routine | future engine phase |
-| 🟡 | **No 3D visualization** — replay is 2D; the ball flight (z) and a static-model 3D view of a one-off / best-found routine would aid analysis | 3D replay (R3F): static player markers + the ball's 3D trajectory for a single sim and the best-found optimized routine | Phase 7 stretch (3D replay) |
 | 🟡 | xG off-manifold risk (G-15): simulated contexts vs real-shot manifold unverified | Population-stability index per feature reported in the model card | Phase 5 |
+| 🟡 | **Corner template is narrow** (O-2) — taker + only 4 runners (`genome.n_runners=4`) vs a full defensive scheme, and no off-ball / non-box attacker roles; on-screen this reads as "too many defenders, too few attackers" and low routine variance | Widen the genome: more attacker slots (7+) with off-ball roles, structured defensive defaults (near-post man, line), wider delivery/run bounds | **Phase 8 (scenario realism — next)** |
+| 🟡 | **Only corners** — free kicks (offside lines, runners from off the ball) are not modeled | New set-piece type + Routine Spec extension (ADR-004) + genome; couples with O-3 off-ball/multi-touch | future engine phase (after Phase 8) |
+| 🟡 | **No evolutionary search** — TPE + random only; no GA/CMA-ES, no family/branch lineage | GA/CMA-ES sampler in `restart_opt` + lineage viz; gated on the 🔴 Numba kernel for budget (doc 09 §11) | future optimizer phase |
 | 🟡 | Physics formulas duplicated in JIT kernel vs `forces.py` | Hold: equivalence test (≤1e-9) polices drift; revisit only if a third copy appears | standing |
 | 🟡 | No import-linter contract | Contract added once `restart.{agents,tactics,engine}` land (module count justifies it) | Phase 2/3 |
 | 🟢 | Single-trajectory simulator ~0.4 s/run | Only if replay sampling in Phase 3 measures as a bottleneck | monitor |
 | 🟢 | Starlette TestClient httpx deprecation warning | Upstream guidance settles | monitor |
 | 🟢 | postcss override pin under Next 16 | Next ships patched postcss in stable | monitor (check on Next upgrades) |
 | 🟢 | No app Dockerfiles | Deployment phase | Phase 8 |
+
+## Closed in Phase 7 (Optimization UI & 3D replay)
+
+- **3D visualization** — `Replay3D` (R3F) renders the ball's real 3D flight (`ball_path` z) plus
+  ground-plane player markers from the same replay JSON, with broadcast / behind-goal / GK camera
+  presets; dynamic-imported so three.js stays out of the default bundle (ADR-008). Was the 🟡 "no 3D
+  visualization" item.
+- The optimizer's outputs are now surfaced read-only (`/optimize`) without `restart_opt` entering the
+  runtime — a guard test enforces the ADR-006 boundary.
 
 ## Closed in Phase 6 (API & Scenario Workbench)
 
