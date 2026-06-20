@@ -8,14 +8,15 @@ from restart.optimize.genome import (
     CategoricalParam,
     ContinuousParam,
     CornerGenome,
+    FreeKickGenome,
     IntParam,
     SearchSpace,
 )
 from restart.players.demo import demo_team
 from restart.players.player import PositionGroup
 from restart.tactics.compile import Scenario, compile_scenario
-from restart.tactics.library import all_corner_routines, all_schemes
-from restart.tactics.routine import DeliveryType, Intent
+from restart.tactics.library import all_corner_routines, all_schemes, direct_free_kick
+from restart.tactics.routine import DeliveryType, Intent, PitchPoint, SetPiece
 
 ATT = demo_team("ENG", "England", 1)
 DEF = demo_team("ARG", "Argentina", 2)
@@ -37,6 +38,27 @@ def base_scenario() -> Scenario:
         kicker_id=kicker,
         role_assignments=roles,
         scheme=all_schemes()[0],
+    )
+
+
+def fk_base_scenario() -> Scenario:
+    """A valid FREE_KICK base (fk_position set) for the free-kick genome."""
+    routine = direct_free_kick()
+    kicker = max(ATT.players, key=lambda p: p.attributes.delivery).player_id
+    outfield = [
+        p.player_id
+        for p in ATT.players
+        if p.position_group is not PositionGroup.GK and p.player_id != kicker
+    ]
+    roles = {a.role: outfield[i] for i, a in enumerate(routine.assignments)}
+    return Scenario(
+        routine=routine,
+        attacking_team=ATT,
+        defending_team=DEF,
+        kicker_id=kicker,
+        role_assignments=roles,
+        scheme=all_schemes()[0],
+        fk_position=PitchPoint(x=35.0, y=-20.0),
     )
 
 
@@ -154,3 +176,29 @@ class TestPhase8Realism:
         recycle = ZONE_GRID["deep_recycle"]
         last_leg = scn.routine.assignments[5].runs[-1]
         assert (last_leg.to.x, last_leg.to.y) == (recycle.x, recycle.y)
+
+
+class TestFreeKickGenome:
+    """Phase 8: a basic free-kick genome over the existing FK engine scaffolding
+    (offside / off-ball runner timing deferred to O-3)."""
+
+    def test_builds_free_kick_scenario(self) -> None:
+        g = FreeKickGenome(n_runners=4)
+        scn = g.to_scenario(fk_base_scenario(), g.defaults())
+        assert scn.routine.set_piece is SetPiece.FREE_KICK
+        assert scn.fk_position is not None
+        assert len(scn.routine.assignments) == 4
+        assert compile_scenario(scn).n_attackers == 4
+
+    def test_requires_fk_position(self) -> None:
+        # A corner base has no fk_position; building a free kick from it must fail.
+        g = FreeKickGenome()
+        with pytest.raises(ValueError):
+            g.to_scenario(base_scenario(), g.defaults())
+
+    def test_delivery_params_applied(self) -> None:
+        g = FreeKickGenome(n_runners=4)
+        v = {**g.defaults(), "delivery_type": "driven", "speed_ms": 27.0}
+        scn = g.to_scenario(fk_base_scenario(), v)
+        assert scn.routine.delivery.type is DeliveryType.DRIVEN
+        assert scn.routine.delivery.speed_ms == 27.0
