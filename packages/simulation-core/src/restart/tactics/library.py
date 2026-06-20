@@ -100,6 +100,39 @@ def man_marking_heavy() -> DefensiveScheme:
     )
 
 
+def near_post_man() -> DefensiveScheme:
+    """Structured near-post scheme: explicit near-post cover + man-marking + line.
+
+    A common real default: post the near post (where inswingers are most
+    dangerous), hold a flat line across the six-yard/penalty area, and man-mark
+    the primary aerial threats. 7 zonal + 3 markers = 10 outfielders.
+
+    Zonal points (7):
+      Near-post anchor:   (50.5, -2.5)  — the headline near-post man
+      Near-post outer:    (50.0, -5.0)
+      Central goal cover:  (50.0,  0.0)
+      Far-post guard:     (50.5,  2.5)
+      Line left:          (46.0, -6.0)
+      Line right:         (46.0,  6.0)
+      Penalty-spot anchor:(42.0,  0.0)
+    """
+    return DefensiveScheme(
+        name="near_post_man",
+        zonal_points=(
+            PitchPoint(x=50.5, y=-2.5),
+            PitchPoint(x=50.0, y=-5.0),
+            PitchPoint(x=50.0, y=0.0),
+            PitchPoint(x=50.5, y=2.5),
+            PitchPoint(x=46.0, y=-6.0),
+            PitchPoint(x=46.0, y=6.0),
+            PitchPoint(x=42.0, y=0.0),
+        ),
+        n_man_markers=3,
+        gk_position=PitchPoint(x=51.5, y=0.0),
+        wall_size=0,
+    )
+
+
 def hybrid() -> DefensiveScheme:
     """Hybrid 5-5 scheme: 5 zonal positions + 5 man-markers.
 
@@ -575,4 +608,5 @@ def all_schemes() -> tuple[DefensiveScheme, ...]:
         zonal_six_two(),
         man_marking_heavy(),
         hybrid(),
+        near_post_man(),
     )
