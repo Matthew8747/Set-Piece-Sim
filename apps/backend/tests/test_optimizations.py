@@ -8,6 +8,7 @@ package (Optuna / LightGBM / SHAP) into the request path.
 from __future__ import annotations
 
 import itertools
+import sys
 from pathlib import Path
 
 import pytest
@@ -90,3 +91,34 @@ class TestLoader:
 
         with pytest.raises(KeyError):
             StudyLoader(REAL_STUDIES).get_detail("does-not-exist")
+
+
+class TestEndpoints:
+    def test_list_optimizations(self) -> None:
+        resp = _client().get("/api/v1/optimizations")
+        assert resp.status_code == 200
+        assert any(s["id"] == CANONICAL for s in resp.json())
+
+    def test_get_optimization_detail(self) -> None:
+        resp = _client().get(f"/api/v1/optimizations/{CANONICAL}")
+        assert resp.status_code == 200
+        detail = resp.json()
+        assert detail["convergence_tpe"] and detail["axes"] and detail["insights"]
+        assert "beats_baseline" in detail["winner"]
+
+    def test_get_optimization_404(self) -> None:
+        resp = _client().get("/api/v1/optimizations/does-not-exist")
+        assert resp.status_code == 404
+
+
+class TestRuntimeBoundary:
+    def test_runtime_never_imports_restart_opt(self) -> None:
+        # Importing the app must not drag the optimizer (Optuna/LightGBM/SHAP)
+        # into the request path — the optimization surface is data-only (ADR-008).
+        for name in [k for k in sys.modules if k.startswith("restart_opt")]:
+            del sys.modules[name]
+        import importlib
+
+        importlib.import_module("restart_api.main")
+        leaked = [k for k in sys.modules if k == "restart_opt" or k.startswith("restart_opt.")]
+        assert leaked == []

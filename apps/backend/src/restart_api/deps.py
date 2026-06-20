@@ -16,8 +16,11 @@ from fastapi import Request
 from restart_api.jobs.queue import JobQueue
 from restart_api.repositories.file import MartTeamRepository
 from restart_api.repositories.ports import ScenarioRepository, SimRunRepository
+from restart_api.settings import get_settings
+from restart_api.studies.loader import StudyLoader
 
 _MARTS_REL = Path("data") / "marts"
+_STUDIES_REL = Path("optimization_studies")
 
 
 @lru_cache
@@ -33,6 +36,26 @@ def default_marts_dir() -> Path:
 @lru_cache
 def team_repository() -> MartTeamRepository:
     return MartTeamRepository(default_marts_dir())
+
+
+@lru_cache
+def _repo_root() -> Path:
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "pyproject.toml").is_file() and (parent / _STUDIES_REL).is_dir():
+            return parent
+    return here.parents[4]
+
+
+def study_loader() -> StudyLoader:
+    """Read-only loader over the committed studies. Honors a configured
+    ``studies_dir`` (tests point it at a fixture dir); a relative default is
+    resolved against the repo root so it is CWD-independent like the marts
+    locator. No ``restart_opt`` import — the optimizer stays out of the runtime."""
+    studies = get_settings().studies_dir
+    if not studies.is_absolute():
+        studies = _repo_root() / studies
+    return StudyLoader(studies)
 
 
 # Per-app stores/queue are built in create_app and read off app.state, so tests
