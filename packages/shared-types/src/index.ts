@@ -43,3 +43,7 @@ export type ScenarioDTO = Schemas["ScenarioDTO"];
 export type SimRunCreate = Schemas["SimRunCreate"];
 export type SimRunResult = Schemas["SimRunResultDTO"];
 export type SimRunStatus = Schemas["SimRunStatusDTO"];
+
+// Optimization studies (read-only surface, Phase 7)
+export type OptimizationSummary = Schemas["OptimizationSummaryDTO"];
+export type OptimizationDetail = Schemas["OptimizationDetailDTO"];
