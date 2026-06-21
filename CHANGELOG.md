@@ -6,6 +6,24 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 9: Evolutionary routine search (2026-06-21) · `ENGINE_VERSION sim/0.5.0` (unchanged)
+
+- **Evolutionary search behind the existing sampler dispatch** — `make_sampler` gains `nsga2` (a
+  genetic algorithm that evolves the *full* mixed genome via selection/crossover/mutation — the
+  "routines develop naturally by simulation" headline) and `cmaes` (an evolution strategy for the
+  continuous genes). Both plug into the unchanged screen→confirm pipeline; population is sized to the
+  budget so real generations occur, and evolutionary screens run pruning-off
+  ([ADR-010](docs/adr/ADR-010-evolutionary-search.md)). Adds the `cmaes` dependency.
+- **Generation lineage** — each trial carries its NSGA-II `generation` index, persisted to
+  `study.json`, so the trial cloud can be read as an evolutionary lineage.
+- **Canonical evolution comparison** — the canonical study runs TPE + random + NSGA-II at equal
+  budget and confirms the best-k routines found by either TPE or evolution under one CRN seed,
+  recording which sampler produced the winner (`winner.sampler`); the `study.json` gains an
+  `evolution` block beside `tpe`/`random`.
+- Single-objective (mean xG); NSGA-II's native multi-objective (xG vs counterattack-risk Pareto) is a
+  documented follow-up. Forward [roadmap](docs/ROADMAP-future-enhancements.md) reordered: evolution is
+  Phase 9, the throughput kernel becomes Phase 10.
+
 ### Changed — Phase 8: Scenario realism (2026-06-21) · `ENGINE_VERSION sim/0.4.0` → **`sim/0.5.0`**
 
 - **Wider corner template (7 attackers, off-ball roles):** `ZONE_GRID` gains off-ball target zones

@@ -2,91 +2,80 @@
 
 > Rewritten at the end of every completed phase.
 
-## Last completed phase: Phase 8 — Scenario realism (engine `sim/0.5.0`)
+## Last completed phase: Phase 9 — Evolutionary routine search (`restart_opt`)
 
-> Phase 7 (Optimization UI & 3D replay) ships in a **parallel** branch / PR #7 off the same `main`;
-> this handoff covers the engine work in `feat/phase8-scenario-realism`.
+> Built on `feat/phase8-scenario-realism` (needs the 7-attacker genome). Phase 7 (optimization UI /
+> 3D replay, PR #7) and Phase 8 (scenario realism, PR #8) are the parallel branches off `main`.
+> `ENGINE_VERSION` unchanged (`sim/0.5.0`) — this is an optimizer-only phase.
 
 ### What shipped
 
-- **Wider corner template — 7 attackers with off-ball roles.** `restart.optimize.genome`: the
-  `ZONE_GRID` gains off-ball target zones (`top_of_box`, `left_half_space`, `right_half_space`,
-  `deep_recycle`) and the runner template grows to 7 slots, so the optimizer can build a realistic
-  overload (box contesters + lurkers/recyclers) instead of four bodies in the six-yard box. The
-  root cause it fixes: `compile_scenario` instantiates only the routine's runners + kicker as
-  attackers, while a `DefensiveScheme` always accounts for 10 outfield + GK = 11 — so the old
-  4-runner default rendered ~5 vs 11. Arity is **fixed per study** (assumption O-2 — no
-  variable-arity search); the canonical study runs 6 runners (7 attackers, a 22-param genome).
-- **Basic free-kick genome.** `FreeKickGenome` builds a `FREE_KICK` routine over the engine's
-  existing FK scaffolding (`fk_position` on the `Scenario`, `wall_size` on the scheme — both already
-  compiled). The corner and free-kick genomes share extracted template builders
-  (`_template_params` / `_build_delivery` / `_build_assignments` / `_role_map`) so they cannot drift.
-  Offside lines + off-ball runner timing are **not** modeled — carried O-3.
-- **Structured defence.** A `near_post_man` `DefensiveScheme` (near-post anchor + flat line + 3
-  man-markers = 10 outfield) joins the library.
-- **`ENGINE_VERSION` `sim/0.4.0` → `sim/0.5.0`** ([ADR-009](../adr/ADR-009-scenario-realism.md)).
-  Placing more attackers changes a routine's simulated context/results, so the engine build id bumps.
-  Determinism is preserved — the same `Scenario` still compiles byte-identical (new 7-attacker + FK
-  determinism tests). The committed canonical `study.json` is **re-baselined** (7-attacker, 22-param
-  genome, `engine_version: sim/0.5.0`).
-- **Ops:** [`scripts/rebaseline_canonical.py`](../../scripts/rebaseline_canonical.py) — an observable,
-  watchdog-bounded wrapper for the long canonical re-run.
-- **Docs:** ADR-009, [`docs/ROADMAP-future-enhancements.md`](../ROADMAP-future-enhancements.md)
-  (the forward roadmap), updated status/debt/assumptions/changelog/methodology, and the README
-  design-decisions table.
+- **Genuine evolutionary search behind the existing sampler dispatch.** `make_sampler`
+  (`restart_opt/study.py`) gains `nsga2` (Optuna `NSGAIISampler` — a **genetic algorithm** that
+  evolves the *full* mixed genome via selection/crossover/mutation, including the categorical
+  zones/intents: the "routines develop naturally, generation by generation" headline) and `cmaes`
+  (Optuna `CmaEsSampler` — an **evolution strategy** for the continuous delivery/timing genes). Both
+  plug into the unchanged screen→confirm→persist pipeline; the only new dependency is `cmaes`
+  (NSGA-II is built into Optuna). ([ADR-010](../adr/ADR-010-evolutionary-search.md), extends ADR-006.)
+- **Population sized to the budget** (`default_population` = `max(4, n_trials // 3)`, ~3 generations
+  at the canonical budget) so real generational pressure occurs; evolutionary screens run **pruning
+  off** (an ES/GA needs full evaluations per generation).
+- **Generation lineage as first-class data.** Each trial carries its NSGA-II `generation` index
+  (read from Optuna `system_attrs`), persisted to `study.json` — so the trial cloud can be read as an
+  evolutionary lineage (the Phase-7 parallel-coordinates / convergence can colour by generation, a
+  frontend follow-up).
+- **Canonical evolution comparison.** `run_canonical` now runs **three** searches at equal budget —
+  TPE, the random baseline, and NSGA-II evolution — and confirms the best-k routines found by
+  **either** TPE or evolution under one common-random-number seed (fair, equal-footing), recording
+  **which sampler** produced the winner (`winner.sampler`). The committed `study.json` gains an
+  `evolution` block + generation lineage beside `tpe`/`random`. The honesty bar is unchanged
+  (evolution must beat random at equal budget or it is theatre).
+- **Single-objective** (mean xG, assumption O-1). NSGA-II's native multi-objective (xG vs
+  counterattack-risk Pareto) is the documented next step.
+- **Docs:** ADR-010, the roadmap reorder (evolution = Phase 9; throughput = Phase 10) + a new UI &
+  features section (lineage / "watch it evolve" view, sampler comparison, Pareto explorer).
 
 ### Validation evidence
 
-All Python gates green (ruff, black, mypy --strict, pytest). Genome: 23 tests (off-ball zones,
-7-attacker + FK builders, byte-determinism). Schemes: `near_post_man` invariant + near-post coverage.
-Engine version bump: the full `simulation-core` suite (441 tests) stays green; the single backend
-assert pinning the version was updated to `sim/0.5.0`. The canonical study was re-baselined with the
-observable wrapper (per-trial Optuna logs + 30 s heartbeat + hard watchdog, 1697 s) and the
-regenerated `study.json` parses to `sim/0.5.0` with a 7-attacker, 22-param genome. The re-baselined
-winner (mean xG ≈ 0.067 vs the library baseline ≈ 0.010, non-overlapping CIs) is **flagged for
-bound-pinning** (`target_x`/`target_y` at search bounds) — the anti-exploit guard firing as designed:
-the discovery is to be **reviewed before any claim**, not read as a literal prescription (and the
-carried 🔴 calibration still caps how literally any xG level should be taken). Sensitivity is
-`routine-precise` (the top routine is stable under ±10% attribute perturbation).
+All Python gates green (ruff, black, mypy --strict, pytest). Optimizer suite covers the new samplers:
+toy-landscape (CMA-ES finds the peak; NSGA-II evolves generations over a *mixed* genome; determinism
+per seed), engine-backed NSGA-II screen (generations recorded, reproducible), generation round-trip
+through persistence, and the canonical smoke (three searches + winner-sampler + lineage). The
+canonical study was re-baselined with the observable watchdog wrapper; the regenerated `study.json`
+carries the `evolution` block (sampler `nsga2`, per-trial generations) beside `tpe`/`random`.
+<!-- RESULT -->
 
 ### Debugging history worth knowing (saves future sessions time)
 
-1. **Never `find /` under MSYS / Git Bash.** A whole-filesystem `find` expanded across mounted
-   Windows drives and hard-locked the terminal pipes during a re-baseline. Scope every search to the
-   project dir; use `git status <path>` + `python -c` JSON checks for integrity, never `find`.
-2. **Long offline runs need a watchdog + heartbeat.** `run_canonical` persists `study.json` only at
-   the very end, so a killed mid-run leaves the committed study untouched (good) but produces nothing.
-   The wrapper logs per-trial progress, a 30 s liveness heartbeat (covers the non-Optuna confirm /
-   sensitivity phases), and a hard wall-clock cap (`os._exit`) so it can't hang indefinitely.
-3. **MSYS path translation.** A `/tmp/...` path passed to a native Python exe via the Bash tool is
-   MSYS-translated to a Windows temp path; a literal `/tmp/...` string *inside* Python is not. Read
-   wrapper output via its real (cygpath-translated) path.
-4. **`CornerGenome` refactor is policed by tests.** The shared template builders are covered by the
-   genome + optimizer suites; any corner/FK drift fails them.
+1. **`CmaEsSampler` needs the optional `cmaes` package** — Optuna raises `ModuleNotFoundError: No
+   module named 'cmaes'` without it. Added to the optimizer package deps. (NSGA-II is built in.)
+2. **NSGA-II's generation key is `NSGAIISampler:generation`** in Optuna 4.x (older docs say
+   `nsga2:generation`). `_generation_of` checks both for version-robustness.
+3. **Population must be sized to the budget.** Optuna's default population (50) at a 24-trial budget
+   yields < 1 generation — no evolution. Size it to `n_trials` (`default_population`).
+4. **Evolutionary samplers + pruning don't mix** — a mid-trial MedianPrune corrupts the generation
+   step; `run_screen` forces pruning off for `cmaes`/`nsga2` regardless of the `prune` flag.
 
-### Open decisions carried forward (NOT touched by Phase 8)
+### Open decisions carried forward (NOT touched by Phase 9)
 
-- **Throughput (🔴, now Phase 9):** the fused Numba scenario kernel — more pressing because 7
-  attackers are ~2.5× slower/sim. The keystone dependency (roadmap §1).
-- **Calibration (🔴):** fit the engine `[knob]`s to real base rates (goal ~5% sim vs 2–3% real) —
-  roadmap §2 (simulation-based inference).
-- **O-3 fidelity:** multi-touch, sequential lookahead, defender anticipation, and full free kicks
-  (offside + off-ball runners) — roadmap §6.
-- **Search/objective:** evolutionary + multi-objective (CVaR / robust) search and lineage viz —
-  roadmap §3–4.
+- **Multi-objective Pareto** (xG vs counterattack risk) — NSGA-II's native strength; needs the
+  objective to emit both metrics (roadmap §4).
+- **Lineage visualization** — colour the parallel-coords by generation, an "evolution" convergence
+  series (roadmap §7); a Phase-7-surface follow-up.
+- **Throughput (🔴, now Phase 10):** the fused Numba kernel — scales evolution (bigger populations /
+  more generations). Evolution works at the scoped budget today; the kernel lifts it (roadmap §1).
+- **Calibration (🔴):** fit the engine `[knob]`s to real base rates (roadmap §2).
 
-## Next phase: Phase 9 — Throughput (fused Numba scenario kernel)
+## Next phase: Phase 10 — Throughput (fused Numba scenario kernel)
 
-Port the engine semantics (RK4 flight + contest resolution) into a `@guvectorize`/`njit(parallel)`
-kernel over the already-flat `SimProgram` SoA arrays; police drift against the reference engine with
-an equivalence test (`≤1e-9`). Target 10⁴–10⁵ sims/s to unlock the full 500/10k reference budget and
-everything downstream (calibration, evolutionary/multi-objective search). See
-[ADR-003](../adr/ADR-003-agent-architecture.md) d8 and [roadmap](../ROADMAP-future-enhancements.md) §1.
+Port the engine semantics into a `@guvectorize`/`njit(parallel)` kernel over the flat `SimProgram`
+SoA arrays; police drift against the reference engine with a `≤1e-9` equivalence test. Target
+10⁴–10⁵ sims/s — which lets evolution run *real* populations over many generations and unlocks the
+full reference budget (calibration, multi-objective). See ADR-003 d8 + roadmap §1.
 
-### Risks for Phase 9
-1. **Physics drift** between the kernel and `forces.py` — contained by the `≤1e-9` equivalence test
-   (the same discipline already used for the JIT physics formulas).
-2. **Determinism under parallelism** — per-sim `SeedSequence`-derived seeds are scenario-independent,
-   so batch order must not affect results; assert byte-identity across batch sizes.
-3. **Scope** — keep it a faithful port (no semantics changes); a behaviour change would bump
-   `ENGINE_VERSION` again and force another re-baseline.
+### Risks for Phase 10
+1. Physics drift between kernel and `forces.py` — contained by the equivalence test.
+2. Determinism under parallelism — per-sim `SeedSequence` seeds are scenario-independent; assert
+   byte-identity across batch sizes.
+3. A behaviour change would bump `ENGINE_VERSION` and force another re-baseline — keep it a faithful
+   port.
