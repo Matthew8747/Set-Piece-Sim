@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/optimizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Optimizations */
+        get: operations["list_optimizations_api_v1_optimizations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/optimizations/{study_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Optimization */
+        get: operations["get_optimization_api_v1_optimizations__study_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/players": {
         parameters: {
             query?: never;
@@ -247,6 +281,48 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AxisDTO
+         * @description One parallel-coordinates axis. Continuous axes carry a numeric domain;
+         *     categorical axes carry their category order so the client can ladder them.
+         */
+        AxisDTO: {
+            /** Categories */
+            categories?: string[] | null;
+            /** Domain */
+            domain?: number[] | null;
+            /** Importance */
+            importance: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "continuous" | "categorical";
+            /** Name */
+            name: string;
+        };
+        /** ConfirmRowDTO */
+        ConfirmRowDTO: {
+            /** Ci Hi */
+            ci_hi: number;
+            /** Ci Lo */
+            ci_lo: number;
+            /** Mean Xg */
+            mean_xg: number;
+            /** N Sims */
+            n_sims: number;
+            /** Params */
+            params: {
+                [key: string]: number | string;
+            };
+        };
+        /** ConvergencePointDTO */
+        ConvergencePointDTO: {
+            /** Best So Far */
+            best_so_far: number;
+            /** Trial */
+            trial: number;
+        };
         /** EventDTO */
         EventDTO: {
             /** Kind */
@@ -271,6 +347,15 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** MatchupDTO */
+        MatchupDTO: {
+            /** Attacking */
+            attacking: string;
+            /** Defending */
+            defending: string;
+            /** Scheme */
+            scheme: string;
         };
         /** MetaResponse */
         MetaResponse: {
@@ -332,6 +417,64 @@ export interface components {
             root_seed: number;
             /** Xg Model */
             xg_model?: string | null;
+        };
+        /** OptimizationDetailDTO */
+        OptimizationDetailDTO: {
+            /** Axes */
+            axes: components["schemas"]["AxisDTO"][];
+            /** Baseline Ci */
+            baseline_ci: number[];
+            /** Baseline Mean Xg */
+            baseline_mean_xg: number;
+            /** Confirm */
+            confirm: components["schemas"]["ConfirmRowDTO"][];
+            /** Convergence Random */
+            convergence_random: components["schemas"]["ConvergencePointDTO"][];
+            /** Convergence Tpe */
+            convergence_tpe: components["schemas"]["ConvergencePointDTO"][];
+            /** Created At */
+            created_at: string;
+            /** Engine Version */
+            engine_version: string;
+            /** Feature Importance */
+            feature_importance: {
+                [key: string]: number;
+            };
+            /** Id */
+            id: string;
+            /** Insights */
+            insights: string[];
+            matchup: components["schemas"]["MatchupDTO"];
+            /** Name */
+            name: string;
+            sensitivity: components["schemas"]["SensitivityDTO"];
+            /** Stale */
+            stale: boolean;
+            /** Trials */
+            trials: components["schemas"]["TrialDTO"][];
+            winner: components["schemas"]["WinnerDTO"];
+        };
+        /** OptimizationSummaryDTO */
+        OptimizationSummaryDTO: {
+            /** Beats Baseline */
+            beats_baseline: boolean;
+            /** Created At */
+            created_at: string;
+            /** Engine Version */
+            engine_version: string;
+            /** Id */
+            id: string;
+            matchup: components["schemas"]["MatchupDTO"];
+            /** N Trials */
+            n_trials: number;
+            /** Name */
+            name: string;
+            /** Stale */
+            stale: boolean;
+            /** Winner Ci */
+            winner_ci: number[];
+            /** Winner Mean Xg */
+            winner_mean_xg: number;
         };
         /** PlayerDTO */
         PlayerDTO: {
@@ -451,6 +594,17 @@ export interface components {
             name: string;
             /** Scheme Id */
             scheme_id: string;
+        };
+        /** SensitivityDTO */
+        SensitivityDTO: {
+            /** Flipped */
+            flipped: string[];
+            /** Rankings Flip */
+            rankings_flip: boolean;
+            /** Top1 Stable */
+            top1_stable: boolean;
+            /** Verdict */
+            verdict: string;
         };
         /** SimRunCreate */
         SimRunCreate: {
@@ -577,6 +731,30 @@ export interface components {
             /** Team Id */
             team_id: string;
         };
+        /** TrialDTO */
+        TrialDTO: {
+            /** Params */
+            params: {
+                [key: string]: number | string;
+            };
+            /** State */
+            state: string;
+            /** Value */
+            value: number;
+        };
+        /** WinnerDTO */
+        WinnerDTO: {
+            /** Beats Baseline */
+            beats_baseline: boolean;
+            /** Boundary Flags */
+            boundary_flags: string[];
+            /** Ci */
+            ci: number[];
+            /** Face Validity Flags */
+            face_validity_flags: string[];
+            /** Mean Xg */
+            mean_xg: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -602,6 +780,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaResponse"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Rate limit exceeded */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_optimizations_api_v1_optimizations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptimizationSummaryDTO"][];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Rate limit exceeded */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_optimization_api_v1_optimizations__study_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptimizationDetailDTO"];
                 };
             };
             /** @description Resource not found */

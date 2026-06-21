@@ -9,19 +9,29 @@ export interface HistogramProps {
   height?: number;
   label?: string;
   color?: string;
+  /** Fixed [min, max] domain. Compare mode passes the shared domain to both
+   *  histograms so a difference is read off one x-scale, not two (the classic
+   *  deception trap — doc 07 §3). Omitted → domain is the sample min/max. */
+  domain?: readonly [number, number];
 }
 
-function binCounts(samples: readonly number[], bins: number): { counts: number[]; max: number } {
+function binCounts(
+  samples: readonly number[],
+  bins: number,
+  domain?: readonly [number, number],
+): { counts: number[]; max: number } {
   const counts = new Array<number>(bins).fill(0);
-  let min = Infinity;
-  let max = -Infinity;
-  for (const v of samples) {
-    if (v < min) min = v;
-    if (v > max) max = v;
+  let min = domain ? domain[0] : Infinity;
+  let max = domain ? domain[1] : -Infinity;
+  if (!domain) {
+    for (const v of samples) {
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
   }
   const span = max - min || 1;
   for (const v of samples) {
-    const idx = Math.min(bins - 1, Math.floor(((v - min) / span) * bins));
+    const idx = Math.max(0, Math.min(bins - 1, Math.floor(((v - min) / span) * bins)));
     counts[idx] = (counts[idx] ?? 0) + 1;
   }
   return { counts, max: Math.max(...counts, 1) };
@@ -34,6 +44,7 @@ export function Histogram({
   height = 120,
   label = "distribution",
   color = "var(--color-signal)",
+  domain,
 }: HistogramProps) {
   if (samples.length === 0) {
     return (
@@ -44,7 +55,7 @@ export function Histogram({
   }
 
   const nBins = bins ?? Math.min(30, Math.max(5, Math.round(Math.sqrt(samples.length))));
-  const { counts, max } = binCounts(samples, nBins);
+  const { counts, max } = binCounts(samples, nBins, domain);
   const bw = width / nBins;
 
   return (

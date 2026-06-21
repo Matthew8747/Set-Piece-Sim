@@ -12,14 +12,16 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 import { BuildPanel } from "./BuildPanel";
+import { ComparePanel } from "./ComparePanel";
 import { ReplayPanel } from "./ReplayPanel";
 import { SimulatePanel } from "./SimulatePanel";
 
-type Mode = "build" | "simulate" | "replay";
+type Mode = "build" | "simulate" | "replay" | "compare";
 const MODES: { mode: Mode; key: string; label: string }[] = [
   { mode: "build", key: "B", label: "Build" },
   { mode: "simulate", key: "S", label: "Simulate" },
   { mode: "replay", key: "R", label: "Replay" },
+  { mode: "compare", key: "C", label: "Compare" },
 ];
 
 export function ScenarioWorkbench({ scenarioId }: { scenarioId: string }) {
@@ -112,6 +114,7 @@ export function ScenarioWorkbench({ scenarioId }: { scenarioId: string }) {
         <SimulatePanel scenarioId={scenarioId} onComplete={(id) => setRunId(id)} />
       )}
       {mode === "replay" && <ReplayPanel runId={runId} />}
+      {mode === "compare" && <ComparePanel scenarioA={scenario} />}
     </div>
   );
 }

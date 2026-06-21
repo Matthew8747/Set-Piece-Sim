@@ -1,6 +1,123 @@
 {
   "components": {
     "schemas": {
+      "AxisDTO": {
+        "description": "One parallel-coordinates axis. Continuous axes carry a numeric domain;\ncategorical axes carry their category order so the client can ladder them.",
+        "properties": {
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "importance": {
+            "title": "Importance",
+            "type": "number"
+          },
+          "kind": {
+            "enum": [
+              "continuous",
+              "categorical"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "importance"
+        ],
+        "title": "AxisDTO",
+        "type": "object"
+      },
+      "ConfirmRowDTO": {
+        "properties": {
+          "ci_hi": {
+            "title": "Ci Hi",
+            "type": "number"
+          },
+          "ci_lo": {
+            "title": "Ci Lo",
+            "type": "number"
+          },
+          "mean_xg": {
+            "title": "Mean Xg",
+            "type": "number"
+          },
+          "n_sims": {
+            "title": "N Sims",
+            "type": "integer"
+          },
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "params",
+          "mean_xg",
+          "ci_lo",
+          "ci_hi",
+          "n_sims"
+        ],
+        "title": "ConfirmRowDTO",
+        "type": "object"
+      },
+      "ConvergencePointDTO": {
+        "properties": {
+          "best_so_far": {
+            "title": "Best So Far",
+            "type": "number"
+          },
+          "trial": {
+            "title": "Trial",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "trial",
+          "best_so_far"
+        ],
+        "title": "ConvergencePointDTO",
+        "type": "object"
+      },
       "EventDTO": {
         "properties": {
           "kind": {
@@ -74,6 +191,29 @@
           "engine_version"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "MatchupDTO": {
+        "properties": {
+          "attacking": {
+            "title": "Attacking",
+            "type": "string"
+          },
+          "defending": {
+            "title": "Defending",
+            "type": "string"
+          },
+          "scheme": {
+            "title": "Scheme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attacking",
+          "defending",
+          "scheme"
+        ],
+        "title": "MatchupDTO",
         "type": "object"
       },
       "MetaResponse": {
@@ -215,6 +355,180 @@
           "n_xg_scored"
         ],
         "title": "MonteCarloResponse",
+        "type": "object"
+      },
+      "OptimizationDetailDTO": {
+        "properties": {
+          "axes": {
+            "items": {
+              "$ref": "#/components/schemas/AxisDTO"
+            },
+            "title": "Axes",
+            "type": "array"
+          },
+          "baseline_ci": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Baseline Ci",
+            "type": "array"
+          },
+          "baseline_mean_xg": {
+            "title": "Baseline Mean Xg",
+            "type": "number"
+          },
+          "confirm": {
+            "items": {
+              "$ref": "#/components/schemas/ConfirmRowDTO"
+            },
+            "title": "Confirm",
+            "type": "array"
+          },
+          "convergence_random": {
+            "items": {
+              "$ref": "#/components/schemas/ConvergencePointDTO"
+            },
+            "title": "Convergence Random",
+            "type": "array"
+          },
+          "convergence_tpe": {
+            "items": {
+              "$ref": "#/components/schemas/ConvergencePointDTO"
+            },
+            "title": "Convergence Tpe",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "feature_importance": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Feature Importance",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "insights": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Insights",
+            "type": "array"
+          },
+          "matchup": {
+            "$ref": "#/components/schemas/MatchupDTO"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sensitivity": {
+            "$ref": "#/components/schemas/SensitivityDTO"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "trials": {
+            "items": {
+              "$ref": "#/components/schemas/TrialDTO"
+            },
+            "title": "Trials",
+            "type": "array"
+          },
+          "winner": {
+            "$ref": "#/components/schemas/WinnerDTO"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "matchup",
+          "engine_version",
+          "created_at",
+          "stale",
+          "convergence_tpe",
+          "convergence_random",
+          "baseline_mean_xg",
+          "baseline_ci",
+          "trials",
+          "axes",
+          "confirm",
+          "feature_importance",
+          "insights",
+          "sensitivity",
+          "winner"
+        ],
+        "title": "OptimizationDetailDTO",
+        "type": "object"
+      },
+      "OptimizationSummaryDTO": {
+        "properties": {
+          "beats_baseline": {
+            "title": "Beats Baseline",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "matchup": {
+            "$ref": "#/components/schemas/MatchupDTO"
+          },
+          "n_trials": {
+            "title": "N Trials",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "winner_ci": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Winner Ci",
+            "type": "array"
+          },
+          "winner_mean_xg": {
+            "title": "Winner Mean Xg",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "matchup",
+          "engine_version",
+          "created_at",
+          "winner_mean_xg",
+          "winner_ci",
+          "beats_baseline",
+          "n_trials",
+          "stale"
+        ],
+        "title": "OptimizationSummaryDTO",
         "type": "object"
       },
       "PlayerDTO": {
@@ -510,6 +824,37 @@
           "name"
         ],
         "title": "SchemeSummary",
+        "type": "object"
+      },
+      "SensitivityDTO": {
+        "properties": {
+          "flipped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flipped",
+            "type": "array"
+          },
+          "rankings_flip": {
+            "title": "Rankings Flip",
+            "type": "boolean"
+          },
+          "top1_stable": {
+            "title": "Top1 Stable",
+            "type": "boolean"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "verdict",
+          "top1_stable",
+          "rankings_flip",
+          "flipped"
+        ],
+        "title": "SensitivityDTO",
         "type": "object"
       },
       "SimRunCreate": {
@@ -849,6 +1194,81 @@
         ],
         "title": "TeamSummaryDTO",
         "type": "object"
+      },
+      "TrialDTO": {
+        "properties": {
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "params",
+          "value",
+          "state"
+        ],
+        "title": "TrialDTO",
+        "type": "object"
+      },
+      "WinnerDTO": {
+        "properties": {
+          "beats_baseline": {
+            "title": "Beats Baseline",
+            "type": "boolean"
+          },
+          "boundary_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Boundary Flags",
+            "type": "array"
+          },
+          "ci": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ci",
+            "type": "array"
+          },
+          "face_validity_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Face Validity Flags",
+            "type": "array"
+          },
+          "mean_xg": {
+            "title": "Mean Xg",
+            "type": "number"
+          }
+        },
+        "required": [
+          "mean_xg",
+          "ci",
+          "beats_baseline",
+          "boundary_flags",
+          "face_validity_flags"
+        ],
+        "title": "WinnerDTO",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -929,6 +1349,153 @@
         "summary": "Meta",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/v1/optimizations": {
+      "get": {
+        "operationId": "list_optimizations_api_v1_optimizations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OptimizationSummaryDTO"
+                  },
+                  "title": "Response List Optimizations Api V1 Optimizations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Request validation failed"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "List Optimizations",
+        "tags": [
+          "optimizations"
+        ]
+      }
+    },
+    "/api/v1/optimizations/{study_id}": {
+      "get": {
+        "operationId": "get_optimization_api_v1_optimizations__study_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimizationDetailDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Request validation failed"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "Get Optimization",
+        "tags": [
+          "optimizations"
         ]
       }
     },
