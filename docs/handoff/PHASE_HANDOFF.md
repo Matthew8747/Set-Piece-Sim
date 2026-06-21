@@ -41,8 +41,13 @@ All Python gates green (ruff, black, mypy --strict, pytest). Genome: 23 tests (o
 7-attacker + FK builders, byte-determinism). Schemes: `near_post_man` invariant + near-post coverage.
 Engine version bump: the full `simulation-core` suite (441 tests) stays green; the single backend
 assert pinning the version was updated to `sim/0.5.0`. The canonical study was re-baselined with the
-observable wrapper (per-trial Optuna logs + 30 s heartbeat + hard watchdog) and the regenerated
-`study.json` parses to `sim/0.5.0` with a 7-attacker, 22-param genome.
+observable wrapper (per-trial Optuna logs + 30 s heartbeat + hard watchdog, 1697 s) and the
+regenerated `study.json` parses to `sim/0.5.0` with a 7-attacker, 22-param genome. The re-baselined
+winner (mean xG ≈ 0.067 vs the library baseline ≈ 0.010, non-overlapping CIs) is **flagged for
+bound-pinning** (`target_x`/`target_y` at search bounds) — the anti-exploit guard firing as designed:
+the discovery is to be **reviewed before any claim**, not read as a literal prescription (and the
+carried 🔴 calibration still caps how literally any xG level should be taken). Sensitivity is
+`routine-precise` (the top routine is stable under ±10% attribute perturbation).
 
 ### Debugging history worth knowing (saves future sessions time)
 
