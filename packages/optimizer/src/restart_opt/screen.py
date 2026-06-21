@@ -120,6 +120,20 @@ def top_k_params(outcome: StudyOutcome, k: int) -> list[dict[str, object]]:
     return seen
 
 
+def confirm_params(
+    base: Scenario,
+    genome: Genome,
+    bundle: XGModelBundle,
+    candidates: Sequence[Mapping[str, object]],
+    n_confirm: int,
+    root_seed: int,
+) -> list[ConfirmResult]:
+    """Confirm an explicit list of candidate genomes under one CRN seed (so the
+    candidates — whatever sampler found them — are compared on equal footing)."""
+    runner = MonteCarloRunner(engine=SetPieceEngine(xg_scorer=bundle))
+    return confirm_candidates(samples_fn(base, genome, runner), candidates, n_confirm, root_seed)
+
+
 def confirm_top_k(
     base: Scenario,
     genome: Genome,
@@ -129,9 +143,7 @@ def confirm_top_k(
     n_confirm: int,
     root_seed: int,
 ) -> list[ConfirmResult]:
-    runner = MonteCarloRunner(engine=SetPieceEngine(xg_scorer=bundle))
-    candidates: Sequence[Mapping[str, object]] = top_k_params(outcome, k)
-    return confirm_candidates(samples_fn(base, genome, runner), candidates, n_confirm, root_seed)
+    return confirm_params(base, genome, bundle, top_k_params(outcome, k), n_confirm, root_seed)
 
 
 def confirm_scenario(
