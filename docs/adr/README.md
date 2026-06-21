@@ -12,3 +12,4 @@ Numbered, immutable once accepted; superseded ADRs are marked, never deleted.
 | [ADR-006](ADR-006-routine-optimizer.md) | System B: the routine optimizer (Optuna over the pure objective) | Accepted (Phase 5) |
 | [ADR-007](ADR-007-api-workbench-and-persistence.md) | API & Scenario Workbench: ports-and-adapters, async jobs, real squads | Accepted (Phase 6) |
 | [ADR-009](ADR-009-scenario-realism.md) | Scenario realism: wider attacker template, basic free kicks, structured defence (`sim/0.5.0`) | Accepted (Phase 8) |
+| [ADR-010](ADR-010-evolutionary-search.md) | Evolutionary routine search (CMA-ES + NSGA-II) over the existing sampler dispatch | Accepted (Phase 9) |
