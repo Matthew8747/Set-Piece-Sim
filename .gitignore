@@ -64,3 +64,7 @@ graphify-out/
 Thumbs.db
 .idea/
 .vscode/
+
+# Phase 8 re-baseline ops artifacts (not committed)
+optimization_studies/_rebaseline_status.log
+.tmp_rebaseline/
