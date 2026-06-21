@@ -7,6 +7,9 @@ dependencies = [
     "numpy>=2.1",
     # Earmarked for Phase 5 in ADR-001: black-box search over the pure objective.
     "optuna>=4.0",
+    # Phase 9: CMA-ES evolution strategy backend for optuna.samplers.CmaEsSampler
+    # (NSGA-II is built into optuna; CMA-ES needs this optional dependency).
+    "cmaes>=0.10",
     # Surrogate + explainability of accumulated trials (doc 06 sec3.3).
     "lightgbm>=4.5",
     "shap>=0.46",

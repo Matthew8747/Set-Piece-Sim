@@ -27,7 +27,14 @@ from restart.optimize.objective import ObjectiveFunction
 # Optuna's per-trial INFO logging is noise in CI/test output.
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-Sampler = str  # "tpe" | "random"
+Sampler = str  # "tpe" | "random" | "cmaes" | "nsga2"
+
+
+#: Evolutionary samplers run a *population* per generation, so the population
+#: must be sized to the trial budget or fewer than one generation occurs (no
+#: actual evolution). This default yields ~3 generations at the canonical budget.
+def default_population(n_trials: int) -> int:
+    return max(4, n_trials // 3)
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +42,8 @@ class TrialRecord:
     params: dict[str, ParamValue]
     value: float | None
     state: str  # COMPLETE | PRUNED | FAIL
+    #: Generation index for population-based samplers (NSGA-II); None otherwise.
+    generation: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,12 +74,32 @@ def suggest(trial: optuna.Trial, space: SearchSpace) -> dict[str, ParamValue]:
     return out
 
 
-def make_sampler(sampler: Sampler, seed: int) -> optuna.samplers.BaseSampler:
+def make_sampler(
+    sampler: Sampler, seed: int, population_size: int | None = None
+) -> optuna.samplers.BaseSampler:
+    """Map a sampler name to a seeded Optuna sampler.
+
+    ``cmaes`` (an evolution strategy, strongest on the continuous genes) and
+    ``nsga2`` (a genetic algorithm that evolves the *full* mixed genome via
+    selection/crossover/mutation) are the evolutionary search options — both plug
+    into the same screen→confirm pipeline as TPE/random (Phase 9, ADR-010)."""
     if sampler == "tpe":
         return optuna.samplers.TPESampler(seed=seed)
     if sampler == "random":
         return optuna.samplers.RandomSampler(seed=seed)
-    raise ValueError(f"unknown sampler {sampler!r} (expected 'tpe' or 'random')")
+    if sampler == "cmaes":
+        return optuna.samplers.CmaEsSampler(seed=seed)
+    if sampler == "nsga2":
+        return optuna.samplers.NSGAIISampler(seed=seed, population_size=population_size or 8)
+    raise ValueError(
+        f"unknown sampler {sampler!r} (expected one of 'tpe', 'random', 'cmaes', 'nsga2')"
+    )
+
+
+def is_evolutionary(sampler: Sampler) -> bool:
+    """Evolutionary samplers need full evaluations to update their population, so
+    the screen runs them with pruning OFF (mid-trial pruning corrupts a generation)."""
+    return sampler in ("cmaes", "nsga2")
 
 
 def run_study(
@@ -79,14 +108,19 @@ def run_study(
     n_trials: int,
     sampler: Sampler = "tpe",
     seed: int = 0,
+    population_size: int | None = None,
 ) -> StudyOutcome:
     """Run one study (no pruning): every trial spends the full per-trial budget.
 
-    This is the fair equal-budget setting for the TPE-vs-random comparison and
-    the engine-free toy-landscape test. The engine-backed, pruning screen lives
-    in :func:`restart_opt.screen.run_screen`.
+    This is the fair equal-budget setting for the sampler comparison and the
+    engine-free toy-landscape test. The engine-backed, pruning screen lives in
+    :func:`restart_opt.screen.run_screen`. For evolutionary samplers the
+    population is sized to the budget so real generations occur.
     """
-    study = optuna.create_study(direction="maximize", sampler=make_sampler(sampler, seed))
+    pop = population_size if population_size is not None else default_population(n_trials)
+    study = optuna.create_study(
+        direction="maximize", sampler=make_sampler(sampler, seed, population_size=pop)
+    )
 
     def _objective(trial: optuna.Trial) -> float:
         params = suggest(trial, space)
@@ -99,12 +133,26 @@ def run_study(
     return build_outcome(study, sampler, n_trials, seed)
 
 
+#: Optuna has used both keys across versions for the NSGA-II generation index.
+_GENERATION_KEYS = ("NSGAIISampler:generation", "nsga2:generation")
+
+
+def _generation_of(trial: optuna.trial.FrozenTrial) -> int | None:
+    """NSGA-II records its generation in system_attrs; other samplers don't."""
+    for key in _GENERATION_KEYS:
+        gen = trial.system_attrs.get(key)
+        if gen is not None:
+            return int(gen)
+    return None
+
+
 def build_outcome(study: optuna.Study, sampler: Sampler, n_trials: int, seed: int) -> StudyOutcome:
     records = [
         TrialRecord(
             params=dict(t.params),
             value=(None if t.value is None else float(t.value)),
             state=t.state.name,
+            generation=_generation_of(t),
         )
         for t in study.trials
     ]
