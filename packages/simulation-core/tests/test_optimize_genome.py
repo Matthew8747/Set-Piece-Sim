@@ -177,6 +177,18 @@ class TestPhase8Realism:
         last_leg = scn.routine.assignments[5].runs[-1]
         assert (last_leg.to.x, last_leg.to.y) == (recycle.x, recycle.y)
 
+    def test_seven_attacker_compile_is_byte_deterministic(self) -> None:
+        # The wider template must keep the SimProgram byte-reproducible (the
+        # determinism contract the Monte Carlo + future Numba kernel rely on).
+        g = CornerGenome(n_runners=6)
+        v = g.defaults()
+        p1 = compile_scenario(g.to_scenario(base_scenario(), v))
+        p2 = compile_scenario(g.to_scenario(base_scenario(), v))
+        assert p1.n_attackers == 6
+        assert p1.att_start.tobytes() == p2.att_start.tobytes()
+        assert p1.att_intent.tobytes() == p2.att_intent.tobytes()
+        assert p1.att_legs_to.tobytes() == p2.att_legs_to.tobytes()
+
 
 class TestFreeKickGenome:
     """Phase 8: a basic free-kick genome over the existing FK engine scaffolding
@@ -202,3 +214,12 @@ class TestFreeKickGenome:
         scn = g.to_scenario(fk_base_scenario(), v)
         assert scn.routine.delivery.type is DeliveryType.DRIVEN
         assert scn.routine.delivery.speed_ms == 27.0
+
+    def test_free_kick_compile_is_byte_deterministic(self) -> None:
+        g = FreeKickGenome(n_runners=4)
+        v = g.defaults()
+        p1 = compile_scenario(g.to_scenario(fk_base_scenario(), v))
+        p2 = compile_scenario(g.to_scenario(fk_base_scenario(), v))
+        assert p1.set_piece == 1  # FREE_KICK code
+        assert p1.kick_pos.tobytes() == p2.kick_pos.tobytes()
+        assert p1.att_start.tobytes() == p2.att_start.tobytes()
