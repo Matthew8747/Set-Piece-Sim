@@ -6,6 +6,26 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Changed — Phase 8: Scenario realism (2026-06-21) · `ENGINE_VERSION sim/0.4.0` → **`sim/0.5.0`**
+
+- **Wider corner template (7 attackers, off-ball roles):** `ZONE_GRID` gains off-ball target zones
+  (`top_of_box`, `left_half_space`, `right_half_space`, `deep_recycle`); the runner template grows to
+  7 slots so the optimizer can build a realistic overload (box contesters + lurkers/recyclers) instead
+  of four bodies in the six-yard box. Arity stays **fixed per study** (O-2 honored — no variable-arity
+  search); the canonical study runs 6 runners (7 attackers). ([ADR-009](docs/adr/ADR-009-scenario-realism.md))
+- **Basic free-kick genome:** `FreeKickGenome` builds a `FREE_KICK` routine over the engine's existing
+  FK scaffolding (preserves the base scenario's `fk_position` + scheme/wall); corner and free-kick
+  genomes share extracted template builders so they cannot drift. Offside lines + off-ball runner
+  timing are explicitly **not** modeled (carried O-3).
+- **Structured defence:** a `near_post_man` `DefensiveScheme` (near-post anchor + flat line + 3
+  man-markers = 10 outfield) joins the library.
+- **`ENGINE_VERSION` bump `sim/0.4.0` → `sim/0.5.0`:** placing more attackers changes a routine's
+  simulated context and therefore its results, so the engine build id bumps (determinism preserved —
+  the same `Scenario` still compiles byte-identical, covered by new 7-attacker + FK determinism tests).
+  The committed canonical `study.json` is re-baselined (now a 7-attacker, 22-param genome).
+- **Ops:** `scripts/rebaseline_canonical.py` — an observable, watchdog-bounded wrapper for the long
+  canonical re-run (per-trial Optuna logging + liveness heartbeat + hard wall-clock cap).
+
 ### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
 - **API hardening:** RFC 9457 problem-details for the whole surface; tightened input + pitch-coordinate
