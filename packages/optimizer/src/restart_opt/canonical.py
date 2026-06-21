@@ -132,7 +132,9 @@ def run_canonical(
     att = att if att is not None else demo_team("ENG", "England", 1)
     deff = deff if deff is not None else demo_team("ARG", "Argentina", 2)
     bundle = bundle if bundle is not None else load_bundle()
-    genome = CornerGenome()
+    # Phase 8: a realistic overload — kicker + 6 runners (box contesters + off-ball
+    # roles) vs the always-11 defence, against the near-post-covering zonal scheme.
+    genome = CornerGenome(n_runners=6)
     base = _scenario_for(near_post_inswinger(), att, deff)
     confirm_seed = cfg.seed + 1000
 
