@@ -4,12 +4,12 @@
 
 | Field | Value |
 |---|---|
-| **Current phase** | Phase 6 complete — API & Scenario Workbench. Next: Phase 7 (optimization UI / 3D replay) |
-| **Completed phases** | Design · P0 foundation · P1 physics (`sim/0.1.0`) · P2 agents & engine (`sim/0.2.0`) · P3 Monte Carlo + MVP (`sim/0.3.0`) · P4 data + xG (`sim/0.4.0`) · P5 optimizer (`restart_opt 0.1.0`) · P6 API & Workbench (`restart_api`, `@restart/pitch-kit`) |
-| **Current branch** | `feat/phase6-api-workbench` (PR open → `main`) |
-| **Latest main commit** | `bede0b9` (origin/main = P3 merge); P4/P5/P6 stacked on the feature branches |
-| **Engine version** | `sim/0.4.0` (unchanged in P6 — the API/UI phase touches no engine physics) |
-| **Test count** | ~530 (Python across core/etl/ml/optimizer/backend + frontend vitest + pitch-kit + Playwright journey) · mypy strict clean · ruff/black/eslint/tsc/prettier clean · OpenAPI drift gate green |
+| **Current phase** | Phase 7 complete — Optimization UI & 3D replay. Next: Phase 8 (scenario realism — wider attacker template, defensive structure, genome variance) |
+| **Completed phases** | Design · P0 foundation · P1 physics (`sim/0.1.0`) · P2 agents & engine (`sim/0.2.0`) · P3 Monte Carlo + MVP (`sim/0.3.0`) · P4 data + xG (`sim/0.4.0`) · P5 optimizer (`restart_opt 0.1.0`) · P6 API & Workbench (`restart_api`, `@restart/pitch-kit`) · P7 Optimization UI & 3D replay |
+| **Current branch** | `feat/phase7-optimization-ui` (PR → `main`) |
+| **Latest main commit** | `dd29ce4` (origin/main = P6 merge); P7 branched off it |
+| **Engine version** | `sim/0.4.0` (unchanged in P7 — the read-API/UI phase touches no engine physics; Phase 8 will bump it) |
+| **Test count** | ~535+ (Python across core/etl/ml/optimizer/backend + frontend vitest 24 + pitch-kit 20 + Playwright journey) · mypy strict clean · ruff/black/eslint/tsc/prettier clean · OpenAPI drift gate green |
 
 ## What works end-to-end now (the Scenario Workbench, real squads)
 
@@ -36,9 +36,15 @@ the new `restart_opt` package. Studies persist to `optimization_studies/` and lo
 
 ## Active / upcoming milestones
 
-- **Phase 7 (next):** optimization UI (study convergence, parallel-coords, top-k vs baseline over
-  `restart_opt` studies) and 3D replay (R3F) consuming the same replay JSON; team-intelligence and
-  report-export surfaces (doc 07 IA).
+- **Phase 8 (next — scenario realism):** widen the corner genome (O-2) — more attacker slots (4→7+)
+  with off-ball / non-box roles, structured defensive defaults (near-post man, line), wider
+  delivery/run variance — to fix the "too many defenders, too few attackers" imbalance and the
+  low-variance replay look. Bumps `ENGINE_VERSION` (first engine change since P4). Later engine
+  phases: free kicks (offside, off-ball runners), evolutionary search (GA + lineage viz, gated on the
+  🔴 kernel).
+- **Phase 7 (done):** optimization UI (convergence, parallel-coords, top-k vs baseline, SHAP
+  insights), workbench CRN compare mode, on-demand 3D replay. Team-intelligence (`/teams`) +
+  report-export deferred to Phase 7.x (doc 07 IA).
 - **Calibration (roadmap week 5 gate, still owed):** engine *upstream* `[knob]`s
   (contest/delivery/traffic) vs real base rates — xG mapping is calibrated, but the simulated
   shot-context *distribution* is not yet validated. Goal rate ~5% sim vs 2–3% real.

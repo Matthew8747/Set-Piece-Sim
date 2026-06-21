@@ -2,78 +2,91 @@
 
 > Rewritten at the end of every completed phase.
 
-## Last completed phase: Phase 6 — API & Scenario Workbench (`restart_api`, `@restart/pitch-kit`)
+## Last completed phase: Phase 7 — Optimization UI & 3D replay (`/optimize`, R3F replay, CRN compare)
 
 ### What shipped
 
-- **API hardening** — RFC 9457 problem-details across the surface; tightened request + pitch-coordinate
-  bounds; per-IP rate limiting (slowapi); `X-API-Key` write gate with bounded demo mode; OpenAPI error
-  schema + security metadata.
-- **Real squads from the marts** — `MartSquadLoader` reads `mart_players` / `mart_player_attributes`
-  and emits a pure `restart.Team` via a fixed deterministic XI rule (assumption **R9**). Demo squads
-  retired from the runtime. `GET /teams`, `GET /players?team=<slug>`.
-- **Persistence ports + async jobs** — `TeamRepository` / `ScenarioRepository` / `SimRunRepository`
-  and a `JobQueue` Protocol, with server-free defaults (SQLite + in-process asyncio worker). Sim runs
-  are idempotent by canonical scenario hash folded with `n_sims` + `seed` + `engine_version`;
-  `POST /sim-runs` (202/200), `GET /sim-runs/{id}` (status/progress/result + `xg_samples`),
-  `GET /sim-runs/{id}/events?sample=worst|median|best`.
-- **shared-types from OpenAPI** — generated from the committed `openapi.json`; `verify.ps1` drift gate.
-- **`@restart/pitch-kit`** — canonical SVG `Pitch`, `ReplayPlayer` (scrubber/keyboard/reduced-motion),
-  hand-rolled SVG charts (`Histogram`/`Ecdf`/`KpiCard`), and the full doc-07 token scale.
-- **Scenario Workbench** — `/scenarios` library + `/scenarios/[id]` Build/Simulate/Replay (B/S/R keys),
-  real-squad pickers, polling progress, distributions + KPI/CI cards, determinism banner, replay
-  sample picker.
-- **Production drop-ins (tested, CI-skipped without a server)** — Postgres mart loader
-  (`restart-etl load-postgres`), Postgres repositories + Arq/Redis queue selected by config,
-  `infra/docker-compose.yml`, real `/readyz` probes.
-- **E2E** — Playwright 3-minute journey at a reduced deterministic budget (`n_sims=24`).
-- Docs: [ADR-007](../adr/ADR-007-api-workbench-and-persistence.md), [API reference](../api/README.md),
-  [frontend README](../../apps/frontend/README.md), [CHANGELOG](../../CHANGELOG.md) Phase-6 entry.
+- **Read-only optimization API** — a `StudyLoader` parses the committed
+  `optimization_studies/<slug>/study.json` into typed DTOs and serves
+  `GET /api/v1/optimizations` (summaries) + `/{id}` (detail: trials, best-so-far convergence,
+  parallel-coords axis metadata, top-k confirm vs baseline, SHAP `feature_importance`, plain-language
+  `insights`, sensitivity verdict, winner + anti-exploit flags). `restart_opt` (Optuna / LightGBM /
+  SHAP) is **never imported** in the request path — a guard test asserts it stays out of `sys.modules`
+  ([ADR-008](../adr/ADR-008-optimization-surface-and-3d-replay.md), extends ADR-006). Studies whose
+  `engine_version` ≠ runtime are flagged `stale`.
+- **pitch-kit optimization primitives** (hand-rolled SVG, React-19, no visx) — `ConvergencePlot`
+  (best-so-far TPE vs equal-budget random + winner CI band + library-baseline ref),
+  `ParallelCoordinates` (the search-space view; `normAxis` ladders mixed continuous/categorical axes,
+  ordered by SHAP importance), `TopKTable` (a beats-baseline marker only on non-overlapping CIs).
+- **`/optimize` + `/optimize/:id`** — study library (beats-baseline badge only when significant) and a
+  detail page composing the primitives + a SHAP insights panel + a sensitivity honesty banner
+  (reports routine *classes* when the ranking flips under ±10% — the canonical study does).
+- **Workbench compare mode (`C`)** — two scenarios run at the same seed + n_sims are paired by the
+  montecarlo determinism contract (CRN); `compareStats` (pure, tested) returns the mean paired
+  difference + 95% CI; a winner shows **only when the CI excludes zero** (doc 07 §4 stats policy);
+  distributions overlay on a shared x-scale (new `Histogram` `domain` prop).
+- **On-demand 3D replay (R3F)** — `Replay3D` consumes the **same** `SimulateResponse` as the 2D player
+  (`ball_path` z → real flight arc; tracks on the ground plane); camera presets
+  (broadcast / behind-goal / GK); `prefers-reduced-motion` freezes on contact. `next/dynamic`
+  (`ssr:false`) keeps `@react-three/fiber` + `three` in a lazy chunk; 2D stays the default + SVG-only
+  fallback. New deps in the **frontend workspace only**.
+- Docs: ADR-008, CHANGELOG Phase-7 entry, this handoff, status/debt registers updated.
   `ENGINE_VERSION` **unchanged** (`sim/0.4.0`).
 
 ### Validation evidence
 
-All `scripts/verify.ps1` gates green (ruff, black, mypy --strict, pytest, next build, eslint, tsc,
-vitest, prettier, OpenAPI/shared-types drift). pitch-kit: 13 vitest tests; frontend: 8 vitest;
-Playwright journey passes locally (build → 24-sim run → distributions → replay). Postgres/Arq adapter
-tests are marked `postgres`/`redis` and skip without `RESTART_TEST_DATABASE_URL` / `RESTART_TEST_REDIS_URL`.
+All `scripts/verify.ps1` gates green (ruff, black, mypy --strict, pytest, next build, eslint, tsc on
+all three workspaces, vitest, prettier, OpenAPI/shared-types drift). pitch-kit: 20 vitest;
+frontend: 24 vitest (incl. `compareStats`, `replay3d-util`, `/optimize` components, compare badge).
+Backend optimization surface: 11 pytest (loader, derivations, endpoints, 404, `restart_opt`-not-imported
+boundary). The full Python suite is unchanged from P6 green — Phase 7 added one backend module
+(`restart_api.studies`) and no engine code.
 
 ### Debugging history worth knowing (saves future sessions time)
 
-1. **DuckDB connections are not thread-safe.** `MartSquadLoader` shared one connection; the in-process
-   job worker (`asyncio.to_thread`) and a concurrent polling request raced on it and corrupted results
-   — a spurious "unknown team". Fix: issue each query on its own `con.cursor()`. Any future
-   threaded/duckdb access must do the same.
-2. **A failed sim run is cached by idempotency key.** During E2E a (pre-fix) failure was stored and
-   every re-run with the same spec+seed returned it. Bust by changing the seed or clearing the store
-   (`.e2e-data`); don't wipe the store mid-run (it drops tables under the live server).
-3. **Tailwind v4 resolves a package `@import`.** `globals.css` imports `@restart/pitch-kit/tokens.css`
-   (an `@theme` block) so utilities + raw vars come from one scale — validated via `next build`.
-4. **Scenario spec is ids-only by design.** The Build planning handles are a local annotation; the
-   engine simulates the *selected routine*. Persisting custom geometry would be a backend change.
-5. **Playwright loads its config as CommonJS** — use `__dirname`, not `import.meta`.
+1. **`winner.ci` in `study.json` is `[mean, lo, hi]`** (not `[lo, hi]`). The convergence band maps the
+   last two; the summary reads index 0 as the headline mean.
+2. **React-compiler ESLint flags impure calls during render.** `useRef(performance.now())` fails
+   "Cannot call impure function during render" — stamp the start time lazily on the first `useFrame`.
+3. **jsdom has no `window.matchMedia`.** `ReplayPanel`'s reduced-motion effect must guard
+   `typeof window.matchMedia !== "function"` or the workbench's replay-mode test throws.
+4. **R3F v9 + three are heavy** — the dynamic import is load-bearing: a static import would put three.js
+   in the default chunk. The build confirms three lands in one lazy chunk only.
+5. **`verify.ps1` via the PS-5.1 tool wrapper trips on native stderr** (`uv sync` writes to stderr →
+   NativeCommandError under `$ErrorActionPreference=Stop`). Run the gate steps individually, or in a
+   real terminal, when the wrapper aborts at step 1.
 
-### Open decisions carried forward (NOT touched by Phase 6)
+### Open decisions carried forward (NOT touched by Phase 7)
 
 - **Engine `[knob]` calibration (🔴)** — simulated shot-context distribution still unvalidated
-  (goal ~5% sim vs 2–3% real); `mart_calibration_targets` holds the real base rates to fit.
-- **Fused Numba scenario kernel (🔴)** — the path to 10⁵–10⁶-sim studies; still deferred.
-- **First-contact-only fidelity (O-3)** — no multi-touch / lookahead / defender anticipation.
-- **E2E in CI** — the journey runs locally; wiring it into CI is gated on provisioning the committed
-  marts in CI (the same precondition the data-dependent pytest suite already has).
+  (goal ~5% sim vs 2–3% real).
+- **Fused Numba scenario kernel (🔴)** — gates 10⁵–10⁶-sim studies; **a hard dependency for any
+  evolutionary search at real budget**.
+- **First-contact-only fidelity (O-3)** — no multi-touch / off-ball / lookahead / defender
+  anticipation.
+- **Team-intelligence (`/teams`)** + report-export — deferred to Phase 7.x.
 
-## Next phase: Phase 7 — Optimization UI & 3D replay (roadmap weeks 11–12)
+## Next phase: Phase 8 — Scenario realism (engine; **bumps ENGINE_VERSION**)
 
-Scope (doc 07 IA): an optimization surface over `restart_opt` studies (convergence with best-so-far
-± CI band, parallel-coordinates of trials, top-k vs baseline, the SHAP "insights" panel); 3D replay
-(R3F, dynamic-imported) consuming the same replay JSON the 2D player already uses; team-intelligence
-(squad aerial/pace profiles, mismatch matrix) and an exportable print-CSS report. Compare mode in the
-workbench (two scenarios, common-random-number difference CI; **no winner badge without significance**)
-is the natural first add.
+The first engine change since P4, driven by review feedback that replays show too many defenders vs
+too few attackers and too little routine variance.
 
-### Risks for Phase 7
-1. R3F bundle weight — load only on demand; keep 2D as the default and the SVG-only fallback.
-2. Optimization studies are heavy/long — surface persisted `study.json` artifacts, don't run searches
-   from the browser.
-3. The carried-forward 🔴 calibration still caps how literally any "winner" should be read — keep
-   reporting routine *classes* until the shot-context distribution is validated.
+Scope (to be brainstormed + ADR'd before coding — this is engine core, not UI):
+
+1. **Widen the corner genome (O-2).** Today: taker + 4 runners (`restart.optimize.genome.n_runners=4`)
+   against a full defensive scheme. Add attacker slots (target 7+) with **off-ball / non-box roles**
+   (not every attacker contests the header); widen delivery + run-timing bounds for real variance.
+2. **Structured defensive defaults.** Schemes (`restart.tactics`) gain a sensible base structure —
+   e.g. a near-post man for most scenarios, a defensive line — instead of purely reactive marking.
+3. **Determinism + calibration discipline.** Bump `ENGINE_VERSION` (`sim/0.5.0`); re-baseline the
+   committed study only after the change is validated; do **not** silently absorb the 🔴 calibration
+   or 🔴 kernel debt — those remain their own phases.
+
+### Risks for Phase 8
+1. Bumping `ENGINE_VERSION` invalidates the committed `study.json` (it will read `stale` in `/optimize`
+   until regenerated) — sequence the regen, and keep the read-only surface tolerant of stale studies
+   (it already is).
+2. More attackers + wider bounds = more sims at ~3 sims/s — throughput pressure makes the 🔴 Numba
+   kernel more urgent; scope budgets honestly (ADR-006) until it lands.
+3. Free kicks (offside, off-ball runners) and evolutionary search (GA + lineage viz) are **separate
+   later phases**, not Phase 8 — keep scope contained to the corner template + defensive structure.
