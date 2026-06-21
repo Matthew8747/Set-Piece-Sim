@@ -136,6 +136,13 @@ ZONE_GRID: dict[str, PitchPoint] = {
     "penalty_spot": PitchPoint(x=41.5, y=0.0),
     "goalmouth": PitchPoint(x=50.0, y=0.0),
     "edge": PitchPoint(x=38.0, y=0.0),
+    # Off-ball zones (Phase 8): not every runner contests the 6-yard box — these
+    # let the optimizer place lurkers / recyclers / half-space arrivals for
+    # cut-backs and second balls.
+    "top_of_box": PitchPoint(x=35.0, y=0.0),
+    "left_half_space": PitchPoint(x=41.0, y=-10.0),
+    "right_half_space": PitchPoint(x=41.0, y=10.0),
+    "deep_recycle": PitchPoint(x=32.0, y=0.0),
 }
 ZONE_CHOICES: tuple[str, ...] = tuple(ZONE_GRID)
 
@@ -166,11 +173,117 @@ _DEFAULT_STARTS: tuple[PitchPoint, ...] = (
     PitchPoint(x=36.5, y=5.0),
     PitchPoint(x=42.0, y=-7.0),
     PitchPoint(x=39.0, y=2.0),
+    PitchPoint(x=34.0, y=-2.0),
 )
 
-_DEFAULT_ZONES = ("near_post", "far_post", "goalmouth", "edge", "six_left", "six_right")
-_DEFAULT_INTENTS = ("attack_ball", "attack_ball", "screen", "second_ball", "decoy", "second_ball")
-_DEFAULT_DELAYS = (0.0, 0.2, 0.0, 0.0, 0.1, 0.0)
+# Slots 0-3 contest the box; slots 4-6 default to off-ball roles (lurk / recycle
+# / half-space) so a widened template reads like a real overload, not seven
+# bodies in the six-yard box.
+_DEFAULT_ZONES = (
+    "near_post",
+    "far_post",
+    "goalmouth",
+    "six_right",
+    "top_of_box",
+    "left_half_space",
+    "deep_recycle",
+)
+_DEFAULT_INTENTS = (
+    "attack_ball",
+    "attack_ball",
+    "screen",
+    "attack_ball",
+    "second_ball",
+    "decoy",
+    "second_ball",
+)
+_DEFAULT_DELAYS = (0.0, 0.2, 0.0, 0.1, 0.3, 0.4, 0.5)
+
+
+# --- Shared template builders (corner + free-kick genomes use the same shape) -
+# A fixed-arity runner template: delivery (target/speed/spin/type) + per-runner
+# (target zone, run-timing delay, intent). Extracted so the corner and free-kick
+# genomes cannot drift apart silently (both are policed by the genome tests).
+
+
+def _template_params(n_runners: int, fixed_lead_attacker: bool) -> tuple[Param, ...]:
+    params: list[Param] = [
+        ContinuousParam("target_x", 40.0, 52.0),
+        ContinuousParam("target_y", -8.0, 8.0),
+        ContinuousParam("speed_ms", 16.0, 32.0),
+        ContinuousParam("spin_rps", 2.0, 12.0),
+        CategoricalParam("delivery_type", DELIVERY_CHOICES),
+    ]
+    for i in range(n_runners):
+        params.append(CategoricalParam(f"r{i}_zone", ZONE_CHOICES))
+        params.append(ContinuousParam(f"r{i}_delay", 0.0, 1.0))
+        if not (fixed_lead_attacker and i == 0):
+            params.append(CategoricalParam(f"r{i}_intent", INTENT_CHOICES))
+    return tuple(params)
+
+
+def _template_defaults(n_runners: int, fixed_lead_attacker: bool) -> dict[str, ParamValue]:
+    d: dict[str, ParamValue] = {
+        "target_x": 49.5,
+        "target_y": -2.5,
+        "speed_ms": 24.0,
+        "spin_rps": 8.0,
+        "delivery_type": "inswinger",
+    }
+    for i in range(n_runners):
+        d[f"r{i}_zone"] = _DEFAULT_ZONES[i]
+        d[f"r{i}_delay"] = _DEFAULT_DELAYS[i]
+        if not (fixed_lead_attacker and i == 0):
+            d[f"r{i}_intent"] = _DEFAULT_INTENTS[i]
+    return d
+
+
+def _build_delivery(v: Mapping[str, ParamValue]) -> Delivery:
+    return Delivery(
+        type=_DELIVERY_MAP[str(v["delivery_type"])],
+        target=PitchPoint(x=float(v["target_x"]), y=float(v["target_y"])),
+        speed_ms=float(v["speed_ms"]),
+        spin_rps=float(v["spin_rps"]),
+    )
+
+
+def _build_assignments(
+    v: Mapping[str, ParamValue], n_runners: int, fixed_lead_attacker: bool
+) -> tuple[Assignment, ...]:
+    assignments: list[Assignment] = []
+    for i in range(n_runners):
+        target = ZONE_GRID[str(v[f"r{i}_zone"])]
+        intent = (
+            Intent.ATTACK_BALL
+            if (fixed_lead_attacker and i == 0)
+            else _INTENT_MAP[str(v[f"r{i}_intent"])]
+        )
+        assignments.append(
+            Assignment(
+                role=f"runner_{i}",
+                start=_DEFAULT_STARTS[i],
+                runs=(
+                    RunLeg(
+                        to=target,
+                        trigger=Trigger.KICK_APPROACH,
+                        delay_s=float(v[f"r{i}_delay"]),
+                    ),
+                ),
+                intent=intent,
+            )
+        )
+    return tuple(assignments)
+
+
+def _role_map(base: Scenario, n_runners: int) -> dict[str, str]:
+    outfield = [
+        p.player_id
+        for p in base.attacking_team.players
+        if p.position_group is not PositionGroup.GK and p.player_id != base.kicker_id
+    ]
+    if len(outfield) < n_runners:
+        raise ValueError(f"attacking_team has {len(outfield)} outfielders < {n_runners}")
+    return {f"runner_{i}": outfield[i] for i in range(n_runners)}
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,6 +294,11 @@ class CornerGenome:
     (target zone, run-timing delay, intent). With ``fixed_lead_attacker`` the
     slot-0 runner's intent is pinned to ATTACK_BALL, which guarantees the CORNER
     non-short feasibility rule and avoids wasting trials on infeasible genomes.
+
+    ``n_runners`` is fixed per study (kicker + n_runners attackers); the template
+    spans box contesters and off-ball roles (lurk / recycle / half-space) so a
+    wider overload reads like a real corner, not bodies stacked in the six-yard
+    box (Phase 8, O-2 widened — arity stays fixed, not searched).
     """
 
     n_runners: int = 4
@@ -192,92 +310,81 @@ class CornerGenome:
 
     @property
     def space(self) -> SearchSpace:
-        params: list[Param] = [
-            ContinuousParam("target_x", 40.0, 52.0),
-            ContinuousParam("target_y", -8.0, 8.0),
-            ContinuousParam("speed_ms", 16.0, 32.0),
-            ContinuousParam("spin_rps", 2.0, 12.0),
-            CategoricalParam("delivery_type", DELIVERY_CHOICES),
-        ]
-        for i in range(self.n_runners):
-            params.append(CategoricalParam(f"r{i}_zone", ZONE_CHOICES))
-            params.append(ContinuousParam(f"r{i}_delay", 0.0, 1.0))
-            if not (self.fixed_lead_attacker and i == 0):
-                params.append(CategoricalParam(f"r{i}_intent", INTENT_CHOICES))
-        return SearchSpace(tuple(params))
+        return SearchSpace(_template_params(self.n_runners, self.fixed_lead_attacker))
 
     def defaults(self) -> dict[str, ParamValue]:
-        d: dict[str, ParamValue] = {
-            "target_x": 49.5,
-            "target_y": -2.5,
-            "speed_ms": 24.0,
-            "spin_rps": 8.0,
-            "delivery_type": "inswinger",
-        }
-        for i in range(self.n_runners):
-            d[f"r{i}_zone"] = _DEFAULT_ZONES[i]
-            d[f"r{i}_delay"] = _DEFAULT_DELAYS[i]
-            if not (self.fixed_lead_attacker and i == 0):
-                d[f"r{i}_intent"] = _DEFAULT_INTENTS[i]
-        return d
+        return _template_defaults(self.n_runners, self.fixed_lead_attacker)
 
     def to_scenario(self, base: Scenario, values: Mapping[str, object]) -> Scenario:
         v = self.space.validate(values)
         missing = set(self.space.names()) - set(v)
         if missing:
             raise ValueError(f"missing genome params: {sorted(missing)}")
-
-        delivery = Delivery(
-            type=_DELIVERY_MAP[str(v["delivery_type"])],
-            target=PitchPoint(x=float(v["target_x"]), y=float(v["target_y"])),
-            speed_ms=float(v["speed_ms"]),
-            spin_rps=float(v["spin_rps"]),
-        )
-        assignments: list[Assignment] = []
-        for i in range(self.n_runners):
-            target = ZONE_GRID[str(v[f"r{i}_zone"])]
-            intent = (
-                Intent.ATTACK_BALL
-                if (self.fixed_lead_attacker and i == 0)
-                else _INTENT_MAP[str(v[f"r{i}_intent"])]
-            )
-            assignments.append(
-                Assignment(
-                    role=f"runner_{i}",
-                    start=_DEFAULT_STARTS[i],
-                    runs=(
-                        RunLeg(
-                            to=target,
-                            trigger=Trigger.KICK_APPROACH,
-                            delay_s=float(v[f"r{i}_delay"]),
-                        ),
-                    ),
-                    intent=intent,
-                )
-            )
         # RoutineSpec validation raises ValueError on an infeasible genome.
         routine = RoutineSpec(
             set_piece=SetPiece.CORNER,
             name="optimized_corner",
-            delivery=delivery,
-            assignments=tuple(assignments),
+            delivery=_build_delivery(v),
+            assignments=_build_assignments(v, self.n_runners, self.fixed_lead_attacker),
         )
-        outfield = [
-            p.player_id
-            for p in base.attacking_team.players
-            if p.position_group is not PositionGroup.GK and p.player_id != base.kicker_id
-        ]
-        if len(outfield) < self.n_runners:
-            raise ValueError(f"attacking_team has {len(outfield)} outfielders < {self.n_runners}")
-        roles = {f"runner_{i}": outfield[i] for i in range(self.n_runners)}
         return Scenario(
             routine=routine,
             attacking_team=base.attacking_team,
             defending_team=base.defending_team,
             kicker_id=base.kicker_id,
-            role_assignments=roles,
+            role_assignments=_role_map(base, self.n_runners),
             scheme=base.scheme,
             corner_side=base.corner_side,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class FreeKickGenome:
+    """A fixed-arity wide free-kick template (delivery into the box + runners).
+
+    Reuses the corner runner template; builds a FREE_KICK routine and preserves
+    the base scenario's ``fk_position`` (the kick origin is study config, not a
+    search dimension) and its scheme (the wall is the defence's concern). Offside
+    lines and runners-from-off-the-ball timing are NOT modeled here — that is the
+    carried O-3 fidelity cut, a later phase.
+    """
+
+    n_runners: int = 4
+    fixed_lead_attacker: bool = True
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.n_runners <= len(_DEFAULT_STARTS):
+            raise ValueError(f"n_runners must be in [1, {len(_DEFAULT_STARTS)}]")
+
+    @property
+    def space(self) -> SearchSpace:
+        return SearchSpace(_template_params(self.n_runners, self.fixed_lead_attacker))
+
+    def defaults(self) -> dict[str, ParamValue]:
+        return _template_defaults(self.n_runners, self.fixed_lead_attacker)
+
+    def to_scenario(self, base: Scenario, values: Mapping[str, object]) -> Scenario:
+        if base.fk_position is None:
+            raise ValueError("FreeKickGenome requires base.fk_position (the kick origin)")
+        v = self.space.validate(values)
+        missing = set(self.space.names()) - set(v)
+        if missing:
+            raise ValueError(f"missing genome params: {sorted(missing)}")
+        routine = RoutineSpec(
+            set_piece=SetPiece.FREE_KICK,
+            name="optimized_free_kick",
+            delivery=_build_delivery(v),
+            assignments=_build_assignments(v, self.n_runners, self.fixed_lead_attacker),
+        )
+        return Scenario(
+            routine=routine,
+            attacking_team=base.attacking_team,
+            defending_team=base.defending_team,
+            kicker_id=base.kicker_id,
+            role_assignments=_role_map(base, self.n_runners),
+            scheme=base.scheme,
+            corner_side=base.corner_side,
+            fk_position=base.fk_position,
         )
 
 

@@ -6,7 +6,13 @@ import pytest
 from pydantic import ValidationError
 
 from restart.domain.pitch import is_on_pitch
-from restart.tactics.library import all_schemes, hybrid, man_marking_heavy, zonal_six_two
+from restart.tactics.library import (
+    all_schemes,
+    hybrid,
+    man_marking_heavy,
+    near_post_man,
+    zonal_six_two,
+)
 from restart.tactics.routine import PitchPoint
 from restart.tactics.scheme import DefensiveScheme
 
@@ -164,9 +170,9 @@ class TestLibrarySchemes:
         s = hybrid()
         assert _scheme_total(s) == 10
 
-    def test_all_schemes_returns_three(self) -> None:
+    def test_all_schemes_returns_all_library_schemes(self) -> None:
         schemes = all_schemes()
-        assert len(schemes) == 3
+        assert len(schemes) == 4  # zonal_six_two, man_marking_heavy, hybrid, near_post_man
 
     def test_all_schemes_all_sum_ten(self) -> None:
         for s in all_schemes():
@@ -234,3 +240,20 @@ class TestLibrarySchemes:
                 n_man_markers=n_markers,
                 wall_size=n_wall,
             )
+
+
+class TestNearPostManScheme:
+    """Phase 8: a structured default with explicit near-post coverage."""
+
+    def test_valid_and_covers_near_post(self) -> None:
+        s = near_post_man()
+        assert _scheme_total(s) == 10  # all 10 outfielders accounted for
+        assert all(is_on_pitch(p.x, p.y) for p in s.zonal_points)
+        # An explicit near-post anchor (goal-side, near-post y < 0).
+        assert any(p.x >= 50.0 and p.y < 0 for p in s.zonal_points)
+        assert s.n_man_markers >= 1  # man-marking component
+        assert s.wall_size == 0  # not a free-kick wall scheme
+
+    def test_in_all_schemes(self) -> None:
+        names = {s.name for s in all_schemes()}
+        assert "near_post_man" in names

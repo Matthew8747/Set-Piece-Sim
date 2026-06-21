@@ -11,4 +11,4 @@ Numbered, immutable once accepted; superseded ADRs are marked, never deleted.
 | [ADR-005](ADR-005-data-platform-and-xg.md) | Data platform & the xG ↔ engine integration | Accepted (Phase 4) |
 | [ADR-006](ADR-006-routine-optimizer.md) | System B: the routine optimizer (Optuna over the pure objective) | Accepted (Phase 5) |
 | [ADR-007](ADR-007-api-workbench-and-persistence.md) | API & Scenario Workbench: ports-and-adapters, async jobs, real squads | Accepted (Phase 6) |
-| [ADR-008](ADR-008-optimization-surface-and-3d-replay.md) | Read-only optimization surface, CRN compare, on-demand 3D replay | Accepted (Phase 7) |
+| [ADR-009](ADR-009-scenario-realism.md) | Scenario realism: wider attacker template, basic free kicks, structured defence (`sim/0.5.0`) | Accepted (Phase 8) |

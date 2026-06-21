@@ -101,7 +101,7 @@ def test_replay_events_sample_picker(tmp_path: Path) -> None:
             assert ev.status_code == 200, sample
             payload = ev.json()
             assert payload["ball_path"] and payload["att_tracks"]
-            assert payload["engine_version"] == "sim/0.4.0"
+            assert payload["engine_version"] == "sim/0.5.0"
 
 
 def test_replay_events_before_complete_is_409(tmp_path: Path) -> None:

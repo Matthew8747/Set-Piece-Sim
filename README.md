@@ -41,18 +41,45 @@ Workbench** on real squads from the marts: Build → Simulate (async runs, polle
 distributions + KPI/CI cards) → Replay (worst/median/best), with a Playwright E2E of the 3-minute
 journey.
 
+✅ **Phase 7** (parallel PR) — the **optimization UI** (`/optimize`: convergence ± CI, the
+parallel-coordinates trial cloud, top-k vs baseline, plain-language SHAP insights), a workbench
+**compare mode** (two scenarios under common random numbers; a winner only when the paired-difference
+CI excludes zero), and **on-demand 3D replay** (React Three Fiber, dynamic-imported) over the same
+replay JSON. ✅ **Phase 8** (`sim/0.5.0`) — **scenario realism**: the corner template now fields up to
+**7 attackers** with off-ball roles (lurkers/recyclers, not seven bodies in the six-yard box), a
+**basic free-kick genome**, and a structured `near_post_man` defence; the canonical study is
+re-baselined. See [ADR-009](docs/adr/ADR-009-scenario-realism.md).
+
 ```bash
 # Run the Scenario Workbench locally:
 uv run uvicorn restart_api.main:app --app-dir apps/backend/src   # API :8000
 npm run dev -w @restart/frontend                                 # web :3000 -> /scenarios
 ```
 
-🏗️ **Next: Phase 7** — optimization UI (study convergence, parallel-coords, top-k vs baseline) and
-3D replay (R3F) over the same replay JSON; team-intelligence and exportable reports.
+🏗️ **Next: Phase 9** — throughput: a fused **Numba scenario kernel** to lift the engine from
+~3 sims/s toward 10⁵–10⁶-sim studies (the keystone dependency). The full forward roadmap —
+calibration via simulation-based inference, evolutionary/multi-objective search, CVaR/robust
+objectives, multi-touch fidelity — is in
+[`docs/ROADMAP-future-enhancements.md`](docs/ROADMAP-future-enhancements.md).
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
 simulation architecture, ML architecture, UI/UX plan, and 12-week roadmap — lives in
 [`docs/`](docs/README.md).
+
+## Key design decisions (and the rationale)
+
+The "why did you build it this way?" answers, each with its canonical source:
+
+| Decision | Rationale (short) | Where it's documented |
+|---|---|---|
+| **Pure-domain core** — `restart` imports no web/DB/ML/IO | The simulator stays a testable, deterministic library; every adapter (API, optimizer driver, ETL) depends inward, never the reverse | [ADR-005](docs/adr/ADR-005-data-platform-and-xg.md), [ADR-006](docs/adr/ADR-006-routine-optimizer.md) |
+| **`ENGINE_VERSION` + determinism** — every persisted result carries the engine build id; same `Scenario` compiles byte-identical | Reproducibility is a product feature; physics/context-affecting changes bump the version (P8: `sim/0.4.0` → `sim/0.5.0`) so stale results are detectable, not silent | [restart/\_\_init\_\_.py](packages/simulation-core/src/restart/__init__.py), [ADR-009](docs/adr/ADR-009-scenario-realism.md) |
+| **7-attacker template, fixed arity per study** | More attackers with off-ball roles makes the searched scenario realistic; arity stays *fixed within a study* so the search space is constant — keeping common-random-number pairing and SHAP attribution valid (variable-arity excluded, assumption O-2) | [ADR-009](docs/adr/ADR-009-scenario-realism.md) §1, [O-2](docs/handoff/ASSUMPTIONS_REGISTER.md) |
+| **`fk_position` on the `Scenario`, not in the genome** | The kick origin is *study configuration*, not a thing to optimize; the genome searches delivery + runner behaviour, the wall is the defence's concern — so the free-kick and corner genomes share one builder and can't drift | [ADR-009](docs/adr/ADR-009-scenario-realism.md) §2, [genome.py](packages/simulation-core/src/restart/optimize/genome.py) |
+| **Optimizer honesty** — mandatory equal-budget random baseline; no "winner" without non-overlapping/zero-excluding CIs | An optimizer that can't beat random search at equal budget is theatre; a "winner" without a significant CI is a deception trap | [doc 09](docs/09-optimization-methodology.md) §4–5 |
+| **Throughput trade-off** — scoped study budgets, fused kernel deferred | The reference engine is ~3 sims/s; rather than block the product on a large kernel port, budgets are scoped + documented, and the kernel is a planned phase (now more pressing post-P8) | [ADR-006](docs/adr/ADR-006-routine-optimizer.md), [roadmap §1](docs/ROADMAP-future-enhancements.md) |
+| **`restart_opt` out of the API runtime** — the optimization UI reads persisted `study.json` as data | Optuna/LightGBM/SHAP never enter a web request; searches are an offline/CLI concern, surfaced read-only (a guard test enforces the boundary) | ADR-006, ADR-008 (P7 branch) |
+| **Hand-rolled SVG charts (not visx)** | visx peers cap at React 18; the app is React 19 — so charts are plain SVG, with R3F the sole exception for 3D | ADR-007 d7 (P7 branch) |
 
 ## The 60-second pitch
 

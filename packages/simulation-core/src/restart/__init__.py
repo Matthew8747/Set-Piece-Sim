@@ -12,7 +12,8 @@ docs/02-system-architecture.md, "Determinism & versioning").
 
 __version__ = "0.4.0"
 
-#: Bumped for Phase 4: the engine can score shots with a real-data xG model
-#: (injected XGScorer) and emits ShotEvent.xg; ShotEvent gained an xg field and
-#: shot outcomes follow a Bernoulli on scored xG when a model is wired (G-14).
-ENGINE_VERSION = "sim/0.4.0"
+#: Bumped for Phase 8 (scenario realism): the corner template now places up to
+#: 7 attackers with off-ball roles and the optimizer can build basic free kicks,
+#: so a given routine's simulated context — and therefore its results — changes.
+#: (Phase 4 set sim/0.4.0: real-data xG scoring via an injected XGScorer, G-14.)
+ENGINE_VERSION = "sim/0.5.0"

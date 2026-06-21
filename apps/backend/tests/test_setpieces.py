@@ -24,7 +24,8 @@ class TestCatalog:
     def test_schemes_listed(self) -> None:
         resp = CLIENT.get("/api/v1/setpieces/schemes")
         assert resp.status_code == 200
-        assert len(resp.json()) == 3
+        # zonal_six_two, man_marking_heavy, hybrid, near_post_man (added in P8).
+        assert len(resp.json()) == 4
 
 
 class TestSimulate:

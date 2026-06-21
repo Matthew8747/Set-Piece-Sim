@@ -6,30 +6,25 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
-### Added — Phase 7: Optimization UI & 3D replay (2026-06-20) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+### Changed — Phase 8: Scenario realism (2026-06-21) · `ENGINE_VERSION sim/0.4.0` → **`sim/0.5.0`**
 
-- **Read-only optimization surface:** a `StudyLoader` serves the persisted
-  `optimization_studies/<slug>/study.json` as typed DTOs at `GET /api/v1/optimizations` and `/{id}`
-  — trials, best-so-far convergence, parallel-coords axis metadata, top-k confirm vs baseline, SHAP
-  insights, sensitivity verdict, winner + anti-exploit flags. `restart_opt` (Optuna / LightGBM /
-  SHAP) is never imported into the request path — a guard test enforces the boundary
-  ([ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md), extends ADR-006).
-- **pitch-kit optimization primitives (hand-rolled SVG, React-19):** `ConvergencePlot` (best-so-far
-  TPE vs equal-budget random baseline + winner CI band + library-baseline reference),
-  `ParallelCoordinates` (the search-space "wow" view; mixed continuous/categorical axes ordered by
-  SHAP importance), `TopKTable` (a "beats baseline" marker only on non-overlapping CIs).
-- **`/optimize` + `/optimize/:id`:** study library (a beats-baseline badge only when significant) and
-  the detail page composing the primitives plus a plain-language SHAP insights panel and a
-  sensitivity honesty banner (reports routine *classes* when the ranking flips under ±10%).
-- **Workbench compare mode (`C`):** two scenarios run at the same seed + n_sims are paired by the
-  montecarlo determinism contract (common random numbers); `compareStats` returns the mean paired
-  difference and a 95% CI; a winner is shown **only when the CI excludes zero** (the doc 07 §4 /
-  Simulation-Architecture §5.4 stats policy). Distributions overlay on a shared x-scale.
-- **On-demand 3D replay (R3F):** `Replay3D` consumes the **same** `SimulateResponse` as the 2D player
-  (`ball_path` z → a real flight arc; player tracks on the ground plane); camera presets
-  (broadcast / behind-goal / GK); `prefers-reduced-motion` freezes on contact. Loaded via
-  `next/dynamic` (`ssr:false`) so `@react-three/fiber` + `three` stay in a lazy chunk; 2D remains the
-  default and SVG-only fallback. New deps live in the frontend workspace only.
+- **Wider corner template (7 attackers, off-ball roles):** `ZONE_GRID` gains off-ball target zones
+  (`top_of_box`, `left_half_space`, `right_half_space`, `deep_recycle`); the runner template grows to
+  7 slots so the optimizer can build a realistic overload (box contesters + lurkers/recyclers) instead
+  of four bodies in the six-yard box. Arity stays **fixed per study** (O-2 honored — no variable-arity
+  search); the canonical study runs 6 runners (7 attackers). ([ADR-009](docs/adr/ADR-009-scenario-realism.md))
+- **Basic free-kick genome:** `FreeKickGenome` builds a `FREE_KICK` routine over the engine's existing
+  FK scaffolding (preserves the base scenario's `fk_position` + scheme/wall); corner and free-kick
+  genomes share extracted template builders so they cannot drift. Offside lines + off-ball runner
+  timing are explicitly **not** modeled (carried O-3).
+- **Structured defence:** a `near_post_man` `DefensiveScheme` (near-post anchor + flat line + 3
+  man-markers = 10 outfield) joins the library.
+- **`ENGINE_VERSION` bump `sim/0.4.0` → `sim/0.5.0`:** placing more attackers changes a routine's
+  simulated context and therefore its results, so the engine build id bumps (determinism preserved —
+  the same `Scenario` still compiles byte-identical, covered by new 7-attacker + FK determinism tests).
+  The committed canonical `study.json` is re-baselined (now a 7-attacker, 22-param genome).
+- **Ops:** `scripts/rebaseline_canonical.py` — an observable, watchdog-bounded wrapper for the long
+  canonical re-run (per-trial Optuna logging + liveness heartbeat + hard wall-clock cap).
 
 ### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
