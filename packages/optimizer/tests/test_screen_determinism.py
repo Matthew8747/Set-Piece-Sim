@@ -54,3 +54,32 @@ def test_confirm_samples_crn_deterministic() -> None:
     s1 = make(v, 8, 5)
     s2 = make(v, 8, 5)
     assert list(s1) == list(s2)
+
+
+def test_nsga2_screen_evolves_generations_engine_backed() -> None:
+    # The genetic algorithm runs through the same engine-backed screen as TPE and
+    # records its generations (Phase 9). Tiny budget keeps it fast.
+    bundle = load_bundle()
+    genome = CornerGenome()
+    base = base_scenario()
+    out = run_screen(
+        base, genome, bundle, n_trials=8, n_screen=4, sampler="nsga2", seed=1, n_chunks=2
+    )
+    assert out.sampler == "nsga2"
+    assert len(out.trials) == 8
+    gens = {t.generation for t in out.trials if t.generation is not None}
+    assert len(gens) >= 2  # multiple generations evolved
+
+
+def test_nsga2_screen_reproducible_same_seed() -> None:
+    bundle = load_bundle()
+    genome = CornerGenome()
+    base = base_scenario()
+    a = run_screen(
+        base, genome, bundle, n_trials=6, n_screen=4, sampler="nsga2", seed=3, n_chunks=2
+    )
+    b = run_screen(
+        base, genome, bundle, n_trials=6, n_screen=4, sampler="nsga2", seed=3, n_chunks=2
+    )
+    assert a.best_params == b.best_params
+    assert a.best_value == b.best_value

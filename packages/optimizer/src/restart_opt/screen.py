@@ -22,7 +22,15 @@ from restart.optimize.confirm import ConfirmResult, confirm_candidates, mean_ci,
 from restart.optimize.genome import Genome
 from restart.simulation.events import ShotEvent
 from restart.tactics.compile import Scenario, compile_scenario
-from restart_opt.study import Sampler, StudyOutcome, build_outcome, make_sampler, suggest
+from restart_opt.study import (
+    Sampler,
+    StudyOutcome,
+    build_outcome,
+    default_population,
+    is_evolutionary,
+    make_sampler,
+    suggest,
+)
 
 
 def _xg_of(result: object) -> float:
@@ -41,17 +49,28 @@ def run_screen(
     seed: int = 0,
     n_chunks: int = 4,
     prune: bool = True,
+    population_size: int | None = None,
 ) -> StudyOutcome:
-    """Optuna screen at ``n_screen`` sims/trial with CRN + optional median pruning."""
+    """Optuna screen at ``n_screen`` sims/trial with CRN + optional median pruning.
+
+    Evolutionary samplers (``cmaes``/``nsga2``) need full evaluations to update
+    their population, so pruning is forced off for them regardless of ``prune``
+    (a mid-trial prune would corrupt a generation). The population is sized to the
+    trial budget so real generations occur.
+    """
     engine = SetPieceEngine(xg_scorer=bundle)
     space = genome.space
     seeds = sim_seeds(seed, n_screen)  # CRN: identical seed stream for every trial
     chunks = [list(c) for c in np.array_split(np.array(seeds), min(n_chunks, n_screen))]
+    use_pruner = prune and not is_evolutionary(sampler)
     pruner: optuna.pruners.BasePruner = (
-        optuna.pruners.MedianPruner(n_warmup_steps=1) if prune else optuna.pruners.NopPruner()
+        optuna.pruners.MedianPruner(n_warmup_steps=1) if use_pruner else optuna.pruners.NopPruner()
     )
+    pop = population_size if population_size is not None else default_population(n_trials)
     study = optuna.create_study(
-        direction="maximize", sampler=make_sampler(sampler, seed), pruner=pruner
+        direction="maximize",
+        sampler=make_sampler(sampler, seed, population_size=pop),
+        pruner=pruner,
     )
 
     def objective(trial: optuna.Trial) -> float:
