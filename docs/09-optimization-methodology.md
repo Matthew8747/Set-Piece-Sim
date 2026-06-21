@@ -52,6 +52,15 @@ points it can exploit. Infeasible combinations (should the lead-attacker pin be 
 rejected by Routine Spec validation — the builder raises, the driver records a pruned trial, the
 optimizer learns the real constraint instead of crashing.
 
+> **Phase 8 (`sim/0.5.0`) widened this template** ([ADR-009](adr/ADR-009-scenario-realism.md)). The
+> corner genome now fields up to **7 attackers** (kicker + 6 runners) and the zone grid gains
+> **off-ball zones** (top-of-box, half-spaces, deep recycle) so not every runner contests the
+> six-yard box — the canonical study runs 6 runners (a 22-dim genome). Arity remains **fixed per
+> study** (no variable-arity search — assumption O-2), which keeps the search space constant so the
+> common-random-number pairing (§4) and the SHAP attribution (§7) stay valid. A parallel
+> `FreeKickGenome` reuses the same template for basic free kicks (offside / off-ball runner timing
+> stay out — carried O-3); `fk_position` is study configuration, not a search dimension.
+
 ## 4. Screen-then-confirm with common random numbers
 
 Cheap noisy evaluations, expensive confirmations (the headline methodological feature, doc 06 §3.2):
