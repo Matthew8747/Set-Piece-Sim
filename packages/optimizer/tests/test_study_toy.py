@@ -7,8 +7,16 @@ and isolates the search algorithm from simulator noise."""
 import math
 from collections.abc import Mapping
 
-from restart.optimize.genome import ContinuousParam, SearchSpace
-from restart_opt.study import run_study
+import optuna
+import pytest
+
+from restart.optimize.genome import CategoricalParam, ContinuousParam, SearchSpace
+from restart_opt.study import (
+    default_population,
+    is_evolutionary,
+    make_sampler,
+    run_study,
+)
 
 SPACE = SearchSpace((ContinuousParam("x", 0.0, 10.0), ContinuousParam("y", 0.0, 10.0)))
 _X0, _Y0 = 7.0, 3.0
@@ -63,6 +71,66 @@ class TestRunStudy:
         assert len(out.trials) == 10
         assert out.sampler == "tpe"
         assert all(t.value is not None for t in out.trials)
+
+
+class TestEvolutionarySamplers:
+    """Phase 9: CMA-ES (evolution strategy) + NSGA-II (genetic algorithm) plug
+    into the same driver as TPE/random and actually evolve toward the optimum."""
+
+    def test_make_sampler_dispatch(self) -> None:
+        assert isinstance(make_sampler("cmaes", 0), optuna.samplers.CmaEsSampler)
+        assert isinstance(make_sampler("nsga2", 0), optuna.samplers.NSGAIISampler)
+        with pytest.raises(ValueError, match="cmaes"):
+            make_sampler("genetic", 0)
+
+    def test_is_evolutionary(self) -> None:
+        assert is_evolutionary("cmaes") and is_evolutionary("nsga2")
+        assert not is_evolutionary("tpe") and not is_evolutionary("random")
+
+    def test_default_population_scales_with_budget(self) -> None:
+        assert default_population(24) == 8  # ~3 generations at the canonical budget
+        assert default_population(3) == 4  # floored so a generation always forms
+
+    def test_cmaes_finds_the_peak(self) -> None:
+        out = run_study(peak6, _SPACE6, n_trials=80, sampler="cmaes", seed=1)
+        assert out.sampler == "cmaes"
+        assert out.best_value > 0.5  # an evolution strategy concentrates on the optimum
+
+    def test_nsga2_evolves_generations(self) -> None:
+        out = run_study(peak, SPACE, n_trials=40, sampler="nsga2", seed=1)
+        assert out.sampler == "nsga2"
+        # Real signal, far better than an arbitrary corner of the space.
+        assert out.best_value > peak({"x": 0.0, "y": 10.0})
+        # The genetic algorithm runs in generations — they are recorded.
+        gens = {t.generation for t in out.trials if t.generation is not None}
+        assert len(gens) >= 2  # at least a couple of generations evolved
+
+    def test_non_generational_samplers_have_no_generation(self) -> None:
+        out = run_study(peak, SPACE, n_trials=10, sampler="tpe", seed=1)
+        assert all(t.generation is None for t in out.trials)
+
+    def test_nsga2_evolves_a_mixed_genome(self) -> None:
+        # The GA must handle the categorical genes (zones/intents), not just floats.
+        space = SearchSpace(
+            (
+                ContinuousParam("x", 0.0, 10.0),
+                CategoricalParam("kind", ("a", "b", "c")),
+            )
+        )
+
+        def mixed(params: Mapping[str, object]) -> float:
+            x = float(params["x"])  # type: ignore[arg-type]
+            bonus = 1.0 if params["kind"] == "b" else 0.0
+            return math.exp(-((x - 7.0) ** 2)) + bonus
+
+        out = run_study(mixed, space, n_trials=40, sampler="nsga2", seed=2)
+        assert out.best_value > 0.5  # found the "b" category + the continuous peak
+
+    def test_nsga2_deterministic_same_seed(self) -> None:
+        a = run_study(peak, SPACE, n_trials=20, sampler="nsga2", seed=5)
+        b = run_study(peak, SPACE, n_trials=20, sampler="nsga2", seed=5)
+        assert a.best_value == b.best_value
+        assert [t.params for t in a.trials] == [t.params for t in b.trials]
 
 
 def test_infeasible_objective_is_pruned_not_crashed() -> None:

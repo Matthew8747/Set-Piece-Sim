@@ -83,10 +83,13 @@ bar). On a smooth, low-dim landscape random search is strong; TPE's edge shows o
   Replace with **ASHA / Hyperband / BOHB** — principled successive halving that allocates budget to
   promising genomes adaptively (the MedianPruner is a weak version of this). Big sample-efficiency win
   given the throughput constraint.
-- **Evolutionary search (the requested "evolve through branches").** **CMA-ES** for the continuous
-  sub-space (delivery + timings); **GA / NSGA-II** for the mixed categorical/continuous genome.
-  Surface the **lineage tree** (parent→child genomes, fitness by generation) as a first-class
-  visualization — the "family of sims, evolve the winners" idea. Gate on §1 throughput.
+- **Evolutionary search (the requested "evolve through branches") — ✅ SHIPPED (Phase 9, ADR-010).**
+  **CMA-ES** (evolution strategy, continuous genes) and **NSGA-II** (genetic algorithm over the full
+  mixed genome) now plug into the same screen→confirm pipeline as TPE/random; the canonical study runs
+  all three at equal budget and confirms the best across samplers. Each trial carries its
+  **generation** index (persisted to `study.json`). *Remaining:* the **lineage visualization** (colour
+  the Phase-7 parallel-coordinates / convergence by generation — "family of sims, evolve the winners")
+  and **bigger populations / more generations**, which are gated on §1 throughput.
 - **Better Bayesian optimization.** Move from TPE to a **GP / BoTorch** surrogate with a mixed-type
   kernel; batch acquisition (qEI / qKG) to exploit parallel workers; warm-start from the library
   routines (priors that already encode football knowledge).
@@ -163,7 +166,28 @@ vocabulary a quant interviewer wants to hear, and they map cleanly onto a real c
 
 ---
 
-## 7. Platform / product
+## 7. UI & features
+
+The headline ("routines develop naturally by simulation") is now real in the data (Phase 9 persists an
+evolutionary trial cloud with per-trial generation indices). The UI should make it *visible*:
+
+- **Lineage / "watch it evolve" view.** Colour the Phase-7 parallel-coordinates by `generation`, with
+  a generation slider/animation so you can literally watch the population's genomes converge toward the
+  high-xG region — the single most compelling demo of the selling point. The data already supports it
+  (the `evolution` block + `generation` field); this is a frontend-only follow-up.
+- **Sampler comparison on the convergence plot.** Add an "evolution" best-so-far series beside TPE and
+  random (the `ConvergencePlot` already takes multiple series), and badge the winner with the sampler
+  that produced it (`winner.sampler`).
+- **Pareto-front explorer** (with the §4 multi-objective work) — an interactive xG↔counterattack-risk
+  frontier; click a point to load that routine into the workbench. Hands a coach the aggression/safety
+  trade-off directly.
+- **Live "evolve this routine" action** in the workbench — kick off a short, bounded evolutionary
+  search from the current scenario and stream generations into the replay/heatmap (needs §1 throughput
+  to feel live).
+- **Anti-exploit honesty in the UI** — the winner is flagged for bound-pinning today only in the data;
+  surface that flag prominently so a pinned "winner" is never read as a literal prescription.
+
+## 8. Platform / data
 
 - **Team-intelligence surface (`/teams`)** — squad aerial/pace profiles + an attacker×defender mismatch
   matrix (deferred from Phase 7.x).
@@ -178,12 +202,19 @@ vocabulary a quant interviewer wants to hear, and they map cleanly onto a real c
 ## Suggested sequencing (dependency-aware)
 
 ```
-Phase 9  Throughput: Numba scenario kernel        (unblocks everything below)
-Phase 10 Calibration: SBI fit of the engine knobs (makes the numbers real)
-Phase 11 Search+objective: ASHA + CMA-ES/NSGA-II + CVaR/DRO + lineage viz
-Phase 12 Fidelity: multi-touch + lookahead + defender anticipation + full FK
-Phase 13 Platform: /teams, report export, CI for data suites
+Phase 9  ✅ Evolutionary search: NSGA-II (GA) + CMA-ES + generation lineage (ADR-010)
+Phase 10 Throughput: Numba scenario kernel        (scales evolution; unblocks the rest)
+Phase 11 Calibration: SBI fit of the engine knobs (makes the numbers real)
+Phase 12 Objective: multi-objective Pareto (xG vs counterattack risk) + CVaR/DRO + lineage viz
+Phase 13 Fidelity: multi-touch + lookahead + defender anticipation + full FK
+Phase 14 Platform: /teams, report export, CI for data suites
 ```
+
+> **Reorder note (Phase 9).** Evolution was brought forward ahead of throughput because it is the
+> product's headline ("routines develop naturally by simulation") *and* it is feasible at the current
+> scoped budget — it does not need the kernel to *work*, only to *scale*. Throughput therefore follows
+> as Phase 10, where it lifts both evolution (bigger populations / more generations) and everything
+> below.
 
 The ordering is deliberate: **throughput first** (it is the multiplier on every search/calibration
 experiment), **calibration second** (so the bigger searches optimize a trustworthy target), then the

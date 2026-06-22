@@ -36,6 +36,19 @@ def test_study_round_trips(tmp_path: Path) -> None:
     assert loaded["confirm"][0]["mean_xg"] == 0.21
 
 
+def test_generation_index_round_trips(tmp_path: Path) -> None:
+    # The NSGA-II lineage (per-trial generation) must survive persistence so the
+    # parallel-coordinates view can colour the trial cloud by generation.
+    outcome = run_study(_peak, SPACE, n_trials=12, sampler="nsga2", seed=1)
+    document = {"name": "evo", "evolution": outcome_to_dict(outcome)}
+    save_study("evo", document, root=tmp_path)
+    loaded = load_study("evo", root=tmp_path)
+    trials = loaded["evolution"]["trials"]
+    assert all("generation" in t for t in trials)
+    gens = {t["generation"] for t in trials if t["generation"] is not None}
+    assert len(gens) >= 2  # generations preserved
+
+
 def test_save_is_stable_sorted_with_trailing_newline(tmp_path: Path) -> None:
     save_study("s", {"b": 2, "a": 1}, root=tmp_path)
     text = (tmp_path / "s" / "study.json").read_text(encoding="utf-8")

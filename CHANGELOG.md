@@ -6,6 +6,24 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 9: Evolutionary routine search (2026-06-21) · `ENGINE_VERSION sim/0.5.0` (unchanged)
+
+- **Evolutionary search behind the existing sampler dispatch** — `make_sampler` gains `nsga2` (a
+  genetic algorithm that evolves the *full* mixed genome via selection/crossover/mutation — the
+  "routines develop naturally by simulation" headline) and `cmaes` (an evolution strategy for the
+  continuous genes). Both plug into the unchanged screen→confirm pipeline; population is sized to the
+  budget so real generations occur, and evolutionary screens run pruning-off
+  ([ADR-010](docs/adr/ADR-010-evolutionary-search.md)). Adds the `cmaes` dependency.
+- **Generation lineage** — each trial carries its NSGA-II `generation` index, persisted to
+  `study.json`, so the trial cloud can be read as an evolutionary lineage.
+- **Canonical evolution comparison** — the canonical study runs TPE + random + NSGA-II at equal
+  budget and confirms the best-k routines found by either TPE or evolution under one CRN seed,
+  recording which sampler produced the winner (`winner.sampler`); the `study.json` gains an
+  `evolution` block beside `tpe`/`random`.
+- Single-objective (mean xG); NSGA-II's native multi-objective (xG vs counterattack-risk Pareto) is a
+  documented follow-up. Forward [roadmap](docs/ROADMAP-future-enhancements.md) reordered: evolution is
+  Phase 9, the throughput kernel becomes Phase 10.
+
 ### Changed — Phase 8: Scenario realism (2026-06-21) · `ENGINE_VERSION sim/0.4.0` → **`sim/0.5.0`**
 
 - **Wider corner template (7 attackers, off-ball roles):** `ZONE_GRID` gains off-ball target zones
@@ -25,6 +43,21 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
   The committed canonical `study.json` is re-baselined (now a 7-attacker, 22-param genome).
 - **Ops:** `scripts/rebaseline_canonical.py` — an observable, watchdog-bounded wrapper for the long
   canonical re-run (per-trial Optuna logging + liveness heartbeat + hard wall-clock cap).
+
+### Added — Phase 7: Optimization UI & 3D replay (2026-06-20) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+
+- **Read-only optimization surface:** `StudyLoader` serves the persisted `study.json` as typed DTOs
+  at `GET /api/v1/optimizations` + `/{id}` (convergence, parallel-coords axis metadata, top-k vs
+  baseline, SHAP insights, sensitivity, winner + flags). `restart_opt` never enters the request path
+  — a guard test enforces the boundary ([ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md)).
+- **pitch-kit optimization primitives** (hand-rolled SVG): `ConvergencePlot`, `ParallelCoordinates`
+  (the search-space view), `TopKTable` (beats-baseline only on non-overlapping CIs).
+- **`/optimize` + `/optimize/:id`** pages with a plain-language SHAP insights panel and a sensitivity
+  honesty banner (reports routine *classes* when the ranking flips).
+- **Workbench compare mode (`C`):** two scenarios paired by the common-random-number determinism
+  contract; `compareStats` paired-difference CI; a winner only when the CI excludes zero.
+- **On-demand 3D replay (R3F):** `Replay3D` over the same `SimulateResponse`; camera presets; loaded
+  via `next/dynamic` so three.js stays in a lazy chunk (2D remains default + SVG fallback).
 
 ### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 

@@ -14,7 +14,7 @@ methodology; pass larger budgets to reproduce it once the kernel lands.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,7 +35,7 @@ from restart.tactics.routine import RoutineSpec
 from restart_opt import OPT_VERSION
 from restart_opt.bundle import load_bundle, xg_engine
 from restart_opt.persist import confirm_to_dict, outcome_to_dict, save_study
-from restart_opt.screen import confirm_scenario, confirm_top_k, run_screen, top_k_params
+from restart_opt.screen import confirm_params, confirm_scenario, run_screen
 from restart_opt.sensitivity import perturb_team, rank_stability
 from restart_opt.surrogate import fit_surrogate
 
@@ -124,9 +124,20 @@ def run_canonical(
     deff: Team | None = None,
     bundle: XGModelBundle | None = None,
     out_root: Path | None = None,
+    on_phase: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    """Run the canonical study and return its persisted document."""
+    """Run the canonical study and return its persisted document.
+
+    ``on_phase`` (optional) is called with a short label at each phase boundary
+    (screens / confirm / sensitivity / save). The long non-Optuna phases (confirm,
+    sensitivity) emit no per-trial logs, so this is what makes a stall there
+    distinguishable from progress — used by the observable re-baseline wrapper.
+    """
     from restart.players.demo import demo_team  # local: demo squads are a P6 stand-in
+
+    def phase(label: str) -> None:
+        if on_phase is not None:
+            on_phase(label)
 
     cfg = config if config is not None else CanonicalConfig()
     att = att if att is not None else demo_team("ENG", "England", 1)
@@ -138,24 +149,54 @@ def run_canonical(
     base = _scenario_for(near_post_inswinger(), att, deff)
     confirm_seed = cfg.seed + 1000
 
+    # Three searches at equal budget: TPE, the mandatory random baseline, and the
+    # evolutionary GA (NSGA-II) — the headline "routines develop by simulation".
+    # Evolutionary samplers run pruning-off (handled inside run_screen).
+    phase("screen: tpe")
     tpe = run_screen(
         base, genome, bundle, cfg.n_trials, cfg.n_screen, "tpe", cfg.seed, prune=cfg.prune
     )
+    phase("screen: random")
     rnd = run_screen(
         base, genome, bundle, cfg.n_trials, cfg.n_screen, "random", cfg.seed, prune=False
     )
+    phase("screen: evolution (nsga2)")
+    evo = run_screen(base, genome, bundle, cfg.n_trials, cfg.n_screen, "nsga2", cfg.seed)
 
-    confirms = confirm_top_k(base, genome, bundle, tpe, cfg.k, cfg.n_confirm, confirm_seed)
+    # Confirm the best-k routines found by EITHER search (TPE or evolution), under
+    # one CRN seed, so the reported winner is the best across samplers on equal
+    # footing -- and we record which sampler produced it.
+    labeled = [("tpe", t) for t in tpe.completed()] + [("nsga2", t) for t in evo.completed()]
+    labeled.sort(key=lambda lt: lt[1].value if lt[1].value is not None else -1.0, reverse=True)
+    top: list[tuple[str, dict[str, object]]] = []
+    for sampler_name, rec in labeled:
+        if any(rec.params == p for _, p in top):
+            continue
+        top.append((sampler_name, dict(rec.params)))
+        if len(top) >= cfg.k:
+            break
+    candidates = [params for _, params in top]
+
+    phase(f"confirm: {len(candidates)} candidates x {cfg.n_confirm} sims")
+    confirms = confirm_params(base, genome, bundle, candidates, cfg.n_confirm, confirm_seed)
+    phase(f"confirm: baseline x {cfg.n_confirm} sims")
     baseline_cr = confirm_scenario(base, bundle, cfg.n_confirm, confirm_seed)
-    winner = max(confirms, key=lambda c: c.mean_xg) if confirms else baseline_cr
+    if confirms:
+        win_i = max(range(len(confirms)), key=lambda i: confirms[i].mean_xg)
+        winner, winner_sampler = confirms[win_i], top[win_i][0]
+    else:
+        winner, winner_sampler = baseline_cr, "baseline"
     beats = beats_baseline(winner.ci, baseline_cr.ci)
 
     bflags = boundary_flags(genome.space, winner.params)
     fflags = face_validity_flags(winner.mean_xg, bflags)
 
-    surrogate = fit_surrogate(genome.space, tpe.trials, seed=cfg.seed)
+    # Surrogate + sensitivity over the full search cloud (TPE + evolution trials).
+    phase("surrogate (lightgbm + shap)")
+    surrogate = fit_surrogate(genome.space, tpe.trials + evo.trials, seed=cfg.seed)
+    phase(f"sensitivity: {len(candidates)} routines x {cfg.sensitivity_sims} sims")
     sensitivity = _sensitivity(
-        att, deff, genome, bundle, top_k_params(tpe, cfg.k), cfg.sensitivity_sims, cfg.seed
+        att, deff, genome, bundle, candidates, cfg.sensitivity_sims, cfg.seed
     )
 
     document: dict[str, Any] = {
@@ -174,6 +215,7 @@ def run_canonical(
         },
         "tpe": outcome_to_dict(tpe),
         "random": outcome_to_dict(rnd),
+        "evolution": outcome_to_dict(evo),
         "confirm": [confirm_to_dict(c) for c in confirms],
         "baseline": confirm_to_dict(baseline_cr),
         "winner": {
@@ -183,10 +225,13 @@ def run_canonical(
             "beats_baseline": beats,
             "boundary_flags": bflags,
             "face_validity_flags": fflags,
+            "sampler": winner_sampler,
         },
         "insights": surrogate.insights,
         "feature_importance": surrogate.feature_importance,
         "sensitivity": sensitivity,
     }
+    phase("saving study.json")
     save_study(_CANONICAL_NAME, document, root=out_root)
+    phase("done")
     return document

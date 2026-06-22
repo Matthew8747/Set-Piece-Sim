@@ -32,7 +32,15 @@ def outcome_to_dict(o: StudyOutcome) -> dict[str, Any]:
         "seed": o.seed,
         "best_params": o.best_params,
         "best_value": o.best_value,
-        "trials": [{"params": t.params, "value": t.value, "state": t.state} for t in o.trials],
+        "trials": [
+            {
+                "params": t.params,
+                "value": t.value,
+                "state": t.state,
+                "generation": t.generation,  # NSGA-II lineage; None for non-generational samplers
+            }
+            for t in o.trials
+        ],
     }
 
 
