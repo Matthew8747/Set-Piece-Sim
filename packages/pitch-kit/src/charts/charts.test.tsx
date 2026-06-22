@@ -19,6 +19,16 @@ test("Histogram teaches an empty state with no samples", () => {
   expect(screen.getByText(/no samples/i)).toBeDefined();
 });
 
+test("Histogram bins against a fixed shared domain (compare mode x-scale)", () => {
+  // Values beyond the domain clamp into the edge bins instead of crashing.
+  const { container } = render(
+    <Histogram samples={[0.05, 0.5, 0.95, 2.0]} bins={4} domain={[0, 1]} />,
+  );
+  const bars = container.querySelectorAll('[data-chart="bar"]');
+  expect(bars.length).toBeGreaterThan(0);
+  expect(bars.length).toBeLessThanOrEqual(4);
+});
+
 test("Ecdf renders a step polyline", () => {
   const { container } = render(<Ecdf samples={samples} />);
   expect(container.querySelector('[data-chart="ecdf"]')).not.toBeNull();

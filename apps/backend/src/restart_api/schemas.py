@@ -147,6 +147,96 @@ class SimulateResponse(BaseModel):
     ball_path: list[list[float]]  # (samples, 3)
 
 
+# --- Read-only optimization surface (Phase 7) ------------------------------
+# Typed view over the persisted study.json artifact. restart_opt is never
+# imported in the request path: these DTOs carry derived, pre-computed data so
+# the OpenAPI/shared-types drift gate covers the whole contract (ADR-008).
+
+
+class MatchupDTO(BaseModel):
+    attacking: str
+    defending: str
+    scheme: str
+
+
+class ConvergencePointDTO(BaseModel):
+    trial: int  # 1-based trial index
+    best_so_far: float  # cumulative-max mean xG through this trial
+
+
+class AxisDTO(BaseModel):
+    """One parallel-coordinates axis. Continuous axes carry a numeric domain;
+    categorical axes carry their category order so the client can ladder them."""
+
+    name: str
+    kind: Literal["continuous", "categorical"]
+    domain: list[float] | None = None  # [min, max] for continuous
+    categories: list[str] | None = None  # order for categorical
+    importance: float  # SHAP importance (0.0 when the surrogate omits it)
+
+
+class TrialDTO(BaseModel):
+    params: dict[str, float | str]
+    value: float
+    state: str
+
+
+class ConfirmRowDTO(BaseModel):
+    params: dict[str, float | str]
+    mean_xg: float
+    ci_lo: float
+    ci_hi: float
+    n_sims: int
+
+
+class WinnerDTO(BaseModel):
+    mean_xg: float
+    ci: list[float]
+    beats_baseline: bool
+    boundary_flags: list[str]
+    face_validity_flags: list[str]
+
+
+class SensitivityDTO(BaseModel):
+    verdict: str
+    top1_stable: bool
+    rankings_flip: bool
+    flipped: list[str]
+
+
+class OptimizationSummaryDTO(BaseModel):
+    id: str
+    name: str
+    matchup: MatchupDTO
+    engine_version: str
+    created_at: str
+    winner_mean_xg: float
+    winner_ci: list[float]
+    beats_baseline: bool
+    n_trials: int
+    stale: bool  # study engine_version != current ENGINE_VERSION
+
+
+class OptimizationDetailDTO(BaseModel):
+    id: str
+    name: str
+    matchup: MatchupDTO
+    engine_version: str
+    created_at: str
+    stale: bool
+    convergence_tpe: list[ConvergencePointDTO]
+    convergence_random: list[ConvergencePointDTO]
+    baseline_mean_xg: float
+    baseline_ci: list[float]
+    trials: list[TrialDTO]
+    axes: list[AxisDTO]
+    confirm: list[ConfirmRowDTO]
+    feature_importance: dict[str, float]
+    insights: list[str]
+    sensitivity: SensitivityDTO
+    winner: WinnerDTO
+
+
 class ProportionCIDTO(BaseModel):
     p: float
     lo: float

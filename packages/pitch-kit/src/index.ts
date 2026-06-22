@@ -11,6 +11,19 @@ export { Histogram, type HistogramProps } from "./charts/Histogram";
 export { Ecdf, type EcdfProps } from "./charts/Ecdf";
 export { KpiCard, type KpiCardProps } from "./charts/KpiCard";
 export {
+  ConvergencePlot,
+  type ConvergencePlotProps,
+  type ConvergencePoint,
+} from "./charts/ConvergencePlot";
+export {
+  ParallelCoordinates,
+  normAxis,
+  type ParallelCoordinatesProps,
+  type PcAxis,
+  type PcTrial,
+} from "./charts/ParallelCoordinates";
+export { TopKTable, type TopKTableProps, type TopKRow } from "./charts/TopKTable";
+export {
   PX_PER_M,
   GOAL_LINE_X,
   VIEW_X_MIN,

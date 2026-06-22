@@ -1,6 +1,8 @@
 import type {
   MonteCarloRequest,
   MonteCarloResponse,
+  OptimizationDetail,
+  OptimizationSummary,
   PlayerDTO,
   ProblemDetail,
   RoutineSummary,
@@ -74,6 +76,11 @@ export const api = {
   getSimRun: (id: string) => get<SimRunStatus>(`/api/v1/sim-runs/${id}`),
   simRunEvents: (id: string, sample: "worst" | "median" | "best" = "median") =>
     get<SimulateResponse>(`/api/v1/sim-runs/${id}/events?sample=${sample}`),
+
+  // Read-only optimization studies (ADR-008): persisted study.json as data.
+  optimizations: () => get<OptimizationSummary[]>("/api/v1/optimizations"),
+  optimization: (id: string) =>
+    get<OptimizationDetail>(`/api/v1/optimizations/${encodeURIComponent(id)}`),
 
   /**
    * Poll a sim run to a terminal state (the single progress seam — polling, not
