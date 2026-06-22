@@ -112,36 +112,764 @@
       "root_seed": 1000
     }
   ],
-  "created_at": "2026-06-21T15:08:20.349009+00:00",
+  "created_at": "2026-06-22T06:43:35.173742+00:00",
   "engine_version": "sim/0.5.0",
+  "evolution": {
+    "best_params": {
+      "delivery_type": "inswinger",
+      "r0_delay": 0.6184802595127479,
+      "r0_zone": "near_post",
+      "r1_delay": 0.24190170420148482,
+      "r1_intent": "decoy",
+      "r1_zone": "far_post",
+      "r2_delay": 0.9854914276432976,
+      "r2_intent": "screen",
+      "r2_zone": "edge",
+      "r3_delay": 0.8717857347554929,
+      "r3_intent": "screen",
+      "r3_zone": "top_of_box",
+      "r4_delay": 0.4050356132969499,
+      "r4_intent": "second_ball",
+      "r4_zone": "far_post",
+      "r5_delay": 0.2716527676061459,
+      "r5_intent": "second_ball",
+      "r5_zone": "goalmouth",
+      "speed_ms": 17.593838883540343,
+      "spin_rps": 9.505950229289875,
+      "target_x": 42.09590062474007,
+      "target_y": -2.7521919854707253
+    },
+    "best_value": 0.04974002327340914,
+    "n_trials": 24,
+    "sampler": "nsga2",
+    "seed": 0,
+    "trials": [
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "floated",
+          "r0_delay": 0.8700121482468192,
+          "r0_zone": "near_post",
+          "r1_delay": 0.7742336894342167,
+          "r1_intent": "second_ball",
+          "r1_zone": "near_post",
+          "r2_delay": 0.1289262976548533,
+          "r2_intent": "screen",
+          "r2_zone": "six_left",
+          "r3_delay": 0.1381829513486138,
+          "r3_intent": "screen",
+          "r3_zone": "near_post",
+          "r4_delay": 0.11872771895424405,
+          "r4_intent": "second_ball",
+          "r4_zone": "penalty_spot",
+          "r5_delay": 0.18319136200711683,
+          "r5_intent": "screen",
+          "r5_zone": "goalmouth",
+          "speed_ms": 25.644214017146304,
+          "spin_rps": 7.448831829968968,
+          "target_x": 46.5857620471279,
+          "target_y": 3.4430298619587116
+        },
+        "state": "COMPLETE",
+        "value": 0.009781758783710709
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "driven",
+          "r0_delay": 0.6925315900777659,
+          "r0_zone": "far_post",
+          "r1_delay": 0.42876870094576613,
+          "r1_intent": "second_ball",
+          "r1_zone": "six_left",
+          "r2_delay": 0.9194826137446735,
+          "r2_intent": "decoy",
+          "r2_zone": "penalty_spot",
+          "r3_delay": 0.8663823259286292,
+          "r3_intent": "attack_ball",
+          "r3_zone": "six_right",
+          "r4_delay": 0.03183892953130785,
+          "r4_intent": "decoy",
+          "r4_zone": "right_half_space",
+          "r5_delay": 0.4904588086175671,
+          "r5_intent": "second_ball",
+          "r5_zone": "right_half_space",
+          "speed_ms": 27.763104353961516,
+          "spin_rps": 11.621885451174382,
+          "target_x": 48.13379844155476,
+          "target_y": -3.6798724289253624
+        },
+        "state": "COMPLETE",
+        "value": 0.0
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "driven",
+          "r0_delay": 0.8310484552361904,
+          "r0_zone": "six_left",
+          "r1_delay": 0.21331197736748198,
+          "r1_intent": "attack_ball",
+          "r1_zone": "goalmouth",
+          "r2_delay": 0.18327983621407862,
+          "r2_intent": "second_ball",
+          "r2_zone": "penalty_spot",
+          "r3_delay": 0.9295293167921905,
+          "r3_intent": "decoy",
+          "r3_zone": "edge",
+          "r4_delay": 0.874287966624947,
+          "r4_intent": "decoy",
+          "r4_zone": "six_left",
+          "r5_delay": 0.22431702897473926,
+          "r5_intent": "screen",
+          "r5_zone": "six_left",
+          "speed_ms": 22.044029428679693,
+          "spin_rps": 3.796036775596348,
+          "target_x": 43.74155058392923,
+          "target_y": 3.141495821047352
+        },
+        "state": "COMPLETE",
+        "value": 0.00616913473065727
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.7270442627113283,
+          "r0_zone": "deep_recycle",
+          "r1_delay": 0.7885455123065187,
+          "r1_intent": "screen",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.3068100995451961,
+          "r2_intent": "decoy",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.4569114216457658,
+          "r3_intent": "attack_ball",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.5909841653236849,
+          "r4_intent": "screen",
+          "r4_zone": "right_half_space",
+          "r5_delay": 0.9589827218634736,
+          "r5_intent": "decoy",
+          "r5_zone": "far_post",
+          "speed_ms": 21.33032243245827,
+          "spin_rps": 2.811013899879968,
+          "target_x": 50.87866599065415,
+          "target_y": 4.384757323178221
+        },
+        "state": "COMPLETE",
+        "value": 0.0
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.6184802595127479,
+          "r0_zone": "near_post",
+          "r1_delay": 0.662504571532676,
+          "r1_intent": "decoy",
+          "r1_zone": "far_post",
+          "r2_delay": 0.9854914276432976,
+          "r2_intent": "second_ball",
+          "r2_zone": "edge",
+          "r3_delay": 0.7487882575401331,
+          "r3_intent": "screen",
+          "r3_zone": "six_left",
+          "r4_delay": 0.45182168266975964,
+          "r4_intent": "second_ball",
+          "r4_zone": "deep_recycle",
+          "r5_delay": 0.2716527676061459,
+          "r5_intent": "second_ball",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 17.593838883540343,
+          "spin_rps": 11.453015334790795,
+          "target_x": 44.8151140096433,
+          "target_y": 6.868662676843423
+        },
+        "state": "COMPLETE",
+        "value": 0.002865064708287285
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.8792347630313271,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.3426109843415903,
+          "r1_intent": "attack_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.8136786497018634,
+          "r2_intent": "screen",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.8717857347554929,
+          "r3_intent": "second_ball",
+          "r3_zone": "deep_recycle",
+          "r4_delay": 0.9078755943543261,
+          "r4_intent": "decoy",
+          "r4_zone": "far_post",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 24.399527076068228,
+          "spin_rps": 9.505950229289875,
+          "target_x": 43.72456991175774,
+          "target_y": -2.0314421779080405
+        },
+        "state": "COMPLETE",
+        "value": 0.014495578336439757
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.9992779939221711,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "second_ball",
+          "r1_zone": "penalty_spot",
+          "r2_delay": 0.6567619584408371,
+          "r2_intent": "attack_ball",
+          "r2_zone": "edge",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "screen",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.4050356132969499,
+          "r4_intent": "second_ball",
+          "r4_zone": "edge",
+          "r5_delay": 0.3650998770600098,
+          "r5_intent": "second_ball",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 26.885578656240025,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 42.09590062474007,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.023736204261467206
+      },
+      {
+        "generation": 0,
+        "params": {
+          "delivery_type": "driven",
+          "r0_delay": 0.7814796002346613,
+          "r0_zone": "far_post",
+          "r1_delay": 0.37638915519435123,
+          "r1_intent": "second_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.7196201578422882,
+          "r2_intent": "attack_ball",
+          "r2_zone": "goalmouth",
+          "r3_delay": 0.3361022663998874,
+          "r3_intent": "screen",
+          "r3_zone": "near_post",
+          "r4_delay": 0.8442349615530241,
+          "r4_intent": "screen",
+          "r4_zone": "near_post",
+          "r5_delay": 0.9325612038573404,
+          "r5_intent": "second_ball",
+          "r5_zone": "deep_recycle",
+          "speed_ms": 17.288512055549504,
+          "spin_rps": 2.853109231187034,
+          "target_x": 44.47859146893753,
+          "target_y": -4.434178911760316
+        },
+        "state": "COMPLETE",
+        "value": 0.0
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.9992779939221711,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "decoy",
+          "r1_zone": "penalty_spot",
+          "r2_delay": 0.9854914276432976,
+          "r2_intent": "second_ball",
+          "r2_zone": "edge",
+          "r3_delay": 0.7487882575401331,
+          "r3_intent": "screen",
+          "r3_zone": "six_left",
+          "r4_delay": 0.45182168266975964,
+          "r4_intent": "second_ball",
+          "r4_zone": "edge",
+          "r5_delay": 0.2716527676061459,
+          "r5_intent": "second_ball",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 17.593838883540343,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 44.8151140096433,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.0
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.8792347630313271,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "attack_ball",
+          "r1_zone": "six_left",
+          "r2_delay": 0.6567619584408371,
+          "r2_intent": "attack_ball",
+          "r2_zone": "edge",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "second_ball",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.9078755943543261,
+          "r4_intent": "second_ball",
+          "r4_zone": "edge",
+          "r5_delay": 0.3650998770600098,
+          "r5_intent": "second_ball",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 24.399527076068228,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 43.72456991175774,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.023212182244502312
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.8310484552361904,
+          "r0_zone": "six_left",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "second_ball",
+          "r1_zone": "goalmouth",
+          "r2_delay": 0.18327983621407862,
+          "r2_intent": "attack_ball",
+          "r2_zone": "penalty_spot",
+          "r3_delay": 0.9295293167921905,
+          "r3_intent": "decoy",
+          "r3_zone": "six_right",
+          "r4_delay": 0.4050356132969499,
+          "r4_intent": "decoy",
+          "r4_zone": "six_left",
+          "r5_delay": 0.22431702897473926,
+          "r5_intent": "screen",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 26.885578656240025,
+          "spin_rps": 3.796036775596348,
+          "target_x": 43.74155058392923,
+          "target_y": 3.141495821047352
+        },
+        "state": "COMPLETE",
+        "value": 0.019139350603340894
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "floated",
+          "r0_delay": 0.7814796002346613,
+          "r0_zone": "far_post",
+          "r1_delay": 0.04934894678843971,
+          "r1_intent": "second_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.6567619584408371,
+          "r2_intent": "attack_ball",
+          "r2_zone": "goalmouth",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "screen",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.8442349615530241,
+          "r4_intent": "second_ball",
+          "r4_zone": "near_post",
+          "r5_delay": 0.3650998770600098,
+          "r5_intent": "second_ball",
+          "r5_zone": "deep_recycle",
+          "speed_ms": 17.288512055549504,
+          "spin_rps": 2.853109231187034,
+          "target_x": 44.47859146893753,
+          "target_y": -4.434178911760316
+        },
+        "state": "COMPLETE",
+        "value": 0.0
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "driven",
+          "r0_delay": 0.8310484552361904,
+          "r0_zone": "deep_recycle",
+          "r1_delay": 0.21331197736748198,
+          "r1_intent": "second_ball",
+          "r1_zone": "penalty_spot",
+          "r2_delay": 0.18327983621407862,
+          "r2_intent": "second_ball",
+          "r2_zone": "penalty_spot",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "decoy",
+          "r3_zone": "edge",
+          "r4_delay": 0.874287966624947,
+          "r4_intent": "decoy",
+          "r4_zone": "six_left",
+          "r5_delay": 0.3650998770600098,
+          "r5_intent": "second_ball",
+          "r5_zone": "six_left",
+          "speed_ms": 26.885578656240025,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 46.187660159815024,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.0
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.8792347630313271,
+          "r0_zone": "near_post",
+          "r1_delay": 0.7742336894342167,
+          "r1_intent": "attack_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.1289262976548533,
+          "r2_intent": "screen",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.1381829513486138,
+          "r3_intent": "screen",
+          "r3_zone": "deep_recycle",
+          "r4_delay": 0.11872771895424405,
+          "r4_intent": "second_ball",
+          "r4_zone": "far_post",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 25.644214017146304,
+          "spin_rps": 7.448831829968968,
+          "target_x": 46.5857620471279,
+          "target_y": -2.0314421779080405
+        },
+        "state": "COMPLETE",
+        "value": 0.012866302392735816
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.7270442627113283,
+          "r0_zone": "deep_recycle",
+          "r1_delay": 0.7885455123065187,
+          "r1_intent": "attack_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.3068100995451961,
+          "r2_intent": "decoy",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.4569114216457658,
+          "r3_intent": "second_ball",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.5909841653236849,
+          "r4_intent": "decoy",
+          "r4_zone": "right_half_space",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 24.399527076068228,
+          "spin_rps": 9.505950229289875,
+          "target_x": 43.72456991175774,
+          "target_y": -2.0314421779080405
+        },
+        "state": "COMPLETE",
+        "value": 0.01269311340829175
+      },
+      {
+        "generation": 1,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.6184802595127479,
+          "r0_zone": "near_post",
+          "r1_delay": 0.3426109843415903,
+          "r1_intent": "decoy",
+          "r1_zone": "far_post",
+          "r2_delay": 0.9854914276432976,
+          "r2_intent": "screen",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.8717857347554929,
+          "r3_intent": "screen",
+          "r3_zone": "deep_recycle",
+          "r4_delay": 0.45182168266975964,
+          "r4_intent": "decoy",
+          "r4_zone": "far_post",
+          "r5_delay": 0.2716527676061459,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 17.593838883540343,
+          "spin_rps": 9.505950229289875,
+          "target_x": 43.72456991175774,
+          "target_y": 6.868662676843423
+        },
+        "state": "COMPLETE",
+        "value": 0.047463545599861726
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.7270442627113283,
+          "r0_zone": "near_post",
+          "r1_delay": 0.7885455123065187,
+          "r1_intent": "attack_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.1289262976548533,
+          "r2_intent": "screen",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.4569114216457658,
+          "r3_intent": "screen",
+          "r3_zone": "deep_recycle",
+          "r4_delay": 0.7275469913315297,
+          "r4_intent": "second_ball",
+          "r4_zone": "right_half_space",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 24.399527076068228,
+          "spin_rps": 9.505950229289875,
+          "target_x": 43.72456991175774,
+          "target_y": -2.0314421779080405
+        },
+        "state": "COMPLETE",
+        "value": 0.008018709870567792
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.8792347630313271,
+          "r0_zone": "near_post",
+          "r1_delay": 0.3426109843415903,
+          "r1_intent": "attack_ball",
+          "r1_zone": "far_post",
+          "r2_delay": 0.8136786497018634,
+          "r2_intent": "screen",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.8717857347554929,
+          "r3_intent": "second_ball",
+          "r3_zone": "deep_recycle",
+          "r4_delay": 0.45182168266975964,
+          "r4_intent": "decoy",
+          "r4_zone": "far_post",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 17.593838883540343,
+          "spin_rps": 9.505950229289875,
+          "target_x": 43.72456991175774,
+          "target_y": 6.868662676843423
+        },
+        "state": "COMPLETE",
+        "value": 0.005919165619729022
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.6184802595127479,
+          "r0_zone": "near_post",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "decoy",
+          "r1_zone": "far_post",
+          "r2_delay": 0.9854914276432976,
+          "r2_intent": "screen",
+          "r2_zone": "edge",
+          "r3_delay": 0.8717857347554929,
+          "r3_intent": "screen",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.4050356132969499,
+          "r4_intent": "second_ball",
+          "r4_zone": "far_post",
+          "r5_delay": 0.2716527676061459,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 17.593838883540343,
+          "spin_rps": 9.505950229289875,
+          "target_x": 42.09590062474007,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.04974002327340914
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.6184802595127479,
+          "r0_zone": "near_post",
+          "r1_delay": 0.7742336894342167,
+          "r1_intent": "attack_ball",
+          "r1_zone": "far_post",
+          "r2_delay": 0.1289262976548533,
+          "r2_intent": "screen",
+          "r2_zone": "left_half_space",
+          "r3_delay": 0.8717857347554929,
+          "r3_intent": "screen",
+          "r3_zone": "goalmouth",
+          "r4_delay": 0.45182168266975964,
+          "r4_intent": "second_ball",
+          "r4_zone": "far_post",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 25.644214017146304,
+          "spin_rps": 9.505950229289875,
+          "target_x": 43.72456991175774,
+          "target_y": 6.868662676843423
+        },
+        "state": "COMPLETE",
+        "value": 0.005276041230534315
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.8310484552361904,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "attack_ball",
+          "r1_zone": "six_left",
+          "r2_delay": 0.6567619584408371,
+          "r2_intent": "attack_ball",
+          "r2_zone": "edge",
+          "r3_delay": 0.9295293167921905,
+          "r3_intent": "decoy",
+          "r3_zone": "six_right",
+          "r4_delay": 0.9078755943543261,
+          "r4_intent": "decoy",
+          "r4_zone": "left_half_space",
+          "r5_delay": 0.22431702897473926,
+          "r5_intent": "screen",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 26.885578656240025,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 43.74155058392923,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.03260956311508656
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "inswinger",
+          "r0_delay": 0.7255735341014894,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.3426109843415903,
+          "r1_intent": "second_ball",
+          "r1_zone": "top_of_box",
+          "r2_delay": 0.8136786497018634,
+          "r2_intent": "screen",
+          "r2_zone": "edge",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "second_ball",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.9078755943543261,
+          "r4_intent": "second_ball",
+          "r4_zone": "far_post",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 24.399527076068228,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 43.72456991175774,
+          "target_y": -2.0314421779080405
+        },
+        "state": "COMPLETE",
+        "value": 0.0049870510064622215
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.8792347630313271,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.7742336894342167,
+          "r1_intent": "attack_ball",
+          "r1_zone": "six_left",
+          "r2_delay": 0.1289262976548533,
+          "r2_intent": "screen",
+          "r2_zone": "edge",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "screen",
+          "r3_zone": "top_of_box",
+          "r4_delay": 0.9078755943543261,
+          "r4_intent": "second_ball",
+          "r4_zone": "edge",
+          "r5_delay": 0.9979622513286734,
+          "r5_intent": "second_ball",
+          "r5_zone": "goalmouth",
+          "speed_ms": 25.644214017146304,
+          "spin_rps": 2.6320761833863067,
+          "target_x": 46.5857620471279,
+          "target_y": -7.383084063056026
+        },
+        "state": "COMPLETE",
+        "value": 0.013788592357168252
+      },
+      {
+        "generation": 2,
+        "params": {
+          "delivery_type": "outswinger",
+          "r0_delay": 0.8792347630313271,
+          "r0_zone": "penalty_spot",
+          "r1_delay": 0.24190170420148482,
+          "r1_intent": "attack_ball",
+          "r1_zone": "goalmouth",
+          "r2_delay": 0.6567619584408371,
+          "r2_intent": "attack_ball",
+          "r2_zone": "penalty_spot",
+          "r3_delay": 0.27125207676186414,
+          "r3_intent": "second_ball",
+          "r3_zone": "six_right",
+          "r4_delay": 0.4050356132969499,
+          "r4_intent": "second_ball",
+          "r4_zone": "edge",
+          "r5_delay": 0.22431702897473926,
+          "r5_intent": "second_ball",
+          "r5_zone": "penalty_spot",
+          "speed_ms": 24.399527076068228,
+          "spin_rps": 3.796036775596348,
+          "target_x": 43.74155058392923,
+          "target_y": -2.7521919854707253
+        },
+        "state": "COMPLETE",
+        "value": 0.02259094037992035
+      }
+    ]
+  },
   "feature_importance": {
-    "delivery_type": 0.000138633017760128,
-    "r0_delay": 0.001996396462926218,
+    "delivery_type": 0.0,
+    "r0_delay": 0.004135475140162794,
     "r0_zone": 0.0,
-    "r1_delay": 0.0002930351930964363,
+    "r1_delay": 0.0020280743431616496,
     "r1_intent": 0.0,
     "r1_zone": 0.0,
-    "r2_delay": 0.0015230982328344504,
-    "r2_intent": 0.0013935331208124436,
-    "r2_zone": 0.004559286723729892,
-    "r3_delay": 0.002313625520382168,
-    "r3_intent": 3.1770734213880925e-05,
-    "r3_zone": 0.001779942744004074,
-    "r4_delay": 7.22733621751974e-05,
-    "r4_intent": 0.0009085992158407557,
+    "r2_delay": 0.0027627626161616844,
+    "r2_intent": 0.0,
+    "r2_zone": 0.0,
+    "r3_delay": 0.0005674909682718188,
+    "r3_intent": 0.0,
+    "r3_zone": 0.0,
+    "r4_delay": 0.0008157913008054171,
+    "r4_intent": 0.0,
     "r4_zone": 0.0,
-    "r5_delay": 0.002453999136252259,
-    "r5_intent": 0.005764258365103514,
+    "r5_delay": 0.0020416644232485685,
+    "r5_intent": 0.0,
     "r5_zone": 0.0,
-    "speed_ms": 0.0,
-    "spin_rps": 0.00393064223495169,
-    "target_x": 0.002392085879787357,
-    "target_y": 0.005364928183921473
+    "speed_ms": 0.0032209577631822288,
+    "spin_rps": 0.0033504372674964767,
+    "target_x": 0.004820911747118593,
+    "target_y": 0.008677379991011917
   },
   "insights": [
-    "r5_intent=attack_ball is the strongest setting for mean xG (SHAP importance 0.006).",
-    "lowering target_y tends to increase mean xG (SHAP importance 0.005).",
-    "r2_zone=far_post is the strongest setting for mean xG (SHAP importance 0.005)."
+    "lowering target_y tends to increase mean xG (SHAP importance 0.009).",
+    "lowering target_x tends to increase mean xG (SHAP importance 0.005).",
+    "lowering r0_delay tends to increase mean xG (SHAP importance 0.004)."
   ],
   "matchup": {
     "attacking": "England",
@@ -181,6 +909,7 @@
     "seed": 0,
     "trials": [
       {
+        "generation": null,
         "params": {
           "delivery_type": "floated",
           "r0_delay": 0.8700121482468192,
@@ -209,6 +938,7 @@
         "value": 0.009781758783710709
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.6925315900777659,
@@ -237,6 +967,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.8310484552361904,
@@ -265,6 +996,7 @@
         "value": 0.00616913473065727
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.7270442627113283,
@@ -293,6 +1025,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.6184802595127479,
@@ -321,6 +1054,7 @@
         "value": 0.002865064708287285
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.8792347630313271,
@@ -349,6 +1083,7 @@
         "value": 0.014495578336439757
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.9992779939221711,
@@ -377,6 +1112,7 @@
         "value": 0.023736204261467206
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.7814796002346613,
@@ -405,6 +1141,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.5269074490521803,
@@ -433,6 +1170,7 @@
         "value": 0.005193323323142909
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.3145732950042872,
@@ -461,6 +1199,7 @@
         "value": 0.007317732296407653
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.7532401195921768,
@@ -489,6 +1228,7 @@
         "value": 0.03863012723543531
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.8163643055198561,
@@ -517,6 +1257,7 @@
         "value": 0.0019046493631248139
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "floated",
           "r0_delay": 0.5676927488368441,
@@ -545,6 +1286,7 @@
         "value": 0.013763148688367732
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.9942330832207621,
@@ -573,6 +1315,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.685467145913117,
@@ -601,6 +1344,7 @@
         "value": 0.021758473020485204
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.9792702400358185,
@@ -629,6 +1373,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.11222431582828851,
@@ -657,6 +1402,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.7975263608679399,
@@ -685,6 +1431,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.9890880753568537,
@@ -713,6 +1460,7 @@
         "value": 0.042543738684518245
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.12976262256838134,
@@ -741,6 +1489,7 @@
         "value": 0.008472945101644055
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.9040508194352818,
@@ -769,6 +1518,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.32592393982149914,
@@ -797,6 +1547,7 @@
         "value": 0.00314405461572276
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "floated",
           "r0_delay": 0.7914537299609294,
@@ -825,6 +1576,7 @@
         "value": 0.007154727446465348
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.24394081886689145,
@@ -897,6 +1649,7 @@
     "seed": 0,
     "trials": [
       {
+        "generation": null,
         "params": {
           "delivery_type": "floated",
           "r0_delay": 0.8700121482468192,
@@ -925,6 +1678,7 @@
         "value": 0.009781758783710709
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.6925315900777659,
@@ -953,6 +1707,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.8310484552361904,
@@ -981,6 +1736,7 @@
         "value": 0.00616913473065727
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.7270442627113283,
@@ -1009,6 +1765,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.6184802595127479,
@@ -1037,6 +1794,7 @@
         "value": 0.002865064708287285
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.8792347630313271,
@@ -1065,6 +1823,7 @@
         "value": 0.014495578336439757
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.9992779939221711,
@@ -1093,6 +1852,7 @@
         "value": 0.023736204261467206
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.7814796002346613,
@@ -1121,6 +1881,7 @@
         "value": 0.0
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "driven",
           "r0_delay": 0.5269074490521803,
@@ -1149,6 +1910,7 @@
         "value": 0.005193323323142909
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.3145732950042872,
@@ -1177,6 +1939,7 @@
         "value": 0.007317732296407653
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.05937360674429065,
@@ -1205,6 +1968,7 @@
         "value": 0.025798475571195578
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.026118389004993567,
@@ -1233,6 +1997,7 @@
         "value": 0.06719512139055757
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.0018795843210680785,
@@ -1261,6 +2026,7 @@
         "value": 0.05825713889972647
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.011785807306171283,
@@ -1289,6 +2055,7 @@
         "value": 0.06035503545397229
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "floated",
           "r0_delay": 0.20016248932832129,
@@ -1317,6 +2084,7 @@
         "value": 0.040185941946244585
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.21534103498345392,
@@ -1345,6 +2113,7 @@
         "value": 0.009996903393233338
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.1326301179490822,
@@ -1373,6 +2142,7 @@
         "value": 0.01956142698326168
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "inswinger",
           "r0_delay": 0.43591662312446705,
@@ -1401,6 +2171,7 @@
         "value": 0.05689920939018238
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.3304560692991325,
@@ -1429,6 +2200,7 @@
         "value": 0.061893825392823267
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.35555859904632353,
@@ -1457,6 +2229,7 @@
         "value": 0.024350078530835116
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.2957712640987706,
@@ -1485,6 +2258,7 @@
         "value": 0.027889519540635555
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.12192872301780162,
@@ -1513,6 +2287,7 @@
         "value": 0.06060265556573328
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.1267537309461161,
@@ -1541,6 +2316,7 @@
         "value": 0.06062473794835797
       },
       {
+        "generation": null,
         "params": {
           "delivery_type": "outswinger",
           "r0_delay": 0.21080891439863836,
@@ -1608,6 +2384,7 @@
       "spin_rps": 5.629267254825731,
       "target_x": 40.12225964557921,
       "target_y": -7.986642551382709
-    }
+    },
+    "sampler": "tpe"
   }
 }

@@ -42,8 +42,15 @@ toy-landscape (CMA-ES finds the peak; NSGA-II evolves generations over a *mixed*
 per seed), engine-backed NSGA-II screen (generations recorded, reproducible), generation round-trip
 through persistence, and the canonical smoke (three searches + winner-sampler + lineage). The
 canonical study was re-baselined with the observable watchdog wrapper; the regenerated `study.json`
-carries the `evolution` block (sampler `nsga2`, per-trial generations) beside `tpe`/`random`.
-<!-- RESULT -->
+carries the `evolution` block (sampler `nsga2`, generations 0–2) beside `tpe`/`random`.
+
+**Honest result (scoped budget — 24 trials, population 8, ~3 generations):** evolution's screen best
+(≈0.050) **beat the random baseline** (≈0.043) — the honesty bar passes — but **TPE still won**
+(≈0.067); the union-confirm correctly tagged the winner `sampler="tpe"`. This is expected and not a
+strike against evolution: a GA needs *more generations / larger populations* to overtake model-based
+TPE, and that is precisely what the 🔴 Numba throughput kernel (Phase 10) unlocks. The winner stays
+flagged for bound-pinning (`target_x`/`target_y`) — the anti-exploit guard firing as designed — and
+the carried 🔴 calibration still caps how literally any xG level reads.
 
 ### Debugging history worth knowing (saves future sessions time)
 
