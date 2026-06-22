@@ -101,7 +101,13 @@ def main() -> int:
     )
     out_root = Path(args.out) if args.out else None
     try:
-        run_canonical(config, out_root=out_root)  # None -> optimization_studies/<name>/study.json
+        # Phase markers make the long non-Optuna phases (confirm/sensitivity)
+        # visible, so a stall there is distinguishable from progress.
+        run_canonical(
+            config,
+            out_root=out_root,  # None -> optimization_studies/<name>/study.json
+            on_phase=lambda label: _log(f"PHASE: {label}"),
+        )
     except Exception as exc:
         _log(f"FAILED: {exc!r}")
         return 1
