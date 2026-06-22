@@ -44,6 +44,21 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **Ops:** `scripts/rebaseline_canonical.py` — an observable, watchdog-bounded wrapper for the long
   canonical re-run (per-trial Optuna logging + liveness heartbeat + hard wall-clock cap).
 
+### Added — Phase 7: Optimization UI & 3D replay (2026-06-20) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+
+- **Read-only optimization surface:** `StudyLoader` serves the persisted `study.json` as typed DTOs
+  at `GET /api/v1/optimizations` + `/{id}` (convergence, parallel-coords axis metadata, top-k vs
+  baseline, SHAP insights, sensitivity, winner + flags). `restart_opt` never enters the request path
+  — a guard test enforces the boundary ([ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md)).
+- **pitch-kit optimization primitives** (hand-rolled SVG): `ConvergencePlot`, `ParallelCoordinates`
+  (the search-space view), `TopKTable` (beats-baseline only on non-overlapping CIs).
+- **`/optimize` + `/optimize/:id`** pages with a plain-language SHAP insights panel and a sensitivity
+  honesty banner (reports routine *classes* when the ranking flips).
+- **Workbench compare mode (`C`):** two scenarios paired by the common-random-number determinism
+  contract; `compareStats` paired-difference CI; a winner only when the CI excludes zero.
+- **On-demand 3D replay (R3F):** `Replay3D` over the same `SimulateResponse`; camera presets; loaded
+  via `next/dynamic` so three.js stays in a lazy chunk (2D remains default + SVG fallback).
+
 ### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
 - **API hardening:** RFC 9457 problem-details for the whole surface; tightened input + pitch-coordinate
