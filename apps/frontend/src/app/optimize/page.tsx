@@ -28,9 +28,12 @@ export default function OptimizePage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-6 py-12">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Optimization studies</h1>
-        <p className="text-sm opacity-60">
+      <header className="flex flex-col gap-2 border-b border-(--color-line)/10 pb-6">
+        <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+          Search
+        </span>
+        <h1 className="text-3xl font-semibold tracking-tight">Optimization studies</h1>
+        <p className="max-w-2xl text-sm text-(--color-line)/60">
           Routine searches against a defensive scheme — convergence, the search space, and what beat
           the library baseline.
         </p>
@@ -39,9 +42,9 @@ export default function OptimizePage() {
       {error && <p className="font-mono text-xs text-(--color-warn)">{error}</p>}
 
       {empty && (
-        <section className="rounded-lg border border-dashed border-(--color-line)/20 p-8 text-center">
-          <p className="text-lg">No studies yet.</p>
-          <p className="mt-2 text-sm opacity-60">
+        <section className="card flex flex-col items-center gap-2 border-dashed p-10 text-center">
+          <p className="text-lg font-medium">No studies yet.</p>
+          <p className="max-w-md text-sm text-(--color-line)/60">
             Studies are produced offline by <span className="font-mono">restart-opt</span> and
             surfaced here read-only.
           </p>
@@ -49,12 +52,12 @@ export default function OptimizePage() {
       )}
 
       {studies && studies.length > 0 && (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="stagger grid gap-3 sm:grid-cols-2">
           {studies.map((s) => (
             <li key={s.id}>
               <Link
                 href={`/optimize/${s.id}`}
-                className="flex flex-col gap-2 rounded-lg border border-(--color-line)/15 p-4 transition hover:border-(--color-signal)/40"
+                className="card card-interactive flex flex-col gap-2 p-4"
               >
                 <span className="font-medium">{s.name}</span>
                 <span className="font-mono text-xs opacity-50">
