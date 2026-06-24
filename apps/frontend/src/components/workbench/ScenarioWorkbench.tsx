@@ -96,9 +96,9 @@ export function ScenarioWorkbench({ scenarioId }: { scenarioId: string }) {
                 type="button"
                 onClick={() => setMode(m.mode)}
                 aria-pressed={active}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-sm transition-all ${
+                className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-sm transition-colors ${
                   active
-                    ? "bg-(--color-signal) font-medium text-[#04130c] shadow-[0_4px_14px_-6px_color-mix(in_oklab,var(--color-signal)_80%,transparent)]"
+                    ? "bg-(--color-signal) font-medium text-[#04130c]"
                     : "text-(--color-line-muted) hover:bg-(--color-line)/5 hover:text-(--color-line)"
                 }`}
               >

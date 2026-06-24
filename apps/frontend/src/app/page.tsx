@@ -35,8 +35,8 @@ export default function Home() {
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-16 px-6 py-16">
       <section className="stagger flex flex-col gap-6">
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full border border-(--color-line)/15 px-3 py-1 font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
-            <span className="size-1.5 animate-pulse rounded-full bg-(--color-signal)" />
+          <span className="inline-flex items-center gap-2 rounded-full border border-(--color-line)/12 px-3 py-1 font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+            <span className="size-1 rounded-full bg-(--color-signal)/70" />
             World Cup 2026
           </span>
           <EnvironmentBadge environment="dev" />

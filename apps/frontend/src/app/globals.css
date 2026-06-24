@@ -5,10 +5,10 @@
 
 /* ----------------------------------------------------------------------------
    Base — typography + atmosphere
-   The surface is the hero (doc 07 §1): a near-black green-tinted ground with a
-   faint pitch-line lattice and a single quiet signal-green glow, so saturated
-   trajectory/heat colours sit on a calm, intentional backdrop instead of flat
-   black. Kept very low-contrast so it reads as texture, never decoration.
+   Restraint over glow (doc 07 §1): a near-black ground with one barely-there
+   signal-green wash in the top-left and a faint pitch-line lattice. Tuned low
+   enough to read as paper texture, never as a neon backdrop — the data is the
+   only thing that should glow.
 ---------------------------------------------------------------------------- */
 body {
   background-color: var(--color-surface);
@@ -16,29 +16,23 @@ body {
   font-family: var(--font-sans);
   background-image:
     radial-gradient(
-      120% 80% at 12% -10%,
-      color-mix(in oklab, var(--color-signal) 9%, transparent),
-      transparent 55%
-    ),
-    radial-gradient(
-      90% 70% at 100% 0%,
-      color-mix(in oklab, var(--color-ci) 6%, transparent),
-      transparent 50%
+      100% 70% at 0% -10%,
+      color-mix(in oklab, var(--color-signal) 4%, transparent),
+      transparent 45%
     ),
     linear-gradient(
       transparent 0 calc(100% - 1px),
-      color-mix(in oklab, var(--color-line) 3%, transparent) calc(100% - 1px)
+      color-mix(in oklab, var(--color-line) 2%, transparent) calc(100% - 1px)
     ),
     linear-gradient(
       90deg,
       transparent 0 calc(100% - 1px),
-      color-mix(in oklab, var(--color-line) 3%, transparent) calc(100% - 1px)
+      color-mix(in oklab, var(--color-line) 2%, transparent) calc(100% - 1px)
     );
   background-size:
     100% 100%,
-    100% 100%,
-    44px 44px,
-    44px 44px;
+    52px 52px,
+    52px 52px;
   background-attachment: fixed;
 }
 
@@ -165,43 +159,43 @@ h3 {
   .btn-primary {
     background: var(--color-signal);
     color: #04130c;
-    box-shadow: 0 6px 20px -10px color-mix(in oklab, var(--color-signal) 80%, transparent);
   }
   .btn-primary:hover {
-    background: color-mix(in oklab, var(--color-signal) 88%, white);
-    box-shadow: var(--shadow-glow);
+    background: color-mix(in oklab, var(--color-signal) 92%, white);
   }
   .btn-primary:disabled {
     opacity: 0.4;
-    box-shadow: none;
   }
 
   .btn-ghost {
-    border: 1px solid color-mix(in oklab, var(--color-line) 18%, transparent);
+    border: 1px solid var(--border-strong);
     color: var(--color-line);
   }
   .btn-ghost:hover {
-    border-color: color-mix(in oklab, var(--color-signal) 45%, transparent);
+    border-color: color-mix(in oklab, var(--color-line) 32%, transparent);
     background: color-mix(in oklab, var(--color-line) 4%, transparent);
   }
 
   .card {
-    border: 1px solid color-mix(in oklab, var(--color-line) 12%, transparent);
+    border: 1px solid var(--border-subtle);
     border-radius: var(--radius-card);
-    background: color-mix(in oklab, var(--color-surface-raised) 70%, transparent);
+    background: color-mix(in oklab, var(--color-surface-raised) 60%, transparent);
   }
 
+  /* Hover lifts on neutral elevation — depth, not a green halo. A thin accent
+     bar marks the hovered row instead of recolouring the whole border. */
   .card-interactive {
+    position: relative;
     transition:
-      transform 0.35s var(--ease-out-quint),
-      border-color 0.35s var(--ease-out-quint),
-      box-shadow 0.35s var(--ease-out-quint),
-      background 0.35s var(--ease-out-quint);
+      transform 0.25s var(--ease-out-quint),
+      border-color 0.25s var(--ease-out-quint),
+      box-shadow 0.25s var(--ease-out-quint),
+      background 0.25s var(--ease-out-quint);
   }
   .card-interactive:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(in oklab, var(--color-signal) 40%, transparent);
-    box-shadow: var(--shadow-card);
-    background: color-mix(in oklab, var(--color-surface-raised) 92%, transparent);
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-raised);
+    background: color-mix(in oklab, var(--color-surface-raised) 85%, transparent);
   }
 }

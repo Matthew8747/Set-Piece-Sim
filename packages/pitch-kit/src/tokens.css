@@ -38,7 +38,8 @@
      grotesque for body, IBM Plex Mono for ALL numerals (tabular). The
      --font-*-loaded vars are injected by next/font in the app's layout; the
      quoted names are the graceful fallback (tests, SVG export, no-JS). */
-  --font-display: var(--font-bricolage), "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-bricolage), "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-hanken), "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
 
@@ -46,9 +47,16 @@
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Radii + elevation for app chrome (the pitch/charts set their own). */
-  --radius-card: 0.75rem;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.5);
-  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--color-signal) 35%, transparent),
-    0 10px 40px -16px color-mix(in oklab, var(--color-signal) 45%, transparent);
+  /* Radii + elevation for app chrome (the pitch/charts set their own).
+     Elevation is neutral and restrained — depth comes from shadow, not glow, so
+     the dark theme reads like an instrument, not a neon dashboard (doc 07 §5). */
+  --radius-card: 0.625rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 0 0 rgb(255 255 255 / 0.02) inset;
+  --shadow-raised:
+    0 1px 2px rgb(0 0 0 / 0.35), 0 12px 28px -14px rgb(0 0 0 / 0.55),
+    0 1px 0 0 rgb(255 255 255 / 0.03) inset;
+
+  /* Neutral hairlines for surface hierarchy (chrome only). */
+  --border-subtle: color-mix(in oklab, var(--color-line) 10%, transparent);
+  --border-strong: color-mix(in oklab, var(--color-line) 18%, transparent);
 }
