@@ -1,0 +1,28 @@
+# Keep the build context small + the image clean. The backend image needs the
+# Python workspace only — not the JS toolchain, build outputs, data lake, or VCS.
+.git
+.github
+node_modules
+**/node_modules
+.next
+**/.next
+apps/frontend
+packages/pitch-kit
+packages/shared-types
+.venv
+**/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+**/.pytest_cache
+.mypy_cache
+**/.mypy_cache
+.ruff_cache
+htmlcov
+data/raw
+data/staging
+data/marts
+test-results
+playwright-report
+*.log
+.env
