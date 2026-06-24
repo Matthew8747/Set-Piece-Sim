@@ -69,3 +69,35 @@ jobs:
 
       - name: Prettier (format check)
         run: npm run format:check
+
+  contract:
+    name: Contract (OpenAPI / shared-types drift)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Sync workspaces
+        run: |
+          uv sync --all-packages
+          npm ci
+
+      # Regenerate the committed schema + TS client and fail if either changed
+      # (ADR-007 d6 — codegen replaces hand-mirroring).
+      - name: OpenAPI / shared-types drift
+        run: |
+          uv run python apps/backend/scripts/dump_openapi.py
+          npm run gen -w "@restart/shared-types"
+          git diff --exit-code -- apps/backend/openapi.json packages/shared-types/src/generated.ts

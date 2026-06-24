@@ -76,9 +76,10 @@ export function ReplayPanel({ runId }: ReplayPanelProps) {
 
   if (!runId) {
     return (
-      <p className="text-sm opacity-50">
-        Run a simulation first (press <kbd className="font-mono">S</kbd>), then replay the worst /
-        median / best delivery here.
+      <p className="card flex items-center gap-2 p-6 text-sm text-(--color-line)/60">
+        Run a simulation first (press{" "}
+        <kbd className="rounded bg-(--color-line)/8 px-1.5 py-0.5 font-mono text-[11px]">S</kbd>),
+        then replay the worst / median / best delivery here.
       </p>
     );
   }
@@ -94,10 +95,10 @@ export function ReplayPanel({ runId }: ReplayPanelProps) {
               type="button"
               onClick={() => setSample(s)}
               aria-pressed={s === sample}
-              className={`rounded border px-3 py-1 font-mono text-xs ${
+              className={`rounded-md border px-3 py-1 font-mono text-xs transition-colors ${
                 s === sample
-                  ? "border-(--color-signal) text-(--color-signal)"
-                  : "border-(--color-line)/20 opacity-70"
+                  ? "border-(--color-signal)/50 bg-(--color-signal)/10 text-(--color-signal)"
+                  : "border-(--color-line)/15 text-(--color-line-muted) hover:border-(--color-line)/30 hover:text-(--color-line)"
               }`}
             >
               {s}
@@ -114,10 +115,10 @@ export function ReplayPanel({ runId }: ReplayPanelProps) {
               type="button"
               onClick={() => setView(v)}
               aria-pressed={v === view}
-              className={`rounded border px-3 py-1 font-mono text-xs uppercase ${
+              className={`rounded-md border px-3 py-1 font-mono text-xs transition-colors uppercase ${
                 v === view
-                  ? "border-(--color-signal) text-(--color-signal)"
-                  : "border-(--color-line)/20 opacity-70"
+                  ? "border-(--color-signal)/50 bg-(--color-signal)/10 text-(--color-signal)"
+                  : "border-(--color-line)/15 text-(--color-line-muted) hover:border-(--color-line)/30 hover:text-(--color-line)"
               }`}
             >
               {v}
@@ -136,7 +137,7 @@ export function ReplayPanel({ runId }: ReplayPanelProps) {
                 type="button"
                 onClick={() => setPreset(p.preset)}
                 aria-pressed={p.preset === preset}
-                className={`rounded border px-3 py-1 font-mono text-xs ${
+                className={`rounded-md border px-3 py-1 font-mono text-xs transition-colors ${
                   p.preset === preset
                     ? "border-(--color-signal) text-(--color-signal)"
                     : "border-(--color-line)/20 opacity-70"

@@ -105,7 +105,7 @@ export function BuildPanel({ routines, schemes, teams, initial, onSaved }: Build
 
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-      <section className="flex flex-col gap-4">
+      <section className="card flex h-fit flex-col gap-4 p-5">
         <Picker label="Attacking squad" value={attId} onChange={setAttId}>
           {teams.map((t) => (
             <option key={t.team_id} value={t.team_id}>
@@ -139,7 +139,7 @@ export function BuildPanel({ routines, schemes, teams, initial, onSaved }: Build
           type="button"
           onClick={save}
           disabled={busy || !routineId || !schemeId || !attId || !defId}
-          className="rounded bg-(--color-signal) px-3 py-2 font-medium text-black disabled:opacity-40"
+          className="btn btn-primary mt-1 w-full"
         >
           {busy ? "saving…" : "Save as new scenario"}
         </button>
@@ -205,12 +205,14 @@ function Picker({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      {label}
+    <label className="flex flex-col gap-1.5 text-sm">
+      <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+        {label}
+      </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded border border-(--color-line)/20 bg-(--color-surface-raised) px-2 py-1.5"
+        className="rounded-lg border border-(--color-line)/15 bg-(--color-surface) px-3 py-2 transition-colors focus:border-(--color-signal)/50"
       >
         {children}
       </select>

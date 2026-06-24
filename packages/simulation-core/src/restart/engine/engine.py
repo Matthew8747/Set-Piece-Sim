@@ -5,10 +5,13 @@ SimProgram arrays, 20 ms agent tick, precomputed ball-flight oracle, one
 Gumbel-max contest, discrete GK model, first-contact-centric termination
 (d1-d10). The Phase-3 batch kernel ports these exact semantics.
 
-RNG draw order is fixed and documented inline (ADR-003 d9): delivery direction,
-delivery speed, per-agent reaction jitter (attackers then defenders, index
-order), contest Gumbel noise (contestant index order), contact aim draws,
-GK save draw. Same (program, seed) => bit-identical result.
+RNG is externalized (ADR-011): all per-sim randomness is drawn up front into a
+``SimDraws`` struct (``engine/draws.py``) by category sub-stream — delivery,
+reaction jitter (attackers then defenders, index order), contest Gumbel (one
+slot per potential contestant by player index), shot aim/perturb/Bernoulli, and
+the loose-ball jitter — and the engine reads those draws instead of calling an
+``rng``. This is what lets the Numba kernel (Phase 10) consume identical draws
+and match this reference to <=1e-9. Same (program, seed) => bit-identical result.
 
 Planning simplification (G-13, registered): interception plans are computed
 once at kick time from kick-instant agent states — agents commit to a plan
@@ -26,6 +29,7 @@ from restart.agents.interception import earliest_interception
 from restart.agents.kinematics import separate, step_agents
 from restart.domain.vectors import FloatArray
 from restart.engine.config import EngineConfig
+from restart.engine.draws import SimDraws, draw_sim
 from restart.engine.xg import ShotContext, XGScorer
 from restart.physics import BallState, IntegratorConfig, PhysicsConfig, TrajectorySimulator
 from restart.physics.trajectory import Trajectory
@@ -43,7 +47,6 @@ from restart.simulation.events import (
     ShotEvent,
     SimEvent,
 )
-from restart.simulation.rng import spawn_rng
 from restart.tactics.compile import SimProgram
 from restart.tactics.routine import INTENT_CODES, TRIGGER_CODES, Intent, Trigger
 
@@ -136,11 +139,11 @@ class SetPieceEngine:
     # ------------------------------------------------------------------ run
     def run(self, program: SimProgram, seed: int) -> SetPieceResult:
         cfg = self._cfg
-        rng = spawn_rng(seed, 0)
+        draws = draw_sim(seed, program.n_attackers, program.n_defenders)
         events: list[SimEvent] = []
 
         # --- 1. delivery execution (G-11): intent + skill-scaled noise -----
-        delivery_state = self._execute_delivery(program, rng)
+        delivery_state = self._execute_delivery(program, draws)
         delivery = self._ball_sim.simulate(delivery_state)
         events.append(delivery.events[0])  # LaunchEvent
 
@@ -158,12 +161,14 @@ class SetPieceEngine:
         ball_times = np.arange(0.0, max(t_contact_ground, cfg.agent_dt_s), cfg.agent_dt_s)
         ball_pos = np.stack([np.interp(ball_times, s_t, s_p[:, k]) for k in range(3)], axis=1)
 
-        # --- 2. per-agent reaction readiness (G-3; fixed draw order) -------
-        att_react = program.att_attr[:, Attr.REACTION_TIME] * (
-            1.0 + cfg_jitter(rng, program.n_attackers, cfg_frac=self._agents.reaction_jitter_frac)
-        )
+        # --- 2. per-agent reaction readiness (G-3; externalized draws) -----
+        # jitter draws are U(-1, 1); scale by the configured fraction. Attackers
+        # occupy the first na slots, defenders the next nd (ADR-011 draw plan).
+        na, nd = program.n_attackers, program.n_defenders
+        frac = self._agents.reaction_jitter_frac
+        att_react = program.att_attr[:, Attr.REACTION_TIME] * (1.0 + frac * draws.jitter[:na])
         def_react = program.def_attr[:, Attr.REACTION_TIME] * (
-            1.0 + cfg_jitter(rng, program.n_defenders, cfg_frac=self._agents.reaction_jitter_frac)
+            1.0 + frac * draws.jitter[na : na + nd]
         )
 
         # --- 3. pre-kick window: runs develop before the ball moves ---------
@@ -222,12 +227,12 @@ class SetPieceEngine:
 
         if t_star is None:
             return self._resolve_untouched(
-                program, delivery, events, rng, att_tracks, def_tracks, track_times, seed
+                program, delivery, events, draws, att_tracks, def_tracks, track_times, seed
             )
 
         # --- 6. contest winner (Gumbel-max; fixed contestant order) ---------
         winner_team, winner_idx = self._contest_winner(
-            program, contestants, ball_times, ball_pos, t_star, rng
+            program, contestants, ball_times, ball_pos, t_star, draws
         )
         ball_at = self._ball_state_at(delivery, t_star)
         contact_h = float(ball_at.position[2])
@@ -285,7 +290,7 @@ class SetPieceEngine:
             t_star,
             def_tracks,
             events,
-            rng,
+            draws,
             seed,
             track_times,
             att_tracks,
@@ -293,7 +298,7 @@ class SetPieceEngine:
         )
 
     # ------------------------------------------------------------ internals
-    def _execute_delivery(self, program: SimProgram, rng: np.random.Generator) -> BallState:
+    def _execute_delivery(self, program: SimProgram, draws: SimDraws) -> BallState:
         cfg = self._cfg
         kick = np.array([program.kick_pos[0], program.kick_pos[1], 0.11])
         aim = program.delivery_target - program.kick_pos
@@ -305,10 +310,11 @@ class SetPieceEngine:
         heading += (
             -program.spin_sign * cfg.curl_compensation_rad_per_rps * program.delivery_spin_rps
         )
-        # Draw 1: direction error; draw 2: speed multiplier.
-        heading += float(rng.normal(0.0, cfg.dir_noise_base_rad * (1.2 - skill)))
-        speed = program.delivery_speed_ms * float(
-            1.0 + rng.normal(0.0, cfg.speed_noise_frac * (1.2 - skill))
+        # Externalized draws (ADR-011): delivery[0]=dir error, [1]=speed mult,
+        # both standard normal scaled by the skill-dependent sigma.
+        heading += cfg.dir_noise_base_rad * (1.2 - skill) * float(draws.delivery[0])
+        speed = program.delivery_speed_ms * (
+            1.0 + cfg.speed_noise_frac * (1.2 - skill) * float(draws.delivery[1])
         )
         speed = max(6.0, speed)
 
@@ -366,15 +372,19 @@ class SetPieceEngine:
         ball_times: FloatArray,
         ball_pos: FloatArray,
         t_star: float,
-        rng: np.random.Generator,
+        draws: SimDraws,
     ) -> tuple[str, int]:
         cfg = self._cfg
+        na = program.n_attackers
         k = int(np.searchsorted(ball_times, t_star))
         ball_z = float(ball_pos[min(k, len(ball_pos) - 1), 2])
         best_score, best = -np.inf, contestants[0]
-        # Draws in contestant list order (fixed): one Gumbel per contestant.
+        # Externalized draws (ADR-011): each potential contestant has a fixed
+        # Gumbel slot in draws.contest by player index — attackers [0..na),
+        # defenders [na..na+nd) — so over-provisioning never shifts other draws.
         for team, idx, t_arr in contestants:
             attr = program.att_attr[idx] if team == _ATTACK else program.def_attr[idx]
+            gumbel = draws.contest[idx] if team == _ATTACK else draws.contest[na + idx]
             reach_margin = float(attr[Attr.JUMP_REACH]) - ball_z
             slack = (t_star + cfg.contest_window_s) - t_arr
             score = (
@@ -383,7 +393,7 @@ class SetPieceEngine:
                 + cfg.w_strength * float(attr[Attr.STRENGTH])
                 + cfg.w_heading * float(attr[Attr.HEADING])
                 + (cfg.gk_claim_bonus if (team == _DEFENSE and idx == program.gk_index) else 0.0)
-                + cfg.gumbel_scale * float(rng.gumbel())
+                + cfg.gumbel_scale * float(gumbel)
             )
             if score > best_score:
                 best_score, best = score, (team, idx, t_arr)
@@ -483,7 +493,7 @@ class SetPieceEngine:
         program: SimProgram,
         delivery: Trajectory,
         events: list[SimEvent],
-        rng: np.random.Generator,
+        draws: SimDraws,
         att_tracks: FloatArray,
         def_tracks: FloatArray,
         track_times: FloatArray,
@@ -514,7 +524,8 @@ class SetPieceEngine:
             return self._finish(
                 outcome, events, seed, track_times, att_tracks, def_tracks, delivery, None
             )
-        jitter = float(rng.uniform(0.9, 1.1))
+        # Externalized draw (ADR-011): U(0,1) mapped to the [0.9, 1.1] near-tie band.
+        jitter = 0.9 + 0.2 * draws.second_ball
         if att_score * jitter < def_score:
             team, pid = _ATTACK, program.att_player_ids[att_best]
             outcome = SetPieceOutcome.SECOND_BALL_ATTACK
@@ -538,7 +549,7 @@ class SetPieceEngine:
         t_star: float,
         def_tracks: FloatArray,
         events: list[SimEvent],
-        rng: np.random.Generator,
+        draws: SimDraws,
         seed: int,
         track_times: FloatArray,
         att_tracks: FloatArray,
@@ -550,15 +561,18 @@ class SetPieceEngine:
         pos = np.asarray(ball_at.position)
         is_header = pos[2] > 1.6
 
-        # Draws: aim_y, aim_z, dir error (2), save (later).
-        aim_y = float(rng.uniform(-cfg.shot_aim_y_max_m, cfg.shot_aim_y_max_m))
-        aim_z = float(rng.uniform(cfg.shot_aim_z_min_m, cfg.shot_aim_z_max_m))
+        # Externalized draws (ADR-011): aim_y U(-1,1)->[-max,max], aim_z
+        # U(0,1)->[z_min,z_max], perturb 2x standard normal scaled by sigma.
+        aim_y = cfg.shot_aim_y_max_m * draws.shot_aim_y
+        aim_z = (
+            cfg.shot_aim_z_min_m + (cfg.shot_aim_z_max_m - cfg.shot_aim_z_min_m) * draws.shot_aim_z
+        )
         aim = np.array([52.5, aim_y, aim_z])
         direction = aim - pos
         direction = direction / max(float(np.linalg.norm(direction)), 1e-9)
         sigma = cfg.header_dir_sigma_rad * (1.6 - heading_skill)
         # Small-angle perturbation in two transverse axes.
-        perturb = rng.normal(0.0, sigma, 2)
+        perturb = sigma * draws.shot_perturb
         tangent1 = np.cross(direction, [0.0, 0.0, 1.0])
         tangent1 = tangent1 / max(float(np.linalg.norm(tangent1)), 1e-9)
         tangent2 = np.cross(direction, tangent1)
@@ -612,7 +626,7 @@ class SetPieceEngine:
                 att_tracks,
                 def_tracks,
                 delivery,
-                rng,
+                draws,
             )
 
         # --- placeholder path (no xG model): geometry + GK-save logit (G-9) ---
@@ -642,7 +656,9 @@ class SetPieceEngine:
             + cfg.save_c_distance * dist
         )
         p_save = 1.0 / (1.0 + math.exp(-logit))
-        if float(rng.uniform()) < p_save:
+        # Externalized draw (ADR-011): shot_final serves the GK-save Bernoulli on
+        # the placeholder path (the xG path uses the same slot for its Bernoulli).
+        if draws.shot_final < p_save:
             events.append(
                 SaveEvent(
                     time_s=after.final_state.time_s + t_star,
@@ -728,9 +744,10 @@ class SetPieceEngine:
         att_tracks: FloatArray,
         def_tracks: FloatArray,
         delivery: Trajectory,
-        rng: np.random.Generator,
+        draws: SimDraws,
     ) -> SetPieceResult:
-        scored = float(rng.uniform()) < xg_val
+        # Externalized draw (ADR-011): U(0,1) Bernoulli on the scored xG (G-14).
+        scored = draws.shot_final < xg_val
         if scored:
             if after.goal_scored:
                 goal_ev = after.events[-1]
@@ -795,9 +812,3 @@ class SetPieceEngine:
             delivery=delivery,
             after_contact=after,
         )
-
-
-def cfg_jitter(rng: np.random.Generator, n: int, cfg_frac: float) -> FloatArray:
-    """Symmetric reaction-time jitter draws, fixed order (ADR-003 d9)."""
-    result: FloatArray = rng.uniform(-cfg_frac, cfg_frac, n)
-    return result

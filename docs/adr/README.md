@@ -14,3 +14,4 @@ Numbered, immutable once accepted; superseded ADRs are marked, never deleted.
 | [ADR-008](ADR-008-optimization-surface-and-3d-replay.md) | Read-only optimization surface, CRN compare, on-demand 3D replay | Accepted (Phase 7) |
 | [ADR-009](ADR-009-scenario-realism.md) | Scenario realism: wider attacker template, basic free kicks, structured defence (`sim/0.5.0`) | Accepted (Phase 8) |
 | [ADR-010](ADR-010-evolutionary-search.md) | Evolutionary routine search (CMA-ES + NSGA-II) over the existing sampler dispatch | Accepted (Phase 9) |
+| [ADR-011](ADR-011-throughput-kernel.md) | Fused Numba scenario kernel with externalized RNG (≤1e-9 drop-in, `sim/0.5.0`) | Accepted (Phase 10) |

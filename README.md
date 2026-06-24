@@ -50,16 +50,28 @@ replay JSON. ✅ **Phase 8** (`sim/0.5.0`) — **scenario realism**: the corner 
 **basic free-kick genome**, and a structured `near_post_man` defence; the canonical study is
 re-baselined. See [ADR-009](docs/adr/ADR-009-scenario-realism.md).
 
+✅ **Phase 9** — **evolutionary routine search** (`restart-opt`): a genuine **NSGA-II** genetic
+algorithm and **CMA-ES** evolution strategy plug into the same screen→confirm pipeline as TPE/random,
+each trial carrying its **generation** lineage; the canonical study runs all three at equal budget and
+records which sampler produced the winner. Honest result at the scoped budget: evolution beats random,
+TPE still wins — a GA needs bigger populations/more generations, which Phase 10 unlocks. See
+[ADR-010](docs/adr/ADR-010-evolutionary-search.md). The UI is also now production-grade: a persistent
+app shell, real type system, and motion across the Workbench and Optimization surfaces.
+
 ```bash
 # Run the Scenario Workbench locally:
-uv run uvicorn restart_api.main:app --app-dir apps/backend/src   # API :8000
-npm run dev -w @restart/frontend                                 # web :3000 -> /scenarios
+uv run uvicorn restart_api.main:app --reload --app-dir apps/backend/src   # API :8000
+npm run dev -w apps/frontend                                              # web :3000 -> /scenarios
 ```
 
-🏗️ **Next: Phase 9** — throughput: a fused **Numba scenario kernel** to lift the engine from
-~3 sims/s toward 10⁵–10⁶-sim studies (the keystone dependency). The full forward roadmap —
-calibration via simulation-based inference, evolutionary/multi-objective search, CVaR/robust
-objectives, multi-touch fidelity — is in
+🏗️ **In progress: Phase 10** — throughput: a fused **Numba scenario kernel** to lift the engine from
+~3 sims/s toward 10⁴–10⁵ sims/s (the keystone that scales evolution). It externalizes the per-sim RNG
+into a `SimDraws` draw plan so the njit kernel and the NumPy reference consume identical Philox draws —
+a true `≤1e-9` drop-in (no `ENGINE_VERSION` bump). RNG externalization and the njit agent kernels have
+landed with equivalence tests; the fused per-sim kernel, throughput benchmark, and canonical
+re-baseline remain. See [ADR-011](docs/adr/ADR-011-throughput-kernel.md). The full forward roadmap —
+calibration via simulation-based inference, multi-objective Pareto search, CVaR/robust objectives,
+multi-touch fidelity — is in
 [`docs/ROADMAP-future-enhancements.md`](docs/ROADMAP-future-enhancements.md).
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
@@ -132,9 +144,36 @@ scripts/        verify.{sh,ps1} — the full CI suite, locally
 tests/          cross-package integration tests
 ```
 
+## Deploying
+
+The app is two deployables. Nothing here is bespoke to one host.
+
+- **Backend (FastAPI).** A container image is provided — build from the repo root:
+  ```bash
+  docker build -f apps/backend/Dockerfile -t restart-api .
+  docker run -p 8000:8000 \
+    -e RESTART_CORS_ORIGINS='["https://your-frontend.example"]' \
+    -v "$PWD/data:/app/data" -v "$PWD/optimization_studies:/app/optimization_studies" \
+    restart-api
+  ```
+  The image installs only the backend + simulation core (no optimizer/ML stack). It boots
+  **server-free** (SQLite + in-process queue); set `RESTART_DATABASE_URL` and `RESTART_REDIS_URL`
+  to switch to the Postgres + Arq/Redis drop-ins. Liveness/readiness are at `/healthz` and `/readyz`.
+  Runs on any container host (Railway, Fly, Render, Cloud Run).
+- **Frontend (Next.js).** Deploys to Vercel with zero config; set `NEXT_PUBLIC_API_BASE_URL` to the
+  backend's public URL (and `NEXT_PUBLIC_API_KEY` if the backend sets `RESTART_API_KEY` for writes).
+- **Data.** The `/optimize` surface works out of the box from the committed `optimization_studies/`.
+  The `/scenarios` squads + xG need the marts: run the StatsBomb ETL
+  ([docs/etl-runbook.md](docs/etl-runbook.md)) to populate `data/marts`, then mount it (the marts are
+  derived locally and not redistributed — see License & data below).
+
 ## License & data
 
-Code license TBD at first release. Uses [StatsBomb Open Data](https://github.com/statsbomb/open-data)
-under its non-commercial research terms, with attribution. No proprietary ratings data is used;
-every player attribute is provenance-tagged. This is a research/portfolio project and is not
-affiliated with FIFA or any national federation.
+The original source code is released under the **MIT License** ([LICENSE](LICENSE)). The MIT grant
+covers the code only — it does not relicense third-party data. This project uses
+[StatsBomb Open Data](https://github.com/statsbomb/open-data) under StatsBomb's **non-commercial**
+research terms, with attribution; that data is **not redistributed** here (the derived marts are
+rebuilt locally by the ETL), and any use of the StatsBomb-derived data or models trained on it
+remains subject to StatsBomb's terms. No proprietary ratings data is used; every player attribute is
+provenance-tagged. This is a research/portfolio project and is not affiliated with FIFA, StatsBomb,
+or any national federation.

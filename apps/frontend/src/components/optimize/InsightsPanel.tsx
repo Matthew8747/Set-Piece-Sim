@@ -15,20 +15,25 @@ export function InsightsPanel({
   methodHref = "/docs/09-optimization-methodology",
 }: InsightsPanelProps) {
   return (
-    <section data-testid="insights" className="flex flex-col gap-2">
+    <section data-testid="insights" className="card flex flex-col gap-3 p-5">
       <header className="flex items-baseline justify-between">
         <h3 className="text-sm font-semibold tracking-tight">What the search found</h3>
-        <a href={methodHref} className="font-mono text-[10px] text-(--color-signal)/80 underline">
+        <a
+          href={methodHref}
+          className="font-mono text-[10px] text-(--color-signal)/80 underline-offset-2 hover:underline"
+        >
           how?
         </a>
       </header>
       {insights.length === 0 ? (
-        <p className="font-mono text-xs opacity-50">no surrogate insights for this study</p>
+        <p className="font-mono text-xs text-(--color-line)/50">
+          no surrogate insights for this study
+        </p>
       ) : (
-        <ul className="flex flex-col gap-1.5">
+        <ul className="flex flex-col gap-2.5">
           {insights.map((line, i) => (
-            <li key={i} className="flex gap-2 text-sm">
-              <span aria-hidden className="text-(--color-signal)">
+            <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-(--color-line)/85">
+              <span aria-hidden className="mt-0.5 text-(--color-signal)">
                 →
               </span>
               <span>{line}</span>

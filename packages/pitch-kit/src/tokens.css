@@ -34,7 +34,21 @@
      "positive"; muted blue keeps honest-uncertainty chrome quiet (doc 07 §4). */
   --color-ci: #5aa9ff;
 
-  /* Type — Inter for UI, IBM Plex Mono for ALL numerals (tabular). */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* Type — a characterful editorial grotesque for display, a clean humanist
+     grotesque for body, IBM Plex Mono for ALL numerals (tabular). The
+     --font-*-loaded vars are injected by next/font in the app's layout; the
+     quoted names are the graceful fallback (tests, SVG export, no-JS). */
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-hanken), "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Motion — one easing language across chrome (doc 07 §5). */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Radii + elevation for app chrome (the pitch/charts set their own). */
+  --radius-card: 0.75rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--color-signal) 35%, transparent),
+    0 10px 40px -16px color-mix(in oklab, var(--color-signal) 45%, transparent);
 }

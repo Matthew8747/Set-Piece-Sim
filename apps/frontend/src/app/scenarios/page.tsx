@@ -58,29 +58,28 @@ export default function ScenariosPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-6 py-12">
-      <header className="flex items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Scenarios</h1>
-          <p className="text-sm opacity-60">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-(--color-line)/10 pb-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+            Workbench
+          </span>
+          <h1 className="text-3xl font-semibold tracking-tight">Scenarios</h1>
+          <p className="text-sm text-(--color-line)/60">
             Canonical World Cup 2026 set-pieces and your saved scenarios.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={newScenario}
-          disabled={busy}
-          className="rounded bg-(--color-signal) px-4 py-2 font-medium text-black disabled:opacity-40"
-        >
+        <button type="button" onClick={newScenario} disabled={busy} className="btn btn-primary">
           {busy ? "creating…" : "New scenario"}
+          {!busy && <span aria-hidden>→</span>}
         </button>
       </header>
 
       {error && <p className="font-mono text-xs text-(--color-warn)">{error}</p>}
 
       {empty && (
-        <section className="rounded-lg border border-dashed border-(--color-line)/20 p-8 text-center">
-          <p className="text-lg">No scenarios yet.</p>
-          <p className="mt-2 text-sm opacity-60">
+        <section className="card flex flex-col items-center gap-2 border-dashed p-10 text-center">
+          <p className="text-lg font-medium">No scenarios yet.</p>
+          <p className="max-w-md text-sm text-(--color-line)/60">
             Start from the <span className="text-(--color-signal)">canonical WC2026</span> corner —
             England&apos;s near-post routine against Argentina&apos;s zonal scheme — then tweak the
             squads, simulate, and replay.
@@ -89,18 +88,26 @@ export default function ScenariosPage() {
       )}
 
       {scenarios && scenarios.length > 0 && (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="stagger grid gap-3 sm:grid-cols-2">
           {scenarios.map((s) => (
             <li key={s.scenario_id}>
               <Link
                 href={`/scenarios/${s.scenario_id}`}
-                className="flex flex-col gap-2 rounded-lg border border-(--color-line)/15 p-4 transition hover:border-(--color-signal)/40"
+                className="card card-interactive group flex flex-col gap-2 p-4"
               >
-                <span className="font-medium">{s.name}</span>
-                <span className="font-mono text-xs opacity-50">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="font-medium">{s.name}</span>
+                  <span
+                    aria-hidden
+                    className="translate-x-0 text-(--color-line-muted) opacity-0 transition-all group-hover:translate-x-0.5 group-hover:text-(--color-signal) group-hover:opacity-100"
+                  >
+                    →
+                  </span>
+                </span>
+                <span className="font-mono text-xs text-(--color-line-muted)">
                   {s.spec.routine_id} · {s.spec.scheme_id}
                 </span>
-                <span className="font-mono text-[10px] opacity-30">
+                <span className="font-mono text-[10px] text-(--color-line)/30">
                   #{s.scenario_hash.slice(0, 12)}
                 </span>
               </Link>
