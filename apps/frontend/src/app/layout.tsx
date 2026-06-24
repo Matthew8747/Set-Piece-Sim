@@ -28,7 +28,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Restart Lab — set-piece intelligence",
+  title: "Restart Lab · set-piece intelligence",
   description:
     "AI-assisted set-piece optimization for international football. Physics simulation, Monte Carlo experimentation, and machine-learning routine search for the 2026 World Cup.",
 };

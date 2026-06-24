@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 // The canonical seed (doc 07: "empty states teach" — a new scenario opens
 // pre-loaded with a sensible routine vs zonal defense, not a blank pitch).
 const CANONICAL = {
-  name: "WC2026 — England corner vs Argentina",
+  name: "WC2026 · England corner vs Argentina",
   attacking_team_id: "england",
   defending_team_id: "argentina",
 };
@@ -80,8 +80,8 @@ export default function ScenariosPage() {
         <section className="card flex flex-col items-center gap-2 border-dashed p-10 text-center">
           <p className="text-lg font-medium">No scenarios yet.</p>
           <p className="max-w-md text-sm text-(--color-line)/60">
-            Start from the <span className="text-(--color-signal)">canonical WC2026</span> corner —
-            England&apos;s near-post routine against Argentina&apos;s zonal scheme — then tweak the
+            Start from the <span className="text-(--color-signal)">canonical WC2026</span> corner
+            (England&apos;s near-post routine against Argentina&apos;s zonal scheme), then tweak the
             squads, simulate, and replay.
           </p>
         </section>

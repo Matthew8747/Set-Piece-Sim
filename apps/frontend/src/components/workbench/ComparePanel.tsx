@@ -93,7 +93,7 @@ export function ComparePanel({ scenarioA }: ComparePanelProps) {
     <div className="flex flex-col gap-5">
       {empty ? (
         <p className="text-sm opacity-60">
-          Save a second scenario to compare against — there is nothing to compare yet.
+          Save a second scenario to compare against. There is nothing to compare yet.
         </p>
       ) : (
         <div className="card flex flex-wrap items-end gap-4 p-4">

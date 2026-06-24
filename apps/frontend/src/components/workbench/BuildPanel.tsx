@@ -89,7 +89,7 @@ export function BuildPanel({ routines, schemes, teams, initial, onSaved }: Build
     try {
       const team = teams.find((t) => t.team_id === attId);
       const created = await api.createScenario({
-        name: `${team?.name ?? attId} — ${routines.find((r) => r.routine_id === routineId)?.name ?? routineId}`,
+        name: `${team?.name ?? attId} · ${routines.find((r) => r.routine_id === routineId)?.name ?? routineId}`,
         routine_id: routineId,
         scheme_id: schemeId,
         attacking_team_id: attId,
@@ -148,7 +148,7 @@ export function BuildPanel({ routines, schemes, teams, initial, onSaved }: Build
         {players.length > 0 && (
           <details className="text-xs">
             <summary className="cursor-pointer opacity-60">
-              Selected XI ({players.length}) — provenance
+              Selected XI ({players.length}) · provenance
             </summary>
             <ul className="mt-2 flex flex-col gap-1 font-mono opacity-70">
               {players.map((p) => (
@@ -182,7 +182,7 @@ export function BuildPanel({ routines, schemes, teams, initial, onSaved }: Build
           />
         </div>
         <p className="text-xs opacity-50">
-          Planning overlay — the engine simulates the selected routine. Handles snap to 0.5 m;{" "}
+          Planning overlay. The engine simulates the selected routine; handles snap to 0.5 m.{" "}
           <span className={feasible ? "text-(--color-signal)" : "text-(--color-danger)"}>
             {feasible ? "run is reachable" : "run is too far to arrive in time"}
           </span>

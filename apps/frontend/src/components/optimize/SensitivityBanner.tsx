@@ -25,7 +25,7 @@ export function SensitivityBanner({ sensitivity }: SensitivityBannerProps) {
         <span>
           <span className="font-medium text-(--color-warn)">Reporting routine classes.</span> Top-k
           order flips under ±10% attribute perturbation
-          {sensitivity.flipped.length > 0 ? ` (${sensitivity.flipped.join(", ")})` : ""} — read this
+          {sensitivity.flipped.length > 0 ? ` (${sensitivity.flipped.join(", ")})` : ""}. Read this
           as a routine class (e.g. &ldquo;near-post inswingers beat this zonal line&rdquo;), not a
           player-precise prescription.
         </span>
