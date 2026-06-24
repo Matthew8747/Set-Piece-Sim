@@ -6,15 +6,15 @@ Gumbel-max contest, discrete GK model, first-contact-centric termination
 (d1-d10). The Phase-3 batch kernel ports these exact semantics.
 
 RNG is externalized (ADR-011): all per-sim randomness is drawn up front into a
-``SimDraws`` struct (``engine/draws.py``) by category sub-stream — delivery,
+``SimDraws`` struct (``engine/draws.py``) by category sub-stream - delivery,
 reaction jitter (attackers then defenders, index order), contest Gumbel (one
 slot per potential contestant by player index), shot aim/perturb/Bernoulli, and
-the loose-ball jitter — and the engine reads those draws instead of calling an
+the loose-ball jitter - and the engine reads those draws instead of calling an
 ``rng``. This is what lets the Numba kernel (Phase 10) consume identical draws
 and match this reference to <=1e-9. Same (program, seed) => bit-identical result.
 
 Planning simplification (G-13, registered): interception plans are computed
-once at kick time from kick-instant agent states — agents commit to a plan
+once at kick time from kick-instant agent states - agents commit to a plan
 rather than re-planning during flight. Realism cost is small at corner
 timescales; throughput gain is large (one (n,m) solve per sim).
 """
@@ -380,8 +380,8 @@ class SetPieceEngine:
         ball_z = float(ball_pos[min(k, len(ball_pos) - 1), 2])
         best_score, best = -np.inf, contestants[0]
         # Externalized draws (ADR-011): each potential contestant has a fixed
-        # Gumbel slot in draws.contest by player index — attackers [0..na),
-        # defenders [na..na+nd) — so over-provisioning never shifts other draws.
+        # Gumbel slot in draws.contest by player index - attackers [0..na),
+        # defenders [na..na+nd) - so over-provisioning never shifts other draws.
         for team, idx, t_arr in contestants:
             attr = program.att_attr[idx] if team == _ATTACK else program.def_attr[idx]
             gumbel = draws.contest[idx] if team == _ATTACK else draws.contest[na + idx]
@@ -411,7 +411,7 @@ class SetPieceEngine:
         def_vel: FloatArray,
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
         """Tick both teams over [t_from, t_to]; returns (times, att_tracks,
-        def_tracks, att_pos, att_vel, def_pos, def_vel) — state passes through
+        def_tracks, att_pos, att_vel, def_pos, def_vel) - state passes through
         so windows chain (pre-kick, then flight)."""
         cfg, ag = self._cfg, self._agents
         dt = cfg.agent_dt_s

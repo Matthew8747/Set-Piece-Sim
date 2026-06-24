@@ -1,7 +1,7 @@
 """Parse persisted ``study.json`` artifacts into the optimization DTOs.
 
 Pure read path: ``json.load`` + typed mapping + small numeric derivations. No
-``restart_opt`` import (the optimizer never enters the request path — ADR-008);
+``restart_opt`` import (the optimizer never enters the request path - ADR-008);
 no IO beyond reading the committed study files. Derivations (best-so-far,
 parallel-coords axes) are module-level functions so they are unit-testable and
 the OpenAPI/shared-types drift gate covers the served shapes.

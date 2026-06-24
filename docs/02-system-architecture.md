@@ -1,4 +1,4 @@
-# System Architecture — Restart Lab
+# System Architecture - Restart Lab
 
 **Version:** 0.1 · **Status:** Design review draft
 
@@ -10,7 +10,7 @@ A **modular monolith**: one Python codebase with strictly enforced internal boun
 as two processes (API, worker), plus a separately deployed Next.js frontend.
 
 **Challenged assumption:** a "professional platform" needs microservices. Rejected. Microservices
-for a solo 12-week build buy operational pain and demo fragility for zero portfolio credit —
+for a solo 12-week build buy operational pain and demo fragility for zero portfolio credit -
 interviewers are *more* impressed by a monolith with clean internal boundaries and an articulated
 "here is the seam where the sim engine would be extracted into a service" story than by a fragile
 distributed system. The seams are designed in (the sim core is a pure library with zero web/DB
@@ -39,40 +39,40 @@ flowchart LR
 
 ## 2. Codebase layout (Clean Architecture, dependency rule enforced)
 
-*(As built in Phase 0; revised from the original sketch — the simulation core was promoted to a
+*(As built in Phase 0; revised from the original sketch - the simulation core was promoted to a
 standalone installable package under `packages/`, which makes the dependency rule a packaging
 fact rather than a convention.)*
 
 ```
 restart-lab/
 ├── apps/
-│   ├── backend/              # FastAPI app (restart_api): routers, DTOs, settings — web adapter
+│   ├── backend/              # FastAPI app (restart_api): routers, DTOs, settings - web adapter
 │   │   ├── src/restart_api/  #   depends on restart-simulation-core via uv workspace
 │   │   └── tests/
 │   └── frontend/             # Next.js 16 + TypeScript + Tailwind v4 (App Router, Turbopack)
 ├── packages/
-│   ├── simulation-core/      # THE DOMAIN CORE (python pkg `restart`) — pure, no web/DB imports
+│   ├── simulation-core/      # THE DOMAIN CORE (python pkg `restart`) - pure, no web/DB imports
 │   │   ├── src/restart/      #   physics/ agents/ tactics/ montecarlo/ ml/ domain/ (phased in)
 │   │   └── tests/
 │   └── shared-types/         # TS mirrors of the API contract (pitch-kit joins in Phase 6)
 ├── data/                     # raw → staging → marts lake (git-ignored, rebuildable via ETL)
 ├── docs/                     # design package + living guides
 ├── infra/                    # docker-compose: Postgres 16 + Redis 7 (localhost-bound)
-├── scripts/                  # verify.{sh,ps1} — full CI suite locally
+├── scripts/                  # verify.{sh,ps1} - full CI suite locally
 ├── tests/                    # cross-package integration tests
 └── .github/workflows/        # CI: python + frontend jobs
 ```
 
 Later phases add (per design): `etl/` and `worker/` as backend modules or sibling packages,
-`notebooks/` for validation, and a `pitch-kit` TS package — each lands in the phase that
+`notebooks/` for validation, and a `pitch-kit` TS package - each lands in the phase that
 introduces its first real consumer.
 
 **Dependency rule:** `restart/` (domain) imports nothing from `api/`, `storage/`, or `worker/`.
-Adapters depend inward. Enforced in CI with `import-linter` contracts — a portfolio-visible
+Adapters depend inward. Enforced in CI with `import-linter` contracts - a portfolio-visible
 artifact of architectural discipline, not just a convention.
 
 **Interface contracts (per Clean Architecture):**
-- `restart.montecarlo.BatchRunner.run(scenario: Scenario, n: int, seed: int) -> BatchResult` —
+- `restart.montecarlo.BatchRunner.run(scenario: Scenario, n: int, seed: int) -> BatchResult` -
   pure, deterministic, no I/O.
 - `storage.repositories.*` implement protocols defined in `restart.domain.ports` (e.g.
   `ScenarioRepository`, `ResultStore`), so the domain is testable with in-memory fakes.
@@ -85,7 +85,7 @@ artifact of architectural discipline, not just a convention.
 |---|---|---|---|
 | Sim core numerics | **NumPy (vectorized batch) + Numba for hot loops** | 100k-run requirement (PRD FR-4.1) demands batch vectorization; Numba rescues any unavoidable per-tick Python | JAX (rejected v1: Windows dev friction, overkill without gradients; revisit if differentiable sim becomes a goal), C++/Rust core (rejected: cost/benefit for solo build) |
 | API | **FastAPI + pydantic v2** | Async, OpenAPI for free, pydantic doubles as validation layer (security req) | Flask (weaker typing story), Django (ORM/admin unneeded) |
-| Job queue | **Arq on Redis** | Async-native, tiny API, fits FastAPI; jobs are coarse (one batch = one job) | Celery (heavier, config sprawl), RQ (sync), Postgres-as-queue via SKIP LOCKED (viable fallback — fewer moving parts; rejected to keep Redis for caching anyway) |
+| Job queue | **Arq on Redis** | Async-native, tiny API, fits FastAPI; jobs are coarse (one batch = one job) | Celery (heavier, config sprawl), RQ (sync), Postgres-as-queue via SKIP LOCKED (viable fallback - fewer moving parts; rejected to keep Redis for caching anyway) |
 | Primary DB | **PostgreSQL 16** | Relational entities + JSONB for Routine Specs; mature, free tiers everywhere | SQLite (insufficient for concurrent worker+API writes), Mongo (no) |
 | Bulk results | **Parquet files (volume or S3-compatible)** | 100k × per-sim event rows do not belong in Postgres; Parquet + DuckDB gives fast analytical reads | Postgres rows (write amplification, bloat), ClickHouse (operational overkill) |
 | Analytics-on-files | **DuckDB** | Query Parquet event logs in-process for dashboard aggregates; zero infra | Spark (absurd at this scale) |
@@ -94,7 +94,7 @@ artifact of architectural discipline, not just a convention.
 | Frontend | **Next.js 16 (App Router) + TypeScript + Tailwind** | Industry default; SSR for report pages; Vercel deploy | Vite SPA (loses easy server rendering of reports) |
 | 2D pitch / replay | **Custom SVG components + Canvas for replay** | Full control over the core differentiating visuals | d3-only (fights React), Pixi (heavier than needed) |
 | Charts | **visx** | D3 power with React idioms; consultancy-grade control over styling | Plotly (styling ceiling → "generic dashboard" look), Recharts (too rigid) |
-| 3D (Tier 2) | **React Three Fiber + drei** | Standard React 3D; shares replay data format with 2D player | Three.js raw (more code), deck.gl (geo-oriented, wrong tool — rejected) |
+| 3D (Tier 2) | **React Three Fiber + drei** | Standard React 3D; shares replay data format with 2D player | Three.js raw (more code), deck.gl (geo-oriented, wrong tool - rejected) |
 | Infra | **Docker Compose (dev); GitHub Actions (CI); Vercel (web) + Railway or Fly.io (api/worker/pg/redis)** | Live demo with background workers needs a long-running container host; Vercel serves the frontend it's best at | All-on-Vercel (rejected for worker: long Monte Carlo jobs fit containers better than serverless functions, even with 300 s fluid-compute limits); AWS (overkill + cost risk for a portfolio demo) |
 
 ## 4. Key data flows
@@ -108,8 +108,8 @@ artifact of architectural discipline, not just a convention.
    progress to Redis (`sim:progress:{id}`), writes per-sim event log to Parquet, aggregates KPIs
    + CIs into `sim_results_summary`, sets `status=complete`.
 4. UI polls `GET /sim-runs/{id}` (or SSE later); renders distributions from summary; replay
-   fetches individual sim trajectories (saved for a sampled subset — e.g. the median, best, worst,
-   and 50 random sims — to bound storage).
+   fetches individual sim trajectories (saved for a sampled subset - e.g. the median, best, worst,
+   and 50 random sims - to bound storage).
 
 ### 4.2 Optimize a routine
 1. `POST /api/v1/optimizations` with search-space config + budget.
@@ -141,7 +141,7 @@ Versioned under `/api/v1`; OpenAPI served at `/docs` (auth-free read, keyed writ
 
 - **Engine version** is a first-class field on every result; physics changes bump it; results
   from different engine versions are never silently compared.
-- **Seeds**: one root seed per run; per-sim child streams via `numpy.random.Philox` counters —
+- **Seeds**: one root seed per run; per-sim child streams via `numpy.random.Philox` counters -
   parallel-safe and replayable.
 - **Scenario hash**: canonical-JSON SHA-256 of the full spec; the cache/idempotency key.
 
@@ -152,7 +152,7 @@ Versioned under `/api/v1`; OpenAPI served at `/docs` (auth-free read, keyed writ
 - Worker jobs: max 2 retries on infra errors only (never on validation errors); failed runs keep
   `status=failed` + structured error payload, visible in UI.
 - Sim-level: a sim that produces NaN/exploding states is counted, quarantined (inputs dumped to
-  a debug artifact), and excluded — runs report `n_quarantined`; > 0.1% fails the batch.
+  a debug artifact), and excluded - runs report `n_quarantined`; > 0.1% fails the batch.
 
 ## 8. Testing strategy
 
@@ -170,7 +170,7 @@ Versioned under `/api/v1`; OpenAPI served at `/docs` (auth-free read, keyed writ
 - [ ] All secrets via environment variables; `.env.example` committed, `.env` git-ignored;
       production secrets in platform secret stores (Vercel/Railway). No keys in code or docs.
 - [ ] Pydantic validation on every request body/query; strict bounds on n_sims, budgets,
-      coordinates (pitch bounds), array sizes — sim inputs are effectively code, treat them
+      coordinates (pitch bounds), array sizes - sim inputs are effectively code, treat them
       as hostile.
 - [ ] Rate limiting (slowapi/Redis): per-IP on reads, stricter on compute-triggering POSTs;
       global concurrent-job cap so the demo can't be cost-bombed.
@@ -178,14 +178,14 @@ Versioned under `/api/v1`; OpenAPI served at `/docs` (auth-free read, keyed writ
 - [ ] CORS allowlist (exact origins); security headers (CSP, HSTS) at the edge.
 - [ ] Containers run non-root; minimal base images; `pip-audit` + `npm audit` + Dependabot in CI.
 - [ ] No PII: public-figure athletic data only; provenance-tagged (licensing, not privacy, is
-      the constraint — see Data Pipeline).
+      the constraint - see Data Pipeline).
 - [ ] Structured logging (no secrets in logs); request ids; basic anomaly alerting on job-queue
       depth and error rates.
 
 ## 10. Observability
 
 Structured JSON logs (loguru/structlog); Prometheus-style `/metrics` (sims/sec, queue depth,
-job durations) — even if only scraped locally, the instrumentation is a portfolio artifact;
+job durations) - even if only scraped locally, the instrumentation is a portfolio artifact;
 Sentry free tier for both frontend and API **(reversible)**.
 
 ## Assumption index

@@ -1,7 +1,7 @@
 """Read-only optimization studies surface (Phase 7, ADR-008).
 
 Serves the persisted ``study.json`` artifacts as typed DTOs. The optimizer
-(``restart_opt``: Optuna / LightGBM / SHAP) is never imported here — these
+(``restart_opt``: Optuna / LightGBM / SHAP) is never imported here - these
 routes load data, they never run a search.
 """
 

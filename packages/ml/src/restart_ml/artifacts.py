@@ -21,7 +21,7 @@ from restart_etl.config import default_paths
 
 def models_dir() -> Path:
     # Committed (not under git-ignored data/): the bundle is a small derived
-    # coefficient artifact — the shippable model — and CI cannot retrain (raw
+    # coefficient artifact - the shippable model - and CI cannot retrain (raw
     # data is git-ignored), so the engine integration relies on it being present.
     return default_paths().root / "models"
 

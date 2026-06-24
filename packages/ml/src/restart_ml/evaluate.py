@@ -1,6 +1,6 @@
 """Leakage-safe evaluation: grouped-by-match CV with calibration metrics.
 
-Shots from one match never straddle a fold (``GroupKFold`` on ``match_id``) — the
+Shots from one match never straddle a fold (``GroupKFold`` on ``match_id``) - the
 leakage guard from design doc 06 §2.2. For a model whose output feeds
 expectations, the metric that matters is calibration: we report the calibration
 slope/intercept (a logistic of the outcome on the predicted logit; slope ~ 1,

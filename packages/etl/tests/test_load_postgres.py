@@ -1,4 +1,4 @@
-"""Postgres mart-loader tests — skipped unless a server is provided (ADR-007 d1).
+"""Postgres mart-loader tests - skipped unless a server is provided (ADR-007 d1).
 
 Set ``RESTART_TEST_DATABASE_URL`` to a throwaway database to exercise them; CI
 stays server-free. The contract under test is idempotency: loading the same

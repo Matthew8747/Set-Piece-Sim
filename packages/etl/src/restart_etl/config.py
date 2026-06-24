@@ -71,7 +71,7 @@ APPROVED_SOURCES: frozenset[str] = frozenset(
     }
 )
 
-# Explicitly forbidden — scraped game ratings (design doc 04 §2). Listed so the
+# Explicitly forbidden - scraped game ratings (design doc 04 §2). Listed so the
 # license gate can name the violation, not just reject silently.
 FORBIDDEN_SOURCES: frozenset[str] = frozenset({"ea_fc", "sofifa", "fifa_game"})
 

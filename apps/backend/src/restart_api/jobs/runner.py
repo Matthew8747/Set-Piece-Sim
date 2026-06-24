@@ -3,7 +3,7 @@
 Wraps the pure ``MonteCarloRunner`` (which already derives stable per-sim seeds
 and reports progress every 50 sims) and adds two job concerns: a progress
 callback and a bounded, deterministically-sampled set of per-sim xG values for
-the distribution charts. No IO — this stays pure compute so determinism holds.
+the distribution charts. No IO - this stays pure compute so determinism holds.
 """
 
 from __future__ import annotations

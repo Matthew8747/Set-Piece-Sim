@@ -1,6 +1,6 @@
 """Typed staging rows (pydantic = the schema contract at the staging boundary).
 
-A staging row stays close to the source — one row per set-piece shot — but with
+A staging row stays close to the source - one row per set-piece shot - but with
 units standardized: coordinates in the canonical 105x68 m frame, the freeze
 frame transformed into the same frame and carried as JSON for the marts to turn
 into scalar traffic features. Validation here is the schema gate (doc 04 §5):
@@ -64,7 +64,7 @@ class StagingShot(BaseModel):
     y_m: float
     end_x_m: float | None
     end_y_m: float | None
-    statsbomb_xg: float | None  # reference only — never a feature or the label
+    statsbomb_xg: float | None  # reference only - never a feature or the label
     under_pressure: bool
     freeze_frame: list[FreezeFramePlayer] = Field(default_factory=list)
     has_freeze_frame: bool

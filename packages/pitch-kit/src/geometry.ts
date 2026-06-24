@@ -5,10 +5,10 @@
  * The corner surface is a goal-end crop of the attacking third: looking at the
  * attacked goal from above (goal at the TOP), the length axis runs down the
  * screen and the width axis runs across it. Every track/ball point is
- * `[world_x, world_y(, z)]` — index 0 is the length axis, index 1 the width.
+ * `[world_x, world_y(, z)]` - index 0 is the length axis, index 1 the width.
  */
 
-export const PX_PER_M = 8; // px per metre — the only scale knob
+export const PX_PER_M = 8; // px per metre - the only scale knob
 export const GOAL_LINE_X = 52.5; // attacked goal line, in world metres
 export const VIEW_X_MIN = 26; // crop the view to ~26 m out from goal
 export const HALF_WIDTH = 34; // pitch is 68 m wide → ±34 m about centre

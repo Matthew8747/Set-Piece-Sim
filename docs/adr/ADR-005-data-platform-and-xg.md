@@ -1,4 +1,4 @@
-# ADR-005 — Data platform & the xG ↔ engine integration
+# ADR-005 - Data platform & the xG ↔ engine integration
 
 **Status:** Accepted · **Date:** 2026-06-14 · **Phase:** 4
 **Related:** design doc 04 (data pipeline), design doc 06 (ML architecture), ADR-003 (engine),
@@ -32,9 +32,9 @@ trap** (xG must anchor the simulator to reality, so it must never train on simul
 4. **Mechanical licensing.** Every mart row carries a `source`; an approved allow-list is enforced
    by a gate (unit-tested in CI). Forbidden scraped-ratings sources (EA/sofifa) are named and
    rejected. Player attributes are **derived** with a documented method per value and tagged
-   `{source, method, license}` — the licensing constraint becomes a credibility feature.
+   `{source, method, license}` - the licensing constraint becomes a credibility feature.
 
-5. **xG models, and what ships.** Two body-part models (`xg-header`, `xg-foot`) — the reversible
+5. **xG models, and what ships.** Two body-part models (`xg-header`, `xg-foot`) - the reversible
    split from doc 06 §2.1. The full method comparison (LR vs HistGBM vs RandomForest vs XGBoost vs
    LightGBM) runs under **grouped-by-match CV**; the decision metric is **calibration**, not AUC.
    The **calibrated logistic ships** (slope ≈ 1.00 header & foot) because (a) it meets the
@@ -56,16 +56,16 @@ trap** (xG must anchor the simulator to reality, so it must never train on simul
   JSON directly). Active-model pinning is a file pointer (`models/active.json`) until DB pinning
   lands.
 - xG calibration is solved; the engine's **upstream** `[knob]`s (contest/delivery/traffic) remain
-  uncalibrated, so the *distribution* of simulated contexts is not yet validated — the owed
+  uncalibrated, so the *distribution* of simulated contexts is not yet validated - the owed
   week-5 calibration task. Documented as the Phase-4 honesty note (assumptions G-14/G-15).
 - Off-manifold risk (simulated contexts vs real-shot manifold) is registered (G-15, doc 06 §2.3);
   a population-stability check is the planned mitigation.
 
 ## Alternatives considered
 
-- **Train xG on simulator output** — rejected: destroys the reality anchor (doc 06 §1).
-- **Ship the GBM** — rejected for v1: pulls a non-pure dependency into scoring for a marginal,
+- **Train xG on simulator output** - rejected: destroys the reality anchor (doc 06 §1).
+- **Ship the GBM** - rejected for v1: pulls a non-pure dependency into scoring for a marginal,
   non-calibration gain; revisit if learning curves and calibration favor it.
-- **Airflow/dbt now; Postgres now** — rejected: a CLI rebuild + file-based DuckDB beat an
+- **Airflow/dbt now; Postgres now** - rejected: a CLI rebuild + file-based DuckDB beat an
   orchestrator and a server at this scale (doc 04 §4).
-- **Scraped EA/sofifa ratings** — rejected outright (license-fatal for a public portfolio).
+- **Scraped EA/sofifa ratings** - rejected outright (license-fatal for a public portfolio).

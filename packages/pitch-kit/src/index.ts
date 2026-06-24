@@ -1,5 +1,5 @@
 /**
- * @restart/pitch-kit — the canonical pitch surface, replay transport, and
+ * @restart/pitch-kit - the canonical pitch surface, replay transport, and
  * hand-rolled SVG chart primitives shared across the Restart Lab frontend
  * (design doc 07). Charts are plain SVG, not visx (ADR-007 d7: visx peers cap
  * at React 18; the app is React 19).

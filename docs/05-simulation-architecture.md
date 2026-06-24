@@ -1,4 +1,4 @@
-# Simulation Architecture — Restart Lab
+# Simulation Architecture - Restart Lab
 
 **Version:** 0.1 · **Status:** Design review draft
 
@@ -11,15 +11,15 @@ deliverable): every modeling choice is stated as an explicit, numbered assumptio
 ## 1. Design philosophy
 
 **Fidelity budget:** model only what changes set-piece outcomes, and model it explainably.
-A set piece is ~4–8 seconds, one ball delivery, one or two contests, one or two shots. The
+A set piece is ~4-8 seconds, one ball delivery, one or two contests, one or two shots. The
 fidelity hierarchy, in order of outcome-impact:
 
-1. Ball flight geometry (where/when the ball arrives) — **high fidelity (RK4 + drag + Magnus)**
-2. Who wins the aerial/first contact — **medium fidelity (kinematic reach + skill-weighted contest)**
-3. What the contact produces (shot quality) — **delegated to the real-data xG model** (see ML doc)
-4. Second-ball scramble — **coarse stochastic model, explicitly labeled**
+1. Ball flight geometry (where/when the ball arrives) - **high fidelity (RK4 + drag + Magnus)**
+2. Who wins the aerial/first contact - **medium fidelity (kinematic reach + skill-weighted contest)**
+3. What the contact produces (shot quality) - **delegated to the real-data xG model** (see ML doc)
+4. Second-ball scramble - **coarse stochastic model, explicitly labeled**
 
-**Challenged assumption:** "more physics = more credible." False past a point — biomechanical
+**Challenged assumption:** "more physics = more credible." False past a point - biomechanical
 player models would consume the schedule and add un-validatable parameters. Players are
 point-mass kinematic agents with capability envelopes; the *ball* gets the real physics. This is
 also how published football-simulation literature slices it.
@@ -40,7 +40,7 @@ F_magnus =  ½ ρ A C_l |v|² ŝ,   ŝ = (ω × v)/|ω × v|
 |---|---|---|
 | Ball mass m | 0.430 kg | `P-1` FIFA Law 2 midpoint |
 | Radius | 0.110 m | `P-1` |
-| Air density ρ | 1.225 kg/m³ | `P-2` sea level, 15 °C; host-city altitude (Mexico City 2,240 m, ρ≈0.98) exposed as a scenario parameter — a genuinely fun WC2026 feature, since ~7% less drag/Magnus at altitude measurably changes deliveries |
+| Air density ρ | 1.225 kg/m³ | `P-2` sea level, 15 °C; host-city altitude (Mexico City 2,240 m, ρ≈0.98) exposed as a scenario parameter - a genuinely fun WC2026 feature, since ~7% less drag/Magnus at altitude measurably changes deliveries |
 | C_d | 0.25 post-critical, ramp to 0.45 below Re_crit (|v|≈12 m/s) | `P-3` smooth approximation of the drag crisis; literature-anchored |
 | C_l | Spin-parameter fit: C_l = S/(2.2·S+0.7), S = r|ω|/|v| | `P-4` empirical Magnus fit; clamped S ≤ 0.6 |
 | Spin decay | τ ≈ 8 s exponential | `P-5` minor over flight times ≤ 4 s |
@@ -50,22 +50,22 @@ Integrator: **RK4, fixed dt = 5 ms** for ball flight (`P-6`); error vs dt=1 ms r
 
 ### 2.2 Bounce & roll (`P-7..P-9`)
 
-- Normal: v'_z = -e·v_z, **e = 0.65** dry grass (configurable 0.55–0.75).
+- Normal: v'_z = -e·v_z, **e = 0.65** dry grass (configurable 0.55-0.75).
 - Tangential: Coulomb-style impulse couples horizontal velocity and spin (sliding vs rolling
   contact branch); post-bounce spin recomputed.
 - Rolling: μ_roll = 0.06 deceleration until |v| < 0.2 m/s ⇒ ball dead (or out/goal events).
 
 ### 2.3 Contact events (kicks, headers, deflections, saves) (`P-10..P-13`)
 
-All player–ball interactions are **impulse events**, not continuous contact:
+All player-ball interactions are **impulse events**, not continuous contact:
 
 - An *intent* (target point, speed, spin) is resolved into an outgoing ball state.
 - **Execution noise** is the skill hook: actual outgoing velocity = intended + noise, where noise
   covariance scales inversely with the relevant skill (`delivery_skill` for kicks, `heading` for
   headers) and with difficulty (closing speed of ball, body orientation, contest pressure).
-  Direction noise ~ von Mises–Fisher about intended direction; speed noise lognormal.
+  Direction noise ~ von Mises-Fisher about intended direction; speed noise lognormal.
 - Headers cap outgoing speed at `v_head_max ≈ 0.7·|v_in| + 8 m/s·heading` (`P-12`, tunable
-  in calibration) — prevents physically absurd headed goals from weak positions.
+  in calibration) - prevents physically absurd headed goals from weak positions.
 - Deflections (unintentional contacts): restitution off body e_body = 0.4 with high scatter.
 - Goalkeeper: catch/parry/miss discrete outcome model gated by reach kinematics (dive envelope
   from GK attributes) with probabilities conditioned on ball speed, distance, and traffic
@@ -78,15 +78,15 @@ All player–ball interactions are **impulse events**, not continuous contact:
 Point-mass with capability envelope per `player_attributes`:
 
 - `|a| ≤ accel_ms2`, `|v| ≤ top_speed_ms`; curvature limit: max heading change rate
-  ∝ agility / |v| (fast players turn wide — `G-2`).
+  ∝ agility / |v| (fast players turn wide - `G-2`).
 - Reaction latency: agent re-plans only after `reaction_time_ms` from an information event
-  (ball struck, flick-on) — before that it continues its previous plan (`G-3`).
+  (ball struck, flick-on) - before that it continues its previous plan (`G-3`).
 - Jumping: ballistic, single jump per contest, total reach = `jump_reach_cm`; jump commit time
   ~250 ms before desired contact ⇒ mistimed jumps are possible and skill-dependent (`G-4`).
 
 ### 3.2 Decision model: scripted intents + reactive interception
 
-Two-layer design — this is the key simplification that keeps the project tractable:
+Two-layer design - this is the key simplification that keeps the project tractable:
 
 1. **Scripted layer (from Routine Spec / defensive scheme):** each agent has a role with
    waypoints and timing triggers ("start far-post run when kicker begins approach"). Decoys and
@@ -97,7 +97,7 @@ Two-layer design — this is the key simplification that keeps the project tract
    and decides whether to abandon script for ball-attack based on role + awareness. Contest
    entry, jump timing, and contact intent come from this layer.
 
-**No learned behavior in v1** (`G-5`): behaviors are legible, debuggable, and tunable —
+**No learned behavior in v1** (`G-5`): behaviors are legible, debuggable, and tunable -
 properties the calibration phase needs desperately. RL-driven agents are a Tier-3 research
 extension, not a foundation.
 
@@ -111,20 +111,20 @@ P(i wins first contact) = softmax over contestants (temperature = calibration pa
 ```
 
 Winner executes their contact intent with contest-degraded execution noise. The weights and
-temperature are **the** primary calibration knobs (§6) — flexible enough to match real first-
+temperature are **the** primary calibration knobs (§6) - flexible enough to match real first-
 contact and shot rates, few enough to avoid overfitting.
 
 ### 3.4 Realism constraints (hard, tested)
 
-No teleporting (positions integrate from bounded accelerations — property test); no double
+No teleporting (positions integrate from bounded accelerations - property test); no double
 jumps; no reaction before latency expires; goalkeepers obey the same kinematics; screens impose
 path-blocking via soft collision radii between players (`G-7`: players are 0.4 m-radius soft
-discs; overlap resolves with separation impulses — no ragdolls, no fouls model in v1, noted
+discs; overlap resolves with separation impulses - no ragdolls, no fouls model in v1, noted
 limitation).
 
 ## 4. Tactical layer: the Routine Spec
 
-Declarative JSON document — simultaneously the UI scenario-builder format, the optimizer's
+Declarative JSON document - simultaneously the UI scenario-builder format, the optimizer's
 genome, and the replay metadata. Sketch (`rs/1.0`):
 
 ```jsonc
@@ -148,11 +148,11 @@ genome, and the replay metadata. Sketch (`rs/1.0`):
 ```
 
 Free kicks and throw-ins are the same schema with different `set_piece`, delivery constraints
-(wall placement becomes part of the defensive scheme; throw speed caps), and legality rules —
+(wall placement becomes part of the defensive scheme; throw speed caps), and legality rules -
 this is what makes Tier-2 expansion configuration rather than construction (validates PRD `A-3`).
 
 Validation: JSON Schema + domain checks (positions on pitch, no offside-at-kick for free kicks,
-roles resolvable from lineup, runs kinematically feasible for the assigned player — *infeasible
+roles resolvable from lineup, runs kinematically feasible for the assigned player - *infeasible
 specs are rejected at submission, not silently "fixed"*, so the optimizer learns real constraints).
 
 ## 5. Monte Carlo engine
@@ -161,7 +161,7 @@ specs are rejected at submission, not silently "fixed"*, so the optimizer learns
 
 Randomness enters **only** through: delivery execution noise, contact execution noise, contest
 resolution, reaction-time jitter (±15%), run-timing jitter (awareness-scaled), GK decision
-outcomes, second-ball resolution. Everything else is deterministic — keeps variance attributable.
+outcomes, second-ball resolution. Everything else is deterministic - keeps variance attributable.
 
 ### 5.2 Vectorized batch design
 
@@ -173,11 +173,11 @@ The 100k requirement (PRD FR-4.1) shapes the core data layout:
 - Phase-structured ticking keeps masks cheap: [pre-kick] → [flight] → [contest] → [resolution
   /second ball] → [terminal]; sims advance through phases independently via mask groups.
 - Hot scalar paths (contest scoring, bounce branch) JIT-compiled with Numba where profiling
-  says so — **profile first, Numba second** is the rule.
+  says so - **profile first, Numba second** is the rule.
 - Chunking: 100k runs = 50 × 2k-sim chunks per worker task → bounded memory (~2k sims ×
   23 agents × state ≈ tens of MB), incremental progress, resumability.
 - Replay storage: full trajectories kept only for a curated sample (best/median/worst xG +
-  50 random) — replays are illustrations; statistics come from event logs.
+  50 random) - replays are illustrations; statistics come from event logs.
 
 Performance budget (NFR): ≥ 500 sims/s/core ⇒ 10k corner sims < 60 s on 4 cores with the API
 responsive throughout. Validated by a benchmark in CI (regression gate at -20%).
@@ -187,7 +187,7 @@ responsive throughout. Validated by a benchmark in CI (regression gate at -20%).
 Each sim emits a typed event log: `kick`, `first_contact(player, zone, type)`, `shot(xg_features)`,
 `goal`, `save`, `clearance(zone)`, `second_ball(winner_team)`, `out_of_play`, `keeper_claim`.
 KPIs in `sim_results_summary` are pure aggregations; **xG features, not goals, are the primary
-shot output** — goal sampling uses the real-data xG model (ML doc §2) so simulated finishing
+shot output** - goal sampling uses the real-data xG model (ML doc §2) so simulated finishing
 never drifts from reality.
 
 ### 5.4 Statistics (`M-2..M-3`)
@@ -195,9 +195,9 @@ never drifts from reality.
 - Proportions: Wilson 95% CIs. Derived (mean xG): BCa bootstrap, 2,000 resamples.
 - Comparisons (routine A vs B): two-proportion z-test + absolute-difference CI; the UI never
   claims superiority without non-overlapping CIs or p < 0.01 (multiple-comparison-adjusted in
-  optimizer leaderboards via Benjamini–Hochberg).
+  optimizer leaderboards via Benjamini-Hochberg).
 - Common random numbers across compared scenarios (same child-seed streams) to slash variance
-  of *differences* — a quietly senior touch worth a case-study paragraph.
+  of *differences* - a quietly senior touch worth a case-study paragraph.
 
 ## 6. Calibration & validation plan (the credibility spine)
 
@@ -211,7 +211,7 @@ Four levels, in order; each is a roadmap gate:
 | **V4 Face validity** | Do replays look like football to a knowledgeable viewer? | Structured review checklist (no orbiting runs, sane GK behavior, screens look like screens); failures filed as tunable issues |
 
 Calibration knobs, their values, and before/after rate tables are published in
-`docs/simulation-assumptions.md` — including misses. An honest "model under-produces far-post
+`docs/simulation-assumptions.md` - including misses. An honest "model under-produces far-post
 headers by 2pp" note is worth more portfolio credit than silent perfection.
 
 ## 7. Module boundaries (within `restart/`)
@@ -233,7 +233,7 @@ Physics `P-1..P-13`, agents `G-1..G-7`, Monte Carlo `M-1..M-3` as numbered above
 prose register with literature citations becomes `docs/simulation-assumptions.md` in Phase 1
 and is the canonical home (this section then links rather than duplicates).
 
-## 8. Future engine fidelity (Tier-3 research — not yet built)
+## 8. Future engine fidelity (Tier-3 research - not yet built)
 
 The Phase-2..5 engine is **first-contact-centric** (assumption O-3): a delivery resolves to a single
 first attacking contact that becomes a shot, plus a loose-ball/second-ball step. That is a
@@ -243,7 +243,7 @@ limits are explicit; each is a future engine phase, not Phase 6 (API/Workbench) 
 ### 8.1 Multi-touch pass-then-shot sequences
 
 Real set pieces routinely score off a *combination*: a cross to the back post is headed/cut back
-across the six-yard box for a tap-in. The current engine cannot represent this — the first contact
+across the six-yard box for a tap-in. The current engine cannot represent this - the first contact
 terminates the play. Planned model: after an attacker wins the first contact, they may **lay off /
 pass** to a better-placed teammate instead of shooting; the teammate's strike becomes the scored
 shot context. A pass has a **success probability** (passer skill, distance, defender pressure,
@@ -255,7 +255,7 @@ ceiling for routines that manufacture a tap-in and is the single biggest realism
 With §8.1 in place, the ball-winner faces a **decision**, not a fixed action: shoot now for
 `E[xG | shoot]`, or pass for `E[pass_success] · E[xG | teammate's contact]`. This is a small,
 depth-limited **expectimax / game-tree search** over the post-contact phase (chess-engine in spirit,
-but shallow — 1–2 plies), choosing the higher expected value while pricing in pass-failure risk.
+but shallow - 1-2 plies), choosing the higher expected value while pricing in pass-failure risk.
 The agent picks the action a real attacker would; the optimizer then discovers routines that *create*
 the high-value second action. Must stay cheap (it runs inside the hot Monte Carlo loop) and seeded
 (determinism contract).
@@ -264,9 +264,9 @@ the high-value second action. Must stay cheap (it runs inside the hot Monte Carl
 
 Defenders currently react to the ball and their marks only. Real defenders **anticipate** common
 patterns (a back-post overload, a cut-back runner) without knowing the exact plan. Planned model: a
-**noisy prior over attacker intents** (partial observability) that biases defender positioning —
+**noisy prior over attacker intents** (partial observability) that biases defender positioning -
 strong enough to punish telegraphed routines, noisy enough that disguise/decoys still work. This
-closes the loop on §8.1–8.2 so the optimizer cannot exploit omniscient-or-blind defenders.
+closes the loop on §8.1-8.2 so the optimizer cannot exploit omniscient-or-blind defenders.
 
 ### 8.4 Throughput note
 

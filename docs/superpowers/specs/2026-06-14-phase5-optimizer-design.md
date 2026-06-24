@@ -1,4 +1,4 @@
-# Phase 5 — Optimization Engine (System B) — Design Spec
+# Phase 5 - Optimization Engine (System B) - Design Spec
 
 **Date:** 2026-06-14 · **Branch:** `feat/phase5-optimizer` · **Status:** Approved for planning
 
@@ -30,10 +30,10 @@ Acceptance (from roadmap Phase 5):
 
 | # | Decision | Choice |
 |---|----------|--------|
-| D1 | Throughput | **Scoped configurable budget + optional process-pool parallelism.** The 500-screen / 10k-confirm budget is documented as the *reference methodology*; the committed canonical study runs at a reduced, honest budget the reference engine (~3 sims/s, measured) finishes offline. The fused Numba scenario kernel is **not** built this phase — it remains carried-forward 🔴 tech-debt; budgets are scoped around its absence and the limitation is documented. |
-| D2 | Search space | **Medium genome, ~10–15 dims**: delivery (4 continuous) + delivery type (categorical) + per-runner target-zone (grid categorical) + per-runner run-timing offset (continuous) + per-runner intent (categorical), over a fixed corner template. |
+| D1 | Throughput | **Scoped configurable budget + optional process-pool parallelism.** The 500-screen / 10k-confirm budget is documented as the *reference methodology*; the committed canonical study runs at a reduced, honest budget the reference engine (~3 sims/s, measured) finishes offline. The fused Numba scenario kernel is **not** built this phase - it remains carried-forward 🔴 tech-debt; budgets are scoped around its absence and the limitation is documented. |
+| D2 | Search space | **Medium genome, ~10-15 dims**: delivery (4 continuous) + delivery type (categorical) + per-runner target-zone (grid categorical) + per-runner run-timing offset (continuous) + per-runner intent (categorical), over a fixed corner template. |
 | D3 | Placement | **New sibling package `packages/optimizer` (`restart_opt`, CLI `restart-opt`)** holds Optuna/LightGBM/SHAP/MLflow + persistence (all IO/ML). Pure pieces stay in `restart.optimize`. Mirrors the `etl`/`ml` package pattern. |
-| D4 | Build workflow | **Inline** (no sub-agent dispatch) — optimizer code is determinism-sensitive and tightly coupled. |
+| D4 | Build workflow | **Inline** (no sub-agent dispatch) - optimizer code is determinism-sensitive and tightly coupled. |
 | D5 | Engine version | Physics behavior **unchanged** → **no `ENGINE_VERSION` bump** (stays `sim/0.4.0`). New package ships `0.1.0`; repo milestone = Phase 5. |
 | D6 | Scope cuts (YAGNI) | CMA-ES and GA comparison studies (doc 06 §3.2 Tier-2) **deferred** to future work, documented. Multi-objective optimization **deferred**; counterattack risk is **reported, not optimized**. |
 
@@ -69,47 +69,47 @@ genome ─▶ to_scenario ─▶ compile ─▶ MonteCarloRunner(xg engine) ─�
 
 ---
 
-## 4. Pure core additions — `packages/simulation-core/src/restart/optimize/`
+## 4. Pure core additions - `packages/simulation-core/src/restart/optimize/`
 
 ### 4.1 `genome.py`
 - Param types (frozen dataclasses): `ContinuousParam(name, lo, hi)` (exists, move here),
   `IntParam(name, lo, hi)`, `CategoricalParam(name, choices: tuple[str, ...])`. Common protocol
   for `validate(value)`.
-- `SearchSpace(params: tuple[Param, ...])` — `validate(values)` dispatches per param type;
+- `SearchSpace(params: tuple[Param, ...])` - `validate(values)` dispatches per param type;
   `bounds()` accessor for the driver to build suggestions.
-- `ZONE_GRID: dict[str, PitchPoint]` — fixed named box zones (near/far post, six-yard L/R,
+- `ZONE_GRID: dict[str, PitchPoint]` - fixed named box zones (near/far post, six-yard L/R,
   penalty spot, goalmouth, edge). Targets for runner final legs; keeps dimensionality sane vs raw
   coordinates (doc 06 §3.1).
 - `CornerGenome`:
-  - `space() -> SearchSpace` — the ~10–15-dim corner search space.
-  - `to_scenario(base: Scenario, values: Mapping[str, ...]) -> Scenario` — pure builder over a
+  - `space() -> SearchSpace` - the ~10-15-dim corner search space.
+  - `to_scenario(base: Scenario, values: Mapping[str, ...]) -> Scenario` - pure builder over a
     fixed corner template (N runners, default 4). Maps delivery params + per-runner
     (zone, delay, intent) into a `RoutineSpec`, then a `Scenario`. **Raises `ValueError` on an
-    infeasible combination** (spec validation rejects, never repairs — ADR-004 d2; the optimizer
+    infeasible combination** (spec validation rejects, never repairs - ADR-004 d2; the optimizer
     sees a failure, not a crash).
 
 ### 4.2 objective (extend `interfaces.py` / new `objective.py`)
-- **Objective = mean xG per sim** (doc 06 §2.3) — replaces the current `p_goal` return value.
+- **Objective = mean xG per sim** (doc 06 §2.3) - replaces the current `p_goal` return value.
 - `EvaluationResult` carries: `mean_xg`, `mean_xg_ci_lo/hi`, `p_goal`, `n_sims`, `root_seed`,
   `counterattack_risk` (reported, not optimized).
 - `RoutineObjective` takes a genome + base scenario + an **xG-enabled runner** (driver injects it);
-  `__call__(values) -> float` returns `mean_xg`. Deterministic per (values, root_seed) — CRN ready.
+  `__call__(values) -> float` returns `mean_xg`. Deterministic per (values, root_seed) - CRN ready.
 - `counterattack_risk` = pure read of existing outcomes: fraction of sims ending in defensive
   recovery (`SECOND_BALL_DEFENSE`, plus defense-controlled `CLEARED`). No engine change. Documented
   as a proxy.
 
 ### 4.3 `confirm.py` (pure)
-- `mean_xg_samples(batch) -> np.ndarray` — per-sim xG contribution (shot xg or 0.0).
-- `mean_ci(samples, alpha=0.05) -> (mean, lo, hi)` — normal/t interval (scipy); valid at confirm
+- `mean_xg_samples(batch) -> np.ndarray` - per-sim xG contribution (shot xg or 0.0).
+- `mean_ci(samples, alpha=0.05) -> (mean, lo, hi)` - normal/t interval (scipy); valid at confirm
   budgets (n ≥ ~1000).
-- `confirm_candidates(make_objective, candidates, n_confirm, root_seed) -> list[ConfirmResult]` —
+- `confirm_candidates(make_objective, candidates, n_confirm, root_seed) -> list[ConfirmResult]` -
   re-evaluates each candidate at `n_confirm` sims using a **common root_seed (CRN)**.
-- `beats_baseline(candidate_ci, baseline_ci) -> bool` — non-overlapping 95% CIs.
+- `beats_baseline(candidate_ci, baseline_ci) -> bool` - non-overlapping 95% CIs.
 
 ### 4.4 `boundary.py` (pure anti-exploit)
-- `boundary_flags(space, values, eps_frac=0.02) -> list[str]` — continuous/int params within ε of
+- `boundary_flags(space, values, eps_frac=0.02) -> list[str]` - continuous/int params within ε of
   a bound (categoricals N/A).
-- `face_validity_flags(result, mean_xg_ceiling=0.5) -> list[str]` — flags implausibly high
+- `face_validity_flags(result, mean_xg_ceiling=0.5) -> list[str]` - flags implausibly high
   mean_xg (real corner mean xG is far below this) and other cheap sanity rules. Optimizers find
   simulator bugs before football insights (doc 06 §3.2).
 
@@ -123,7 +123,7 @@ Those tests are updated to the mean_xg semantics where they assert intent, not j
 
 ---
 
-## 5. New package — `packages/optimizer/` (`restart_opt`)
+## 5. New package - `packages/optimizer/` (`restart_opt`)
 
 Layout mirrors `packages/ml`:
 
@@ -159,28 +159,28 @@ packages/optimizer/
 
 ---
 
-## 6. Tests (TDD — write first)
+## 6. Tests (TDD - write first)
 
 Core (simulation-core/tests):
-- `test_optimize_genome.py` — `to_scenario` yields a valid `Scenario` for sampled params; each
+- `test_optimize_genome.py` - `to_scenario` yields a valid `Scenario` for sampled params; each
   param type validates/rejects; infeasible combo raises `ValueError`; zone grid points on-pitch.
-- `test_optimize_objective.py` — objective returns mean_xg ∈ [0,1]; deterministic per
+- `test_optimize_objective.py` - objective returns mean_xg ∈ [0,1]; deterministic per
   (params, seed); CRN: same root_seed → bit-identical, different seed may differ;
   counterattack_risk ∈ [0,1].
-- `test_optimize_confirm.py` — `mean_ci` brackets the mean; `beats_baseline` correct on synthetic
+- `test_optimize_confirm.py` - `mean_ci` brackets the mean; `beats_baseline` correct on synthetic
   non-overlapping vs overlapping CIs; `confirm_candidates` CRN-deterministic.
-- `test_optimize_boundary.py` — boundary flag catches edge param, ignores interior;
+- `test_optimize_boundary.py` - boundary flag catches edge param, ignores interior;
   face-validity flag catches implausible mean_xg.
 
 Driver (optimizer/tests):
-- `test_study_toy.py` — inject an engine-free **planted-optimum** objective (Gaussian over the
+- `test_study_toy.py` - inject an engine-free **planted-optimum** objective (Gaussian over the
   search space) via the `ObjectiveFunction` protocol; TPE recovers the optimum at least as well as
   random at equal small budget; random-search-beats-nothing sanity. Fast (no engine sims).
-- `test_study_determinism.py` — same seed ⇒ identical trial sequence/best (tiny engine budget).
-- `test_persist.py` — study round-trips to JSON and back.
-- `test_surrogate.py` — LightGBM + SHAP on a tiny synthetic trial set produce finite contributions
+- `test_study_determinism.py` - same seed ⇒ identical trial sequence/best (tiny engine budget).
+- `test_persist.py` - study round-trips to JSON and back.
+- `test_surrogate.py` - LightGBM + SHAP on a tiny synthetic trial set produce finite contributions
   (seeded, deterministic).
-- `test_sensitivity.py` — perturbation harness returns a stable/unstable verdict on a toy ranking.
+- `test_sensitivity.py` - perturbation harness returns a stable/unstable verdict on a toy ranking.
 
 ---
 
@@ -200,9 +200,9 @@ Driver (optimizer/tests):
 
 ## 8. Documentation deliverables
 
-- `docs/09-optimization-methodology.md` (07=UI/UX, 08=roadmap are taken) — search space, screen-then-confirm,
+- `docs/09-optimization-methodology.md` (07=UI/UX, 08=roadmap are taken) - search space, screen-then-confirm,
   CRN, anti-exploit, surrogate/SHAP, sensitivity; the reference vs committed budget honesty.
-- `docs/case-studies/england-vs-argentina.md` — canonical study writeup (becomes the case-study
+- `docs/case-studies/england-vs-argentina.md` - canonical study writeup (becomes the case-study
   centerpiece): setup, budget used, TPE-vs-random, confirmed top routine vs library baseline (CIs),
   ≥3 insights, sensitivity verdict, anti-exploit review.
 - Update `docs/handoff/*` (PROJECT_STATUS, PHASE_HANDOFF, ADR_SUMMARY + new ADR-006 for System B,

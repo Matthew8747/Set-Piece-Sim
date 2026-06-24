@@ -1,4 +1,4 @@
-"""Tests for restart.simulation.rng — determinism and independence guarantees."""
+"""Tests for restart.simulation.rng - determinism and independence guarantees."""
 
 import numpy as np
 import pytest

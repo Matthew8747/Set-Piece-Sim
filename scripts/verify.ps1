@@ -32,7 +32,7 @@ Invoke-Step "vitest"             { npm run test }
 Invoke-Step "prettier --check"   { npm run format:check }
 
 # OpenAPI / shared-types drift gate: regenerate the committed schema + TS client
-# and fail if either changed (ADR-007 d6 — codegen replaces hand-mirroring).
+# and fail if either changed (ADR-007 d6 - codegen replaces hand-mirroring).
 Invoke-Step "openapi/shared-types drift" {
     uv run python apps/backend/scripts/dump_openapi.py
     npm run gen -w "@restart/shared-types"

@@ -47,7 +47,7 @@ v1 (one-shot design problem; Tier-3 research note).
 | Package | Depends on |
 |---|---|
 | `restart` (simulation-core) | numpy, scipy (oracle/stats incl. Wilson CIs), numba (JIT kernels), pydantic (config) |
-| `restart_etl` (etl) | httpx, pyarrow, duckdb, numpy, pydantic — **pure data**, no `restart` import on the fetch/staging path |
+| `restart_etl` (etl) | httpx, pyarrow, duckdb, numpy, pydantic - **pure data**, no `restart` import on the fetch/staging path |
 | `restart_ml` (ml) | scikit-learn, xgboost, lightgbm, mlflow, pyarrow, **restart** (xG feature/scorer contract), **restart_etl** (mart readers) |
 | `restart_api` (backend) | fastapi, uvicorn, pydantic-settings, **restart** (engine + montecarlo + xg); loads the committed xG bundle JSON directly (no ML dep) |
 | `apps/frontend` | next 16, react 19, tailwind v4, **@restart/shared-types** (fetches restart_api) |

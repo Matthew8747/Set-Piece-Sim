@@ -1,4 +1,4 @@
-"""OpenAPI completeness — the schema is a product feature + the codegen source
+"""OpenAPI completeness - the schema is a product feature + the codegen source
 (ADR-007 d6). Every route must be documented, the error contract must be the
 ProblemDetail schema, and the API-key scheme must be advertised.
 """

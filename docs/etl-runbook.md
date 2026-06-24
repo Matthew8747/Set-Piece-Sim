@@ -1,4 +1,4 @@
-# Runbook — Data platform & xG (Phase 4)
+# Runbook - Data platform & xG (Phase 4)
 
 Rebuild every Phase-4 number from a clean clone. The raw cache and marts are
 git-ignored (StatsBomb license + size); the trained xG coefficient bundle
@@ -47,7 +47,7 @@ Outputs:
 - `docs/model-cards/xg-v1.md` (committed).
 - `data/mlflow.db` (git-ignored). Browse with `uv run mlflow ui --backend-store-uri sqlite:///data/mlflow.db`.
 
-Acceptance: the shipped logistic calibration slope is 0.9–1.1 (printed as `shipped logistic:
+Acceptance: the shipped logistic calibration slope is 0.9-1.1 (printed as `shipped logistic:
 cal_slope=…`).
 
 ## 3. Verify the engine scores with the real model
@@ -64,4 +64,4 @@ uv run uvicorn restart_api.main:app --app-dir apps/backend/src
 - CI does not fetch raw data (git-ignored). The mechanical license + quality gate **logic**
   is unit-tested (`test_etl_gates.py`), and the engine↔model integration runs against the
   committed bundle (`test_setpieces.py::test_montecarlo_reports_real_data_xg`).
-- xG trains on **real data only** — never on simulator output (design doc 06 §1).
+- xG trains on **real data only** - never on simulator output (design doc 06 §1).

@@ -1,7 +1,7 @@
 """Agent kinematics kernels.
 
 Broadcast kernels over n agents represented as flat float64 arrays (SoA
-contract per ADR-003 d8). All functions are pure — they return new arrays and
+contract per ADR-003 d8). All functions are pure - they return new arrays and
 never mutate inputs. Signatures are Numba-portable: no Python objects, no
 variable-length Python lists in hot paths.
 
@@ -59,9 +59,9 @@ def step_agents(
     accel:          (n,)   acceleration magnitude (m/s²)
     agility:        (n,)   0-1 agility rating (scales turn-rate cap)
     dt:             tick duration (s)
-    turn_rate_base: maximum heading-change rate scale (rad/s) — AgentConfig
-    speed_ref:      reference speed for turn taper (m/s) — AgentConfig
-    arrival_radius: arrive-and-hold threshold (m) — AgentConfig
+    turn_rate_base: maximum heading-change rate scale (rad/s) - AgentConfig
+    speed_ref:      reference speed for turn taper (m/s) - AgentConfig
+    arrival_radius: arrive-and-hold threshold (m) - AgentConfig
 
     Returns
     -------
@@ -99,7 +99,7 @@ def step_agents(
     speed_old = _safe_norm2(vel)  # (n,)
     speed_new = _safe_norm2(vel_new)  # (n,)
 
-    can_turn_free = speed_old <= 0.5  # (n,) bool — slow agents turn freely
+    can_turn_free = speed_old <= 0.5  # (n,) bool - slow agents turn freely
 
     # Maximum heading change allowed this tick (rad)
     # max_turn = dt * base * (0.25 + 0.75*agility) * speed_ref/(v_old + speed_ref)

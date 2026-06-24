@@ -1,4 +1,4 @@
-"""File-based repository adapters — the server-free default (ADR-007 d1).
+"""File-based repository adapters - the server-free default (ADR-007 d1).
 
 Teams come from the marts (read-only); scenarios and sim-runs persist to a
 single SQLite file. A fresh connection is opened per operation (cheap, and

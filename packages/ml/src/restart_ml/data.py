@@ -2,7 +2,7 @@
 
 The feature surface is imported from the simulation core
 (``restart.engine.xg.shot_feature_vector``) so training features are *identical*
-to what the engine computes at score time — the train/serve contract is one
+to what the engine computes at score time - the train/serve contract is one
 function, not two parallel implementations (design doc 06 §2.3).
 """
 

@@ -114,7 +114,7 @@ class TestEndpoints:
 class TestRuntimeBoundary:
     def test_runtime_never_imports_restart_opt(self) -> None:
         # Importing the app must not drag the optimizer (Optuna/LightGBM/SHAP)
-        # into the request path — the optimization surface is data-only (ADR-008).
+        # into the request path - the optimization surface is data-only (ADR-008).
         for name in [k for k in sys.modules if k.startswith("restart_opt")]:
             del sys.modules[name]
         import importlib

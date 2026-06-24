@@ -1,4 +1,4 @@
-"""Postgres repository round-trip — skipped unless a server is provided (ADR-007 d1).
+"""Postgres repository round-trip - skipped unless a server is provided (ADR-007 d1).
 
 Mirrors the file-adapter contract against the Postgres drop-in. Set
 ``RESTART_TEST_DATABASE_URL`` to a throwaway database to run it; CI stays

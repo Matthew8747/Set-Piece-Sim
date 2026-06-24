@@ -2,14 +2,14 @@
 are the explicit boundary contract (and the source of OpenAPI schemas).
 
 Keep field names/shapes in sync with packages/shared-types/src/index.ts
-(hand-mirrored until OpenAPI codegen lands in Phase 6 — tech-debt register)."""
+(hand-mirrored until OpenAPI codegen lands in Phase 6 - tech-debt register)."""
 
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 # Pitch is the canonical 105 x 68 m surface (doc 07). Coordinates are treated as
-# hostile input (sim inputs are effectively code — security checklist doc 02 9);
+# hostile input (sim inputs are effectively code - security checklist doc 02 9);
 # this point is reused by every scenario DTO that carries a position.
 PITCH_LENGTH_M = 105.0
 PITCH_WIDTH_M = 68.0
@@ -27,7 +27,7 @@ class ProblemFieldError(BaseModel):
 
 
 class ProblemDetail(BaseModel):
-    """RFC 9457 problem-details body — the API's single error contract."""
+    """RFC 9457 problem-details body - the API's single error contract."""
 
     type: str
     title: str

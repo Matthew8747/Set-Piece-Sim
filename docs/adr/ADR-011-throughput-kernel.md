@@ -1,16 +1,16 @@
-# ADR-011 — Fused Numba scenario kernel with externalized RNG
+# ADR-011 - Fused Numba scenario kernel with externalized RNG
 
 **Status:** Accepted · **Date:** 2026-06-22 · **Phase:** 10
 **Related:** ADR-001 (physics build-vs-buy; Numba flight kernel addendum), ADR-003 d8 (the SoA
 compile boundary built *for* this kernel) + d9 (per-sim `SeedSequence` determinism), ADR-004
 (`SimProgram`), ADR-006/ADR-010 (the optimizer/evolution this throughput scales), roadmap §1.
-**`ENGINE_VERSION` unchanged (`sim/0.5.0`)** — a faithful port, no semantics change.
+**`ENGINE_VERSION` unchanged (`sim/0.5.0`)** - a faithful port, no semantics change.
 
 ## Context
 
 The reference engine runs at ~3 sims/s. Every downstream ambition (bigger evolutionary populations
 and more generations, the full reference budget, calibration, multi-objective) is gated on
-throughput (roadmap §1 — "the keystone"). The hot path was deliberately compiled to flat, read-only
+throughput (roadmap §1 - "the keystone"). The hot path was deliberately compiled to flat, read-only
 SoA arrays (`SimProgram`, ADR-004 d4) precisely so a Numba kernel could run a whole batch with no
 Python in the loop (ADR-003 d8). This ADR cashes that in.
 
@@ -23,12 +23,12 @@ because it is deterministic.
 
 1. **Externalize the RNG.** All per-sim Philox draws are generated in NumPy host code into a
    `SimDraws` struct; both the njit kernel and the (refactored) reference engine consume `SimDraws`
-   instead of calling `rng` directly. Equivalence to ≤1e-9 then holds *by construction*, and — the
-   bonus — the fast path and the single-sim replay path become bit-identical (a kernel winner
+   instead of calling `rng` directly. Equivalence to ≤1e-9 then holds *by construction*, and - the
+   bonus - the fast path and the single-sim replay path become bit-identical (a kernel winner
    replays exactly in the reference engine). Rejected alternatives: (a) in-kernel Numba RNG with
-   *statistical-only* equivalence — lower risk but not a true drop-in and leaves a fast/replay seam;
-   (b) NumPy vectorize-across-sims — keeps Philox but control-flow divergence needs heavy masking and
-   tops out lower (~10³–10⁴). The exact-1e-9 externalized path was chosen for the true-drop-in
+   *statistical-only* equivalence - lower risk but not a true drop-in and leaves a fast/replay seam;
+   (b) NumPy vectorize-across-sims - keeps Philox but control-flow divergence needs heavy masking and
+   tops out lower (~10³-10⁴). The exact-1e-9 externalized path was chosen for the true-drop-in
    property and the strongest equivalence story.
 
 2. **Category sub-streams with fixed budgets.** The current single lazy stream draws a *variable*
@@ -42,7 +42,7 @@ because it is deterministic.
    batch sizes.
 
 3. **The kernel emits only the optimizer's output contract.** Per sim:
-   `(outcome_code, xg, is_header, first_contact_team)` — exactly what `objective.py`/`aggregate.py`
+   `(outcome_code, xg, is_header, first_contact_team)` - exactly what `objective.py`/`aggregate.py`
    read. Replay tracks (positions over time, full trajectories) are **not** produced on the
    throughput path; they stay reference-engine-only for the on-demand API 3D replay.
 
@@ -59,8 +59,8 @@ because it is deterministic.
 
 ## Consequences
 
-- Throughput rises from ~3 sims/s toward 10⁴–10⁵, unblocking real evolutionary populations/generations
-  and the full reference budget — the multiplier on every later search/calibration phase.
+- Throughput rises from ~3 sims/s toward 10⁴-10⁵, unblocking real evolutionary populations/generations
+  and the full reference budget - the multiplier on every later search/calibration phase.
 - The optimizer objective gains an opt-in kernel path; the reference engine is unchanged for replay and
   the API (no API/OpenAPI/shared-types contract change).
 - One canonical re-baseline (draw-plan change), documented; `ENGINE_VERSION` unchanged.
@@ -69,7 +69,7 @@ because it is deterministic.
 
 ## Explicitly NOT in scope (deferred)
 
-- GPU batch (JAX/CuPy) and distributed Optuna studies (roadmap §1.2/§1.3) — later throughput tiers.
+- GPU batch (JAX/CuPy) and distributed Optuna studies (roadmap §1.2/§1.3) - later throughput tiers.
 - Engine `[knob]` calibration / SBI (roadmap §2).
-- Multi-objective Pareto + lineage visualization (roadmap §4/§7) — unblocked by this kernel, not part
+- Multi-objective Pareto + lineage visualization (roadmap §4/§7) - unblocked by this kernel, not part
   of it.

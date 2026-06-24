@@ -4,7 +4,7 @@ Computes the earliest ball-flight sample each agent can feasibly intercept,
 gated by reaction-time deadlines (G-3) and physical reach (G-1, G-2, G-4').
 
 Design ref: ADR-003 d2 (precomputed flight oracle), d3 (reaction deadlines),
-d4 (2.5-D kinematics — vertical interception via reach, not airborne state).
+d4 (2.5-D kinematics - vertical interception via reach, not airborne state).
 """
 
 from __future__ import annotations
@@ -30,11 +30,11 @@ def earliest_interception(
 
     For each agent *i*, finds the smallest sample index *k* satisfying all of:
 
-    1. ``ball_times[k] >= ready_time[i]``  — agent has reacted (G-3)
-    2. ``ball_pos[k, 2] <= reach[i]``       — ball is within jump-reach height
+    1. ``ball_times[k] >= ready_time[i]``  - agent has reacted (G-3)
+    2. ``ball_pos[k, 2] <= reach[i]``       - ball is within jump-reach height
        (G-4': vertical reach instead of airborne jump state)
     3. ``time_to_point(agent_i -> ball_pos[k, :2]) <= ball_times[k]``
-       — agent can arrive before the ball does (straight-line optimistic
+       - agent can arrive before the ball does (straight-line optimistic
        lower bound; turn neglect documented in kinematics.time_to_point)
 
     Returns ``-1`` for any agent that cannot intercept any sample.
@@ -53,12 +53,12 @@ def earliest_interception(
 
     Returns
     -------
-    result : (n,)  int64 array — sample index or -1
+    result : (n,)  int64 array - sample index or -1
 
     Notes
     -----
     The feasibility matrix is (n x m) ~= 22 x 300 = 6,600 cells, evaluated
-    with NumPy broadcasting — well within the per-tick budget (ADR-003 §2).
+    with NumPy broadcasting - well within the per-tick budget (ADR-003 §2).
     """
     n = pos.shape[0]
     m = ball_times.shape[0]

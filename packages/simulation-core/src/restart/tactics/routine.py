@@ -1,4 +1,4 @@
-"""Routine Spec rs/1.0 — validated pydantic document for set-piece attacking routines.
+"""Routine Spec rs/1.0 - validated pydantic document for set-piece attacking routines.
 
 Implements ADR-004 decision 1-3:
 * Delivery + per-role assignments (start, run legs with triggers/delays, intent).
@@ -45,11 +45,11 @@ class Intent(StrEnum):
     Code mapping exported as INTENT_CODES; order matches SimProgram int8 encoding.
     """
 
-    ATTACK_BALL = "attack_ball"  # 0 — primary aerial/first-contact threat
-    DECOY = "decoy"  # 1 — draws markers away
-    SCREEN = "screen"  # 2 — occupies GK / blocks passing lanes
-    SECOND_BALL = "second_ball"  # 3 — edge-of-box rebound collector
-    SHORT_OPTION = "short_option"  # 4 — short-delivery lay-off target
+    ATTACK_BALL = "attack_ball"  # 0 - primary aerial/first-contact threat
+    DECOY = "decoy"  # 1 - draws markers away
+    SCREEN = "screen"  # 2 - occupies GK / blocks passing lanes
+    SECOND_BALL = "second_ball"  # 3 - edge-of-box rebound collector
+    SHORT_OPTION = "short_option"  # 4 - short-delivery lay-off target
 
 
 class Trigger(StrEnum):

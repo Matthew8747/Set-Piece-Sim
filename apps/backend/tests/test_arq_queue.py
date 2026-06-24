@@ -1,4 +1,4 @@
-"""Arq queue smoke test — skipped unless a Redis server is provided (ADR-007 d2).
+"""Arq queue smoke test - skipped unless a Redis server is provided (ADR-007 d2).
 
 Set ``RESTART_TEST_REDIS_URL`` to exercise it; CI stays server-free. Asserts only
 that ``submit`` enqueues a job without error (the worker process executes it).

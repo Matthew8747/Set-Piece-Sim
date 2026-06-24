@@ -1,8 +1,8 @@
-# Restart Lab — Design Documentation
+# Restart Lab - Design Documentation
 
 **AI-Assisted Set-Piece Optimization for International Football (FIFA World Cup 2026)**
 
-> "Restart" is the coaching term for any dead-ball resumption of play — corners, free kicks,
+> "Restart" is the coaching term for any dead-ball resumption of play - corners, free kicks,
 > throw-ins. This platform simulates and optimizes them.
 
 This directory is the design package for the platform. Read in order:

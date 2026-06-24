@@ -14,7 +14,7 @@ import { SensitivityBanner } from "./SensitivityBanner";
 
 // The /optimize/:id surface: convergence, the parallel-coordinates "wow" view,
 // the SHAP insights panel, the sensitivity honesty banner, and the top-k vs
-// baseline table — all over the persisted study, derived server-side.
+// baseline table - all over the persisted study, derived server-side.
 
 export interface StudyDetailProps {
   detail: OptimizationDetail;

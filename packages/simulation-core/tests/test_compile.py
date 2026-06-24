@@ -438,7 +438,7 @@ class TestMarkingAssignment:
 
     def test_markers_assigned_to_distinct_attackers(self) -> None:
         """Distinct targets when n_markers <= n_attackers (no wrap-around case)."""
-        # zonal_six_two: 2 markers vs 4 attackers — no overflow, must be distinct
+        # zonal_six_two: 2 markers vs 4 attackers - no overflow, must be distinct
         sc = _corner_scenario(scheme=zonal_six_two())
         prog = compile_scenario(sc)
         targets = [int(t) for t in prog.def_mark_target if int(t) >= 0]

@@ -46,7 +46,7 @@ test("KpiCard shows the proportion with its CI and a how? affordance", () => {
 });
 
 test("KpiCard refuses to render without bounds it can trust", () => {
-  // No CI collapse: lo==hi==p still renders (k/n omitted) — just no whisker span.
+  // No CI collapse: lo==hi==p still renders (k/n omitted) - just no whisker span.
   const { container } = render(<KpiCard label="Shot" p={0.1} lo={0.1} hi={0.1} />);
   expect(container.querySelector('[data-chart="whisker"]')).not.toBeNull();
 });

@@ -7,7 +7,7 @@ FastAPI's default ``{"detail": ...}`` bodies so the generated TypeScript types
 and any client share a single, documented error shape.
 
 The simulation core signals invalid-but-well-formed scenarios by raising plain
-``ValueError`` (see ``restart.tactics.compile`` — "all raise ValueError on
+``ValueError`` (see ``restart.tactics.compile`` - "all raise ValueError on
 violation"); at the API boundary those are client errors (422), not server
 faults, so they are mapped explicitly rather than escaping as 500s.
 """

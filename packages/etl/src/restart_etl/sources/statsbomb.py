@@ -8,7 +8,7 @@ reproducibility gate hashes.
 
 ``ASSUMPTION D-1`` (doc 04 §2): StatsBomb Open Data remains available under
 current terms; the raw cache is downloaded once and kept locally (permitted for
-use, not redistribution — hence git-ignored).
+use, not redistribution - hence git-ignored).
 """
 
 from __future__ import annotations

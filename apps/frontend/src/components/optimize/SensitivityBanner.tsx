@@ -4,7 +4,7 @@ import type { OptimizationDetail } from "@restart/shared-types";
 
 // Honesty surface for the ±10% attribute-sensitivity verdict (doc 09 §8, R9).
 // When the top-k ranking flips under perturbation, the discovery is reported as
-// a routine *class*, never a player-precise prescription — the UI says so out
+// a routine *class*, never a player-precise prescription - the UI says so out
 // loud rather than letting the reader over-trust a single "winner".
 
 export interface SensitivityBannerProps {

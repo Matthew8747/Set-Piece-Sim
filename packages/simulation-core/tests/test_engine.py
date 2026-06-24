@@ -63,7 +63,7 @@ class TestCornersRunToTerminal:
         assert times == sorted(times)
 
     def test_kinematic_envelope_never_violated(self) -> None:
-        """No agent exceeds top speed (G-1) — checked from recorded tracks."""
+        """No agent exceeds top speed (G-1) - checked from recorded tracks."""
         program = build_program(all_corner_routines()[0], all_schemes()[0])
         result = ENGINE.run(program, seed=3)
         dt = np.diff(result.track_times_s)
@@ -95,7 +95,7 @@ class TestDeterminism:
 
 class TestOutcomePlausibility:
     def test_distribution_loose_sanity(self) -> None:
-        """NOT calibration (Phase 3) — only 'the sim is not degenerate'."""
+        """NOT calibration (Phase 3) - only 'the sim is not degenerate'."""
         counts: Counter[SetPieceOutcome] = Counter()
         n = 0
         for r_idx in range(3):

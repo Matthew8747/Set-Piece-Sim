@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 
-// The canonical seed (doc 07: "empty states teach" — a new scenario opens
+// The canonical seed (doc 07: "empty states teach" - a new scenario opens
 // pre-loaded with a sensible routine vs zonal defense, not a blank pitch).
 const CANONICAL = {
   name: "WC2026 · England corner vs Argentina",

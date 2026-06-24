@@ -1,6 +1,6 @@
 """CI check: every mart column is documented in docs/data-dictionary.md.
 
-Mechanical enforcement of design doc 04 §6 — no field reachable as a mart product
+Mechanical enforcement of design doc 04 §6 - no field reachable as a mart product
 may be absent from the dictionary. The check builds each mart from a minimal
 synthetic input and asserts every emitted column name appears in the doc.
 """

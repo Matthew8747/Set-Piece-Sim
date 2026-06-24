@@ -1,4 +1,4 @@
-"""Fused JIT flight kernel — the production batch path (ADR-001 addendum).
+"""Fused JIT flight kernel - the production batch path (ADR-001 addendum).
 
 Implements gravity + drag-crisis drag + Magnus + spin decay + RK4 + ground-
 crossing detection in one pass per simulation, eliminating the NumPy path's
@@ -7,7 +7,7 @@ per-step temporary allocations (measured 6.8 s -> sub-second for 10k flights).
 EQUIVALENCE CONTRACT: this kernel must reproduce
 ``restart.physics.batch._simulate_flights_numpy`` (the readable reference)
 to <= 1e-9 absolute; ``tests/test_batch.py`` enforces it. Formulas and guard
-epsilons are copied *verbatim in semantics* from ``forces.py`` — change both
+epsilons are copied *verbatim in semantics* from ``forces.py`` - change both
 together or the equivalence test will catch you.
 
 Typing note: ``numba.njit`` is untyped; the ``TYPE_CHECKING`` split lets mypy

@@ -71,7 +71,7 @@ export function ReplayPlayer({
     onFrameRef.current?.(frame);
   }, [frame]);
 
-  // Reduced motion forces step mode — never auto-advance.
+  // Reduced motion forces step mode - never auto-advance.
   const canAutoPlay = !reduced;
   useEffect(() => {
     if (reduced && playing) setPlaying(false);

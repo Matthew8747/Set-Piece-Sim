@@ -1,8 +1,8 @@
-# Restart Lab — Frontend
+# Restart Lab - Frontend
 
 Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind v4.
 The product surface is the **Scenario Workbench** (design doc 07): one stateful
-page, three modes — Build · Simulate · Replay.
+page, three modes - Build · Simulate · Replay.
 
 ## Run
 
@@ -14,8 +14,8 @@ npm run dev -w @restart/frontend                                 # app on :3000
 
 Env (optional):
 
-- `NEXT_PUBLIC_API_BASE_URL` — API base (default `http://localhost:8000`).
-- `NEXT_PUBLIC_API_KEY` — sent as `X-API-Key` on writes when the API configures a key
+- `NEXT_PUBLIC_API_BASE_URL` - API base (default `http://localhost:8000`).
+- `NEXT_PUBLIC_API_KEY` - sent as `X-API-Key` on writes when the API configures a key
   (demo deployments leave both unset).
 
 ## Architecture
@@ -44,7 +44,7 @@ src/
 
 Shared workspace packages (source-shipped, transpiled in place):
 
-- **`@restart/pitch-kit`** — the canonical 105×68 SVG `Pitch`, the `ReplayPlayer`
+- **`@restart/pitch-kit`** - the canonical 105×68 SVG `Pitch`, the `ReplayPlayer`
   (scrubber, event markers, space=play/pause, ←/→ scrub, honors
   `prefers-reduced-motion`), and hand-rolled SVG charts (`Histogram` with an
   optional shared-`domain` for compare mode, `Ecdf`, `KpiCard` with a CI whisker +
@@ -54,7 +54,7 @@ Shared workspace packages (source-shipped, transpiled in place):
   ([ADR-007 d7](../../docs/adr/ADR-007-api-workbench-and-persistence.md): visx peers cap at React 18).
   3D replay is the one exception (R3F), dynamic-imported in the frontend so three.js
   never enters the default bundle ([ADR-008](../../docs/adr/ADR-008-optimization-surface-and-3d-replay.md)).
-- **`@restart/shared-types`** — API DTOs generated from `openapi.json`.
+- **`@restart/shared-types`** - API DTOs generated from `openapi.json`.
 
 ## Conventions surfaced in the UI (doc 07)
 
@@ -65,7 +65,7 @@ Shared workspace packages (source-shipped, transpiled in place):
 - **Empty states teach:** a new scenario opens on the canonical WC2026 corner.
 - **Scenarios are immutable** named specs; Build forks a new one (no update endpoint).
 - The Build planning handles (delivery target / runner zone) are a **local
-  annotation** with live kinematic feasibility — the engine simulates the
+  annotation** with live kinematic feasibility - the engine simulates the
   *selected routine* (the spec is ids only by design), not free-form geometry.
 
 ## Tests

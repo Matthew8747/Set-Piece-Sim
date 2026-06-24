@@ -1,4 +1,4 @@
-"""Postgres repository adapters — drop-ins for the file defaults (ADR-007 d1).
+"""Postgres repository adapters - drop-ins for the file defaults (ADR-007 d1).
 
 Same Protocols as ``repositories.file``; selected at runtime when
 ``RESTART_DATABASE_URL`` is set. A connection is opened per operation (simple and

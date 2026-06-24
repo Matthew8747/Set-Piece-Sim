@@ -4,12 +4,12 @@ The canonical run is long (the 7-attacker template is ~2.5x slower than the
 4-attacker one and the reference engine is ~3 sims/s). Running it blindly once
 hard-locked a terminal, so this wrapper makes it *observable and bounded*:
 
-* **Per-trial progress** — Optuna's INFO logging is enabled, so each screen
+* **Per-trial progress** - Optuna's INFO logging is enabled, so each screen
   trial prints a line.
-* **Liveness heartbeat** — a daemon thread writes "alive, elapsed Ns" every 30 s,
+* **Liveness heartbeat** - a daemon thread writes "alive, elapsed Ns" every 30 s,
   so the non-Optuna phases (confirm / sensitivity / surrogate) still report and
   the process can never go silent for long.
-* **Hard watchdog** — a wall-clock cap aborts the process rather than letting it
+* **Hard watchdog** - a wall-clock cap aborts the process rather than letting it
   hang indefinitely.
 
 All progress goes to stdout *and* a scoped status file under the project's
@@ -54,7 +54,7 @@ def _watchdog(start: float, max_seconds: int) -> None:
     while True:
         time.sleep(5.0)
         if time.time() - start > max_seconds:
-            _log(f"WATCHDOG: exceeded {max_seconds}s — aborting to avoid an indefinite hang")
+            _log(f"WATCHDOG: exceeded {max_seconds}s - aborting to avoid an indefinite hang")
             os._exit(2)
 
 

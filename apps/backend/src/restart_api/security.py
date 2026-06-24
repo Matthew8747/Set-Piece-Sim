@@ -2,7 +2,7 @@
 
 Policy: if an API key is configured (``RESTART_API_KEY``), every write/compute
 request must present a matching ``X-API-Key`` header. If no key is configured the
-deployment runs in **demo mode** — writes are allowed but remain bounded by the
+deployment runs in **demo mode** - writes are allowed but remain bounded by the
 request schemas (n_sims caps, coordinate bounds), so the public demo can be used
 without a key yet cannot be cost-bombed.
 

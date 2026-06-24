@@ -1,5 +1,5 @@
 /**
- * Restart Lab design tokens — single source of truth (design doc 07).
+ * Restart Lab design tokens - single source of truth (design doc 07).
  *
  * Lives in pitch-kit so the canonical pitch, charts, and the app all draw from
  * one scale; the frontend's globals.css imports this file. Expressed as a
@@ -13,12 +13,12 @@
  * used ONLY on pitch entities, never on chrome.
  */
 @theme {
-  /* Surfaces — near-black, green-tinted neutrals (#0B0F0D family). */
+  /* Surfaces - near-black, green-tinted neutrals (#0B0F0D family). */
   --color-surface: #0b0f0d;
   --color-surface-raised: #111714;
   --color-surface-overlay: #19211c;
 
-  /* Chrome line — pitch-line off-white. */
+  /* Chrome line - pitch-line off-white. */
   --color-line: #e8ece9;
   --color-line-muted: #8a938d;
 
@@ -27,14 +27,14 @@
   --color-signal-dim: #0a9b59;
   --color-warn: #ffb454;
 
-  /* Danger red — a kinematically infeasible run renders red (doc 07 §3). */
+  /* Danger red - a kinematically infeasible run renders red (doc 07 §3). */
   --color-danger: #ff5d5d;
 
-  /* Confidence-interval whisker — distinct from signal so a CI never reads as
+  /* Confidence-interval whisker - distinct from signal so a CI never reads as
      "positive"; muted blue keeps honest-uncertainty chrome quiet (doc 07 §4). */
   --color-ci: #5aa9ff;
 
-  /* Type — a characterful editorial grotesque for display, a clean humanist
+  /* Type - a characterful editorial grotesque for display, a clean humanist
      grotesque for body, IBM Plex Mono for ALL numerals (tabular). The
      --font-*-loaded vars are injected by next/font in the app's layout; the
      quoted names are the graceful fallback (tests, SVG export, no-JS). */
@@ -43,12 +43,12 @@
   --font-sans: var(--font-hanken), "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Motion — one easing language across chrome (doc 07 §5). */
+  /* Motion - one easing language across chrome (doc 07 §5). */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Radii + elevation for app chrome (the pitch/charts set their own).
-     Elevation is neutral and restrained — depth comes from shadow, not glow, so
+     Elevation is neutral and restrained - depth comes from shadow, not glow, so
      the dark theme reads like an instrument, not a neon dashboard (doc 07 §5). */
   --radius-card: 0.625rem;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 0 0 rgb(255 255 255 / 0.02) inset;

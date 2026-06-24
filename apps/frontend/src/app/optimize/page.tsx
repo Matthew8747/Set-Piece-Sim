@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 // Studies library (doc 07 IA): convergence/parallel-coords live on the detail
-// page; here we list the persisted studies with the honest headline — a "beats
+// page; here we list the persisted studies with the honest headline - a "beats
 // baseline" badge only when the winner's CI clears the baseline's (the stats
 // policy, enforced by the backend's beats_baseline flag).
 

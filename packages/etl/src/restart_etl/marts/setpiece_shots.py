@@ -2,7 +2,7 @@
 
 One row per real corner/free-kick shot: geometry + freeze-frame traffic features
 + the binary goal label + grouping key (``match_id`` for leakage-safe CV). This
-is System A's *only* training input — it never sees simulator output (doc 06 §1).
+is System A's *only* training input - it never sees simulator output (doc 06 §1).
 ``statsbomb_xg`` is carried for sanity comparison but is neither a feature nor
 the label.
 """

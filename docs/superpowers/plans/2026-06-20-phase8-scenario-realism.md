@@ -1,10 +1,10 @@
-# Phase 8 — Scenario Realism — Implementation Plan
+# Phase 8 - Scenario Realism - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:executing-plans (inline) or
 > subagent-driven-development. Steps use checkbox (`- [ ]`) tracking.
 
-**Goal:** Widen the searched scenario space to look/play like a real set-piece — 7 attackers with
-off-ball roles, a basic free-kick genome, structured defensive defaults — and bump `ENGINE_VERSION`.
+**Goal:** Widen the searched scenario space to look/play like a real set-piece - 7 attackers with
+off-ball roles, a basic free-kick genome, structured defensive defaults - and bump `ENGINE_VERSION`.
 
 **Architecture:** Pure-core only (`restart.optimize.genome`, `restart.tactics.library`). No web/ML/IO.
 Engine semantics change (more attackers placed) → `sim/0.4.0` → `sim/0.5.0`; canonical `study.json`
@@ -18,18 +18,18 @@ JS gates unaffected). Spec: `docs/superpowers/specs/2026-06-20-phase8-scenario-r
 ---
 
 ## File Structure
-- Modify `packages/simulation-core/src/restart/optimize/genome.py` — off-ball zones, 7-slot template,
+- Modify `packages/simulation-core/src/restart/optimize/genome.py` - off-ball zones, 7-slot template,
   `FreeKickGenome`.
-- Modify `packages/simulation-core/src/restart/tactics/library.py` — `near_post_man()` scheme.
-- Modify `packages/simulation-core/src/restart/__init__.py` — `ENGINE_VERSION`.
-- Modify `packages/optimizer/src/restart_opt/canonical.py` — `CornerGenome(n_runners=6)`.
+- Modify `packages/simulation-core/src/restart/tactics/library.py` - `near_post_man()` scheme.
+- Modify `packages/simulation-core/src/restart/__init__.py` - `ENGINE_VERSION`.
+- Modify `packages/optimizer/src/restart_opt/canonical.py` - `CornerGenome(n_runners=6)`.
 - Tests: `packages/simulation-core/tests/test_optimize_genome.py`,
   `packages/simulation-core/tests/test_tactics_*` (scheme), plus any pinned-value tests to re-baseline.
 - Re-baseline artifact: `optimization_studies/england-vs-argentina/study.json`.
 
 ---
 
-## M1 — Off-ball zones + 7-attacker corner template
+## M1 - Off-ball zones + 7-attacker corner template
 
 ### Task 1.1: Off-ball zones in `ZONE_GRID`
 - [ ] **Failing test** (`test_optimize_genome.py`):
@@ -77,7 +77,7 @@ def test_corner_genome_supports_seven_attackers():
 
 ---
 
-## M2 — `near_post_man` defensive scheme
+## M2 - `near_post_man` defensive scheme
 
 ### Task 2.1
 - [ ] **Failing test** (`test_tactics_library.py` or the scheme test file):
@@ -95,7 +95,7 @@ def test_near_post_man_scheme_valid_and_covers_near_post():
 
 ---
 
-## M3 — Free-kick genome
+## M3 - Free-kick genome
 
 ### Task 3.1
 - [ ] **Failing test:**
@@ -124,12 +124,12 @@ def test_free_kick_genome_requires_fk_position():
 
 ---
 
-## M4 — ENGINE_VERSION bump + re-baseline  *(REVIEW CHECKPOINT)*
+## M4 - ENGINE_VERSION bump + re-baseline  *(REVIEW CHECKPOINT)*
 
 ### Task 4.1: bump + canonical config
 - [ ] `restart/__init__.py`: `ENGINE_VERSION = "sim/0.5.0"`.
 - [ ] `restart_opt/canonical.py`: `genome = CornerGenome(n_runners=6)`; keep `zonal_six_two()` (near
-  post covered) or switch to `near_post_man()` — decide in review.
+  post covered) or switch to `near_post_man()` - decide in review.
 - [ ] **Re-baseline pinned tests:** grep `sim/0.4.0` and any canonical xG/SimProgram value assertions;
   update to `sim/0.5.0` and the 7-attacker template. `grep -rn "sim/0.4.0" packages apps`.
 - [ ] **Run** core pytest → green.
@@ -140,19 +140,19 @@ def test_free_kick_genome_requires_fk_position():
   (match the existing `config` block in `study.json`).
 - [ ] Confirm `optimization_studies/england-vs-argentina/study.json` now has `engine_version:
   sim/0.5.0` and 16+ genome params per trial (7-attacker). **Commit** study + version + canonical +
-  test updates: `feat(engine)!: sim/0.5.0 — 7-attacker template, re-baseline canonical study`.
+  test updates: `feat(engine)!: sim/0.5.0 - 7-attacker template, re-baseline canonical study`.
 
 **M4 done → full `verify.ps1` green. STOP for review.**
 
 ---
 
-## M5 — Docs, ADR-009, handoff, PR
-- [ ] `docs/adr/ADR-009-scenario-realism.md` — wider template (O-2 widened, arity still fixed), basic
+## M5 - Docs, ADR-009, handoff, PR
+- [ ] `docs/adr/ADR-009-scenario-realism.md` - wider template (O-2 widened, arity still fixed), basic
   FK genome (offside/off-ball = O-3 deferred), structured defence, `ENGINE_VERSION` bump rationale +
   re-baseline. Add to ADR index.
 - [ ] Update `simulation-assumptions` / `ASSUMPTIONS_REGISTER` (O-2 widened note), `TECHNICAL_DEBT`
   (FK partial; offside/off-ball still O-3), `PROJECT_STATUS`, `CHANGELOG`, rewrite `PHASE_HANDOFF`.
-- [ ] Full `verify.ps1` green. PR → `main`: `gh pr create --base main --title "Phase 8 — Scenario realism (sim/0.5.0)"`.
+- [ ] Full `verify.ps1` green. PR → `main`: `gh pr create --base main --title "Phase 8 - Scenario realism (sim/0.5.0)"`.
 
 ---
 
@@ -162,4 +162,4 @@ def test_free_kick_genome_requires_fk_position():
 - FreeKickGenome (§4.2) → M3 ✓
 - ENGINE_VERSION + re-baseline (§4.4) → M4 ✓
 - Docs/ADR/PR (§8 M5) ✓
-- Constraints: pure-core, fixed arity (O-2), FK offside deferred (O-3), scoped budget — all stated ✓.
+- Constraints: pure-core, fixed arity (O-2), FK offside deferred (O-3), scoped budget - all stated ✓.

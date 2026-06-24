@@ -1,7 +1,7 @@
 """Load the active xG bundle for engine injection (adapter layer).
 
 The backend reads the *committed* model artifact JSON and builds the pure
-``restart.engine.xg.XGModelBundle`` directly — no ML-framework dependency. The
+``restart.engine.xg.XGModelBundle`` directly - no ML-framework dependency. The
 adapter still depends only on the simulation core; training lives in restart_ml.
 The active pointer (``models/active.json``) is the file-based stand-in for
 ``ml_models.is_active`` until DB pinning lands (tech-debt P4/6).

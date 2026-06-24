@@ -3,7 +3,7 @@
 Each force is a small class that precomputes its constants from config and
 exposes a broadcast-polymorphic ``acceleration(position, velocity, spin)``
 kernel (see ``restart.simulation.interfaces.ForceModel``). Composition is a
-plain sum (``ForceSystem``) — forces are independent and additive in this
+plain sum (``ForceSystem``) - forces are independent and additive in this
 regime.
 
 Assumption IDs (P-*) refer to docs/simulation-assumptions.md.

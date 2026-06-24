@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { CAMERA_PRESETS, frameIndex, worldToScene, type CameraPreset } from "./replay3d-util";
 
 // Tier-2 3D replay (doc 07 §3). Consumes the SAME SimulateResponse the 2D
-// ReplayPlayer uses — ball_path carries z so the flight arc is real; player
+// ReplayPlayer uses - ball_path carries z so the flight arc is real; player
 // tracks are 2D and sit on the ground plane. Loaded on demand (dynamic import)
 // so R3F/three never enter the default bundle.
 
@@ -41,7 +41,7 @@ function Scene({ data, reducedMotion }: { data: SimulateResponse; reducedMotion:
   const attRefs = useRef<(THREE.Mesh | null)[]>([]);
   const defRefs = useRef<(THREE.Mesh | null)[]>([]);
   const ballRef = useRef<THREE.Mesh>(null);
-  // Lazily stamped on the first frame — calling performance.now() in the ref
+  // Lazily stamped on the first frame - calling performance.now() in the ref
   // initializer is an impure call during render (react-compiler lint).
   const startRef = useRef<number | null>(null);
 

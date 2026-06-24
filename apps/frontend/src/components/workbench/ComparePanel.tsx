@@ -9,7 +9,7 @@ import { compareStats, type CompareResult } from "@/lib/compareStats";
 
 // Compare two scenarios under COMMON RANDOM NUMBERS. Both runs use the same seed
 // and n_sims, so sim i of each sees the identical per-sim seed (the montecarlo
-// determinism contract) — the per-sim xG vectors are paired and the difference
+// determinism contract) - the per-sim xG vectors are paired and the difference
 // is signal, not seed luck. No winner is shown unless the paired-difference CI
 // excludes zero (doc 07 §4 stats policy). Sharing one set of inputs for both
 // runs makes the same-seed/same-n requirement structural, not a checkbox.

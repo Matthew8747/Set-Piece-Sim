@@ -6,12 +6,12 @@ analyst-grade web UI. Solo-developer, portfolio-grade standards, phase-gated del
 
 ## Read in this order (15 minutes)
 
-1. [PROJECT_STATUS.md](PROJECT_STATUS.md) — where we are right now (1 min)
-2. [PHASE_HANDOFF.md](PHASE_HANDOFF.md) — what just shipped, what's next, open decisions (3 min)
-3. [ARCHITECTURE_SUMMARY.md](ARCHITECTURE_SUMMARY.md) + [ADR_SUMMARY.md](ADR_SUMMARY.md) — how
+1. [PROJECT_STATUS.md](PROJECT_STATUS.md) - where we are right now (1 min)
+2. [PHASE_HANDOFF.md](PHASE_HANDOFF.md) - what just shipped, what's next, open decisions (3 min)
+3. [ARCHITECTURE_SUMMARY.md](ARCHITECTURE_SUMMARY.md) + [ADR_SUMMARY.md](ADR_SUMMARY.md) - how
    the system is shaped and why (5 min)
-4. [../08-roadmap.md](../08-roadmap.md) — the phase you are about to build, in its 7-part format
-5. Deep-dive only what your phase touches: design docs `01–07`, the
+4. [../08-roadmap.md](../08-roadmap.md) - the phase you are about to build, in its 7-part format
+5. Deep-dive only what your phase touches: design docs `01-07`, the
    [assumptions registry](../simulation-assumptions.md), the
    [development guide](../development-guide.md)
 
@@ -20,9 +20,9 @@ analyst-grade web UI. Solo-developer, portfolio-grade standards, phase-gated del
 - **Phase discipline:** execute one phase at a time; stop for review after each. Never start
   coding before the phase's design/ADR work is recorded.
 - **Quality gates:** `./scripts/verify.sh` (or `scripts/verify.ps1`) must be green before any
-  commit — it mirrors CI exactly (ruff, black, mypy --strict, pytest, next build, eslint, tsc,
+  commit - it mirrors CI exactly (ruff, black, mypy --strict, pytest, next build, eslint, tsc,
   vitest, prettier). `uv` manages Python (3.12 pinned); npm workspaces manage TS.
-- **Dependency rule:** `packages/simulation-core` (`restart`) is pure domain — no web/DB/IO
+- **Dependency rule:** `packages/simulation-core` (`restart`) is pure domain - no web/DB/IO
   imports, ever. `apps/backend` (`restart_api`) is a thin adapter.
 - **Physics changes** bump `restart.ENGINE_VERSION` and update
   [simulation-assumptions.md](../simulation-assumptions.md) (P-/G-numbered, citation-anchored).
@@ -47,5 +47,5 @@ analyst-grade web UI. Solo-developer, portfolio-grade standards, phase-gated del
 
 ## Next recommended actions
 
-See [PHASE_HANDOFF.md](PHASE_HANDOFF.md) §"Next phase" — it is always the authoritative
+See [PHASE_HANDOFF.md](PHASE_HANDOFF.md) §"Next phase" - it is always the authoritative
 "what to do next".

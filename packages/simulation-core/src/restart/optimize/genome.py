@@ -136,7 +136,7 @@ ZONE_GRID: dict[str, PitchPoint] = {
     "penalty_spot": PitchPoint(x=41.5, y=0.0),
     "goalmouth": PitchPoint(x=50.0, y=0.0),
     "edge": PitchPoint(x=38.0, y=0.0),
-    # Off-ball zones (Phase 8): not every runner contests the 6-yard box — these
+    # Off-ball zones (Phase 8): not every runner contests the 6-yard box - these
     # let the optimizer place lurkers / recyclers / half-space arrivals for
     # cut-backs and second balls.
     "top_of_box": PitchPoint(x=35.0, y=0.0),
@@ -165,7 +165,7 @@ _INTENT_MAP: dict[str, Intent] = {
 }
 
 #: Fixed runner start positions by slot (the optimizer moves targets + timing,
-#: not start points — those are an attacking-shape choice, not a search dim).
+#: not start points - those are an attacking-shape choice, not a search dim).
 _DEFAULT_STARTS: tuple[PitchPoint, ...] = (
     PitchPoint(x=38.0, y=-5.0),
     PitchPoint(x=40.0, y=8.0),
@@ -298,7 +298,7 @@ class CornerGenome:
     ``n_runners`` is fixed per study (kicker + n_runners attackers); the template
     spans box contesters and off-ball roles (lurk / recycle / half-space) so a
     wider overload reads like a real corner, not bodies stacked in the six-yard
-    box (Phase 8, O-2 widened — arity stays fixed, not searched).
+    box (Phase 8, O-2 widened - arity stays fixed, not searched).
     """
 
     n_runners: int = 4
@@ -345,7 +345,7 @@ class FreeKickGenome:
     Reuses the corner runner template; builds a FREE_KICK routine and preserves
     the base scenario's ``fk_position`` (the kick origin is study config, not a
     search dimension) and its scheme (the wall is the defence's concern). Offside
-    lines and runners-from-off-the-ball timing are NOT modeled here — that is the
+    lines and runners-from-off-the-ball timing are NOT modeled here - that is the
     carried O-3 fidelity cut, a later phase.
     """
 

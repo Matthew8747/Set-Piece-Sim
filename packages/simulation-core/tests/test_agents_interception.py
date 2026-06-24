@@ -1,4 +1,4 @@
-"""Tests for restart.agents.interception — feasibility, gating, and determinism."""
+"""Tests for restart.agents.interception - feasibility, gating, and determinism."""
 
 import numpy as np
 
@@ -27,7 +27,7 @@ def _ball_table(
 
 
 class TestEarliestInterceptionStationary:
-    """Stationary ball directly at an agent — should intercept at first reachable sample."""
+    """Stationary ball directly at an agent - should intercept at first reachable sample."""
 
     def test_stationary_ball_at_agent_intercepts_immediately(self) -> None:
         # Agent at (5, 5), ball hovering at (5, 5, 1.0)
@@ -79,9 +79,9 @@ class TestEarliestInterceptionUnreachable:
         reach = np.array([3.0])
         ready_time = np.array([0.0])
 
-        # Ball 100 m away, samples close together in time — agent can never catch it
+        # Ball 100 m away, samples close together in time - agent can never catch it
         samples = [(100.0 + i * 10.0, 0.0, 1.0) for i in range(20)]
-        ball_times = np.arange(20, dtype=np.float64) * 0.01  # 0 to 0.19 s — no time to run 100m
+        ball_times = np.arange(20, dtype=np.float64) * 0.01  # 0 to 0.19 s - no time to run 100m
         ball_pos = np.array(samples, dtype=np.float64)
 
         result = earliest_interception(

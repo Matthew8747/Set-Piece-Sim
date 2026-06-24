@@ -2,7 +2,7 @@
 
 Players come straight from lineups (real StatsBomb identities). Attributes are
 *derived* with a documented method per value and provenance-tagged
-``{source, method, license}`` — turning the licensing constraint (no scraped
+``{source, method, license}`` - turning the licensing constraint (no scraped
 ratings) into a credibility feature. Observable attributes (heading from aerial
 duels, delivery from set-piece pass completion) are computed from events and
 empirical-Bayes shrunk toward the position-group mean; the rest fall back to

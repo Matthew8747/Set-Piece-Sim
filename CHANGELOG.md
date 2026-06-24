@@ -6,22 +6,22 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
-### Added — Phase 10 (in progress): Throughput — fused Numba scenario kernel · `ENGINE_VERSION sim/0.5.0` (unchanged)
+### Added - Phase 10 (in progress): Throughput - fused Numba scenario kernel · `ENGINE_VERSION sim/0.5.0` (unchanged)
 
-- **Externalized RNG (`SimDraws` draw plan)** — all per-sim randomness is drawn up front into category
+- **Externalized RNG (`SimDraws` draw plan)** - all per-sim randomness is drawn up front into category
   sub-streams (delivery, jitter, contest, shot, second-ball) with fixed budgets, so the njit kernel and
   the NumPy reference engine can consume *identical* Philox draws. Numba's in-kernel RNG can't reproduce
   NumPy Philox bit-for-bit, so this externalization is what makes the kernel a true `≤1e-9` drop-in. The
   engine now reads draws instead of calling `rng`; a deliberate one-time draw-plan change (model
   identical, aggregates within Monte Carlo noise, `ENGINE_VERSION` unchanged).
   ([ADR-011](docs/adr/ADR-011-throughput-kernel.md))
-- **njit agent kernels** — scalar-loop `step_agents` / `time_to_point` / `earliest_interception` in
+- **njit agent kernels** - scalar-loop `step_agents` / `time_to_point` / `earliest_interception` in
   `agents/_kernels.py`, each equivalence-tested to `≤1e-9` against its broadcast NumPy reference (the
   same discipline as the physics flight kernel). The composable pieces the fused per-sim kernel will call.
 - *Remaining:* the fused per-sim kernel (flight-trajectory port + contest/shot), the throughput
   benchmark with an honesty gate, and the canonical re-baseline.
 
-### Changed — Frontend: production-grade console (2026-06-23)
+### Changed - Frontend: production-grade console (2026-06-23)
 
 - A persistent **app shell** (sidebar nav with active state) replaces standalone pages; the real
   **type system** the tokens always declared is now loaded (Bricolage Grotesque display, Hanken Grotesk
@@ -31,17 +31,17 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
   Workbench (all four modes) and the Optimization study surface were brought onto the same system. No
   data-surface behaviour changed; all component tests preserved.
 
-### Added — Phase 9: Evolutionary routine search (2026-06-21) · `ENGINE_VERSION sim/0.5.0` (unchanged)
+### Added - Phase 9: Evolutionary routine search (2026-06-21) · `ENGINE_VERSION sim/0.5.0` (unchanged)
 
-- **Evolutionary search behind the existing sampler dispatch** — `make_sampler` gains `nsga2` (a
-  genetic algorithm that evolves the *full* mixed genome via selection/crossover/mutation — the
+- **Evolutionary search behind the existing sampler dispatch** - `make_sampler` gains `nsga2` (a
+  genetic algorithm that evolves the *full* mixed genome via selection/crossover/mutation - the
   "routines develop naturally by simulation" headline) and `cmaes` (an evolution strategy for the
   continuous genes). Both plug into the unchanged screen→confirm pipeline; population is sized to the
   budget so real generations occur, and evolutionary screens run pruning-off
   ([ADR-010](docs/adr/ADR-010-evolutionary-search.md)). Adds the `cmaes` dependency.
-- **Generation lineage** — each trial carries its NSGA-II `generation` index, persisted to
+- **Generation lineage** - each trial carries its NSGA-II `generation` index, persisted to
   `study.json`, so the trial cloud can be read as an evolutionary lineage.
-- **Canonical evolution comparison** — the canonical study runs TPE + random + NSGA-II at equal
+- **Canonical evolution comparison** - the canonical study runs TPE + random + NSGA-II at equal
   budget and confirms the best-k routines found by either TPE or evolution under one CRN seed,
   recording which sampler produced the winner (`winner.sampler`); the `study.json` gains an
   `evolution` block beside `tpe`/`random`.
@@ -49,12 +49,12 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
   documented follow-up. Forward [roadmap](docs/ROADMAP-future-enhancements.md) reordered: evolution is
   Phase 9, the throughput kernel becomes Phase 10.
 
-### Changed — Phase 8: Scenario realism (2026-06-21) · `ENGINE_VERSION sim/0.4.0` → **`sim/0.5.0`**
+### Changed - Phase 8: Scenario realism (2026-06-21) · `ENGINE_VERSION sim/0.4.0` → **`sim/0.5.0`**
 
 - **Wider corner template (7 attackers, off-ball roles):** `ZONE_GRID` gains off-ball target zones
   (`top_of_box`, `left_half_space`, `right_half_space`, `deep_recycle`); the runner template grows to
   7 slots so the optimizer can build a realistic overload (box contesters + lurkers/recyclers) instead
-  of four bodies in the six-yard box. Arity stays **fixed per study** (O-2 honored — no variable-arity
+  of four bodies in the six-yard box. Arity stays **fixed per study** (O-2 honored - no variable-arity
   search); the canonical study runs 6 runners (7 attackers). ([ADR-009](docs/adr/ADR-009-scenario-realism.md))
 - **Basic free-kick genome:** `FreeKickGenome` builds a `FREE_KICK` routine over the engine's existing
   FK scaffolding (preserves the base scenario's `fk_position` + scheme/wall); corner and free-kick
@@ -63,18 +63,18 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **Structured defence:** a `near_post_man` `DefensiveScheme` (near-post anchor + flat line + 3
   man-markers = 10 outfield) joins the library.
 - **`ENGINE_VERSION` bump `sim/0.4.0` → `sim/0.5.0`:** placing more attackers changes a routine's
-  simulated context and therefore its results, so the engine build id bumps (determinism preserved —
+  simulated context and therefore its results, so the engine build id bumps (determinism preserved -
   the same `Scenario` still compiles byte-identical, covered by new 7-attacker + FK determinism tests).
   The committed canonical `study.json` is re-baselined (now a 7-attacker, 22-param genome).
-- **Ops:** `scripts/rebaseline_canonical.py` — an observable, watchdog-bounded wrapper for the long
+- **Ops:** `scripts/rebaseline_canonical.py` - an observable, watchdog-bounded wrapper for the long
   canonical re-run (per-trial Optuna logging + liveness heartbeat + hard wall-clock cap).
 
-### Added — Phase 7: Optimization UI & 3D replay (2026-06-20) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+### Added - Phase 7: Optimization UI & 3D replay (2026-06-20) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
 - **Read-only optimization surface:** `StudyLoader` serves the persisted `study.json` as typed DTOs
   at `GET /api/v1/optimizations` + `/{id}` (convergence, parallel-coords axis metadata, top-k vs
   baseline, SHAP insights, sensitivity, winner + flags). `restart_opt` never enters the request path
-  — a guard test enforces the boundary ([ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md)).
+  - a guard test enforces the boundary ([ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md)).
 - **pitch-kit optimization primitives** (hand-rolled SVG): `ConvergencePlot`, `ParallelCoordinates`
   (the search-space view), `TopKTable` (beats-baseline only on non-overlapping CIs).
 - **`/optimize` + `/optimize/:id`** pages with a plain-language SHAP insights panel and a sensitivity
@@ -84,7 +84,7 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **On-demand 3D replay (R3F):** `Replay3D` over the same `SimulateResponse`; camera presets; loaded
   via `next/dynamic` so three.js stays in a lazy chunk (2D remains default + SVG fallback).
 
-### Added — Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+### Added - Phase 6: API & Scenario Workbench (2026-06-19) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
 - **API hardening:** RFC 9457 problem-details for the whole surface; tightened input + pitch-coordinate
   bounds; per-IP rate limiting (slowapi; in-memory default, Redis when configured); `X-API-Key` write
@@ -95,7 +95,7 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
   demo squads retired from the API runtime. `GET /api/v1/teams`, `GET /api/v1/players?team=<slug>`.
 - **Persistence ports + async jobs:** `TeamRepository` / `ScenarioRepository` / `SimRunRepository`
   and a `JobQueue`, with server-free defaults (SQLite + in-process asyncio worker). `POST /scenarios`;
-  `POST /sim-runs` (`202`, or `200` on idempotency hit — key = canonical scenario hash + `n_sims` +
+  `POST /sim-runs` (`202`, or `200` on idempotency hit - key = canonical scenario hash + `n_sims` +
   `seed` + `engine_version`); `GET /sim-runs/{id}` (status/progress/result with `xg_samples`);
   `GET /sim-runs/{id}/events?sample=worst|median|best` (single-sim replay). Determinism preserved
   end to end: same key ⇒ identical surfaced result.
@@ -104,7 +104,7 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **`@restart/pitch-kit` (new workspace):** the canonical 105×68 SVG pitch, a `ReplayPlayer`
   (scrubber, event markers, keyboard, `prefers-reduced-motion`), and hand-rolled SVG chart
   primitives (`Histogram`, `Ecdf`, `KpiCard` with CI whisker + "how?"), plus the full doc-07
-  token scale. Charts are plain SVG, not visx (React-19 peer block — ADR-007 d7).
+  token scale. Charts are plain SVG, not visx (React-19 peer block - ADR-007 d7).
 - **Scenario Workbench:** `/scenarios` library + `/scenarios/[id]` host with Build / Simulate /
   Replay modes (B/S/R keys), real-squad pickers, async-run polling, distribution charts +
   KPI/CI cards, and replay with a worst/median/best sample picker. Determinism banner on every
@@ -116,24 +116,24 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **E2E:** Playwright runs the 3-minute journey at a reduced deterministic budget (`n_sims=24`)
   booting the backend + Next as web servers.
 - Docs: [API reference](docs/api/README.md), [frontend README](apps/frontend/README.md), ADR-007,
-  assumption R9. `ENGINE_VERSION` **unchanged** — Phase 6 touches no engine physics.
+  assumption R9. `ENGINE_VERSION` **unchanged** - Phase 6 touches no engine physics.
 
 ### Fixed
 - `MartSquadLoader` shared a single DuckDB connection across threads; the in-process job worker and a
   concurrent polling request could race on it and corrupt query results (a spurious "unknown team").
   Each query now runs on its own DuckDB cursor.
 
-### Added — Phase 5: Optimization Engine (System B) (2026-06-14) · `ENGINE_VERSION sim/0.4.0` (unchanged)
+### Added - Phase 5: Optimization Engine (System B) (2026-06-14) · `ENGINE_VERSION sim/0.4.0` (unchanged)
 
-- **Pure optimize core (`restart.optimize`)** — the genome, objective, statistics, and guards stay
-  IO/ML-free in the simulation core: `genome.py` (typed mixed search space —
-  Continuous/Int/Categorical — plus the ~13-dim `CornerGenome` over a zone grid and its
+- **Pure optimize core (`restart.optimize`)** - the genome, objective, statistics, and guards stay
+  IO/ML-free in the simulation core: `genome.py` (typed mixed search space -
+  Continuous/Int/Categorical - plus the ~13-dim `CornerGenome` over a zone grid and its
   genotype→`Scenario` builder; `DeliveryGenome` keeps the v1 delivery sub-space); the
   `RoutineObjective` now returns **mean xG per sim** (doc 06 §2.3), deterministic per
   (params, root_seed) for common random numbers, and reports counterattack risk without optimizing
   it; `confirm.py` (mean-xG CI, the non-overlap decision rule, the CRN confirm stage);
   `boundary.py` (anti-exploit bound-pinning + face-validity ceiling).
-- **New `optimizer` package (`restart_opt`, CLI `restart-opt`)** — System B's search engine,
+- **New `optimizer` package (`restart_opt`, CLI `restart-opt`)** - System B's search engine,
   isolating all Optuna/LightGBM/SHAP/MLflow + IO from the pure core: seeded **Optuna TPE** with a
   mandatory **random-search baseline at equal budget**; the engine-backed **screen-then-confirm**
   pipeline (small-budget screen with median pruning under common random numbers → top-k confirmed
@@ -148,11 +148,11 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **Throughput decision (ADR-006):** the reference engine is ~3 sims/s (measured), so the fused
   Numba scenario kernel (ADR-003 d8) is **deferred** and study budgets are **scoped + configurable**;
   the 500-screen/10k-confirm figures remain the documented reference methodology. `ENGINE_VERSION`
-  is **unchanged** (`sim/0.4.0`) — the optimizer does not touch engine physics.
+  is **unchanged** (`sim/0.4.0`) - the optimizer does not touch engine physics.
 
-### Added — Phase 4: Data Platform, Player Profiles & xG v1 (2026-06-14) · `ENGINE_VERSION sim/0.4.0`
+### Added - Phase 4: Data Platform, Player Profiles & xG v1 (2026-06-14) · `ENGINE_VERSION sim/0.4.0`
 
-- **`etl` package (`restart_etl`, CLI `restart-etl`)** — pure-data pipeline, raw → staging →
+- **`etl` package (`restart_etl`, CLI `restart-etl`)** - pure-data pipeline, raw → staging →
   marts (design doc 04). `fetch statsbomb` pulls WC 2022 + Euro 2024 to a byte-exact, manifested,
   git-ignored raw cache; `stage` applies the single owned coordinate transform
   (StatsBomb 120×80 → canonical 105×68 m, center origin, attack L→R; property-tested) and writes
@@ -161,44 +161,44 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - **Marts (real data):** `mart_setpiece_shots` (975 corner/FK shots, 75 goals, freeze-frame
   traffic features + goal label, grouped by match), `mart_calibration_targets` (real base
   rates), `mart_players` + `mart_player_attributes` (1,259 players × 12 derived,
-  **provenance-tagged** `{source, method, license}` attributes — aerial-duel-derived heading,
+  **provenance-tagged** `{source, method, license}` attributes - aerial-duel-derived heading,
   set-piece-completion-derived delivery, position-group literature/curated priors for the rest;
   clamped to engine bounds), `mart_defensive_schemes` (curated zonal/man/hybrid + empirical
   corner reference).
 - **Mechanical license gate:** every mart row's `source` ∈ approved allow-list; forbidden
   scraped-ratings sources (EA/sofifa) named and rejected. Enforced in CI via unit tests, not a
   policy doc.
-- **`ml` package (`restart_ml`, CLI `restart-xg`)** — System A xG, trained on **real data only**
+- **`ml` package (`restart_ml`, CLI `restart-xg`)** - System A xG, trained on **real data only**
   (never simulator output, doc 06 §1). `xg-header` + `xg-foot` calibrated logistic models with a
   full method comparison (LR vs HistGBM vs RandomForest vs XGBoost vs LightGBM) under
   **grouped-by-match CV**; Platt calibration on out-of-fold predictions; MLflow (SQLite backend)
   logs every run; generated **model card** (`docs/model-cards/xg-v1.md`). Shipped logistic
-  calibration slope **1.00** (header & foot) — meets the 0.9–1.1 acceptance target. The decision
+  calibration slope **1.00** (header & foot) - meets the 0.9-1.1 acceptance target. The decision
   to ship the logistic (keeping the core dependency-free) over the marginally-better RF is
   recorded with evidence.
 - **Engine integration (pure-domain preserved):** new `restart.engine.xg` (`ShotContext`,
   `XGScorer` protocol, pure-NumPy `LogisticXGScorer`, `XGModelBundle`). `SetPieceEngine` accepts
   an injected scorer; shots emit a `ShotContext`, are scored, and resolve by Bernoulli on the
   real-data xG (G-14/G-15). The shipped coefficient bundle is committed under `models/` and
-  loaded by the backend directly as JSON — no ML framework in the API runtime.
+  loaded by the backend directly as JSON - no ML framework in the API runtime.
 - **API:** Monte Carlo report now carries `mean_xg`, `n_xg_scored`, and `xg_model`; `ShotEvent`
   (and `EventDTO`) carry per-shot `xg`. shared-types mirrors updated.
 - Docs: data dictionary v1 (CI-checked), ETL runbook, model card, ADR-005, assumptions G-14/G-15.
 - New tests across `etl`, `ml`, engine xG, and the API xG acceptance path (all green).
 
-### Changed — Engine `sim/0.3.0` → `sim/0.4.0`
+### Changed - Engine `sim/0.3.0` → `sim/0.4.0`
 - `ShotEvent` gained an `xg` field and the engine gained an xG-scored shot path (injected
   `XGScorer`). The default (no-scorer) path is unchanged and deterministic, but the engine's
   behavior set changed → `ENGINE_VERSION` bump. The placeholder GK-save logit (G-9) is retained
   as the fallback when no model is wired.
 
-### Added — Phase 3: Monte Carlo, Analytics & MVP (2026-06-13) · `ENGINE_VERSION sim/0.3.0`
+### Added - Phase 3: Monte Carlo, Analytics & MVP (2026-06-13) · `ENGINE_VERSION sim/0.3.0`
 
-- `restart.montecarlo`: seeded batch runner (`sim_seeds` — per-sim seeds stable across batch
+- `restart.montecarlo`: seeded batch runner (`sim_seeds` - per-sim seeds stable across batch
   sizes, any sim replayable singly), outcome aggregation with **Wilson 95% CIs** (SciPy, M-2),
   serializable `SimulationReport` (goal / shot / header / first-contact / clearance /
   possession-recovery probabilities, PRD FR-4.2).
-- `restart.optimize`: optimization *interfaces only* (no algorithms, per phase scope) —
+- `restart.optimize`: optimization *interfaces only* (no algorithms, per phase scope) -
   `SearchSpace`, `ContinuousParam`, `ObjectiveFunction` protocol, `RoutineObjective`
   (delivery-param mutation → compile → Monte Carlo → P(goal), deterministic per seed for CRN).
   Optuna/CMA-ES/GA plug in here in Phase 5.
@@ -211,26 +211,26 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ### Changed
 - Engine ball-flight horizon capped at 4 s (`EngineConfig.ball_sim_horizon_s`): set pieces
-  resolve in 2–4 s, and integrating roll-to-rest tails cost ~10× per sim. Shifts some
+  resolve in 2-4 s, and integrating roll-to-rest tails cost ~10× per sim. Shifts some
   untouched-ball second-ball classifications → `ENGINE_VERSION` bump to `sim/0.3.0`.
 
 ### Performance
 - `domain.vectors.cross` hand-expanded (np.cross routes through moveaxis, ~100× slower on
   small arrays; was ~25% of engine time) and `agents.separate` vectorized to process only
-  overlapping pairs — both equivalence-preserving. Reference-engine MC ≈ 3 sims/s; the fused
+  overlapping pairs - both equivalence-preserving. Reference-engine MC ≈ 3 sims/s; the fused
   batch scenario kernel (ADR-003 d8) remains the 100k-sim answer (Phase-3 follow-up).
 
-### Added — Phase 2: Agents & Tactical Engine (2026-06-12) · `ENGINE_VERSION sim/0.2.0`
+### Added - Phase 2: Agents & Tactical Engine (2026-06-12) · `ENGINE_VERSION sim/0.2.0`
 
 - `restart.players`: validated attribute model with kernel-facing column contract
-  (`Attr` IntEnum — compiled-program ABI), `Player`/`Team` entities, deterministic synthetic
+  (`Attr` IntEnum - compiled-program ABI), `Player`/`Team` entities, deterministic synthetic
   demo squads (no licensed ratings data).
 - `restart.agents`: accel/turn-rate-limited kinematics, reaction-latency gating,
   accelerate-then-cruise interception solver, soft-disc separation (G-1..G-7).
 - `restart.tactics`: Routine Spec `rs/1.0` (validating, rejecting), defensive schemes
   (zonal/man/hybrid + FK wall), `compile_scenario` → SoA `SimProgram` (ADR-004); library of
   5 corner routines + 3 schemes + direct free kick.
-- `restart.engine`: `SetPieceEngine` — delivery execution (range-solved elevation, curl
+- `restart.engine`: `SetPieceEngine` - delivery execution (range-solved elevation, curl
   pre-aim, skill noise), pre-kick run development, kick-instant interception planning,
   Gumbel-max aerial contests, header/clearance/GK-claim contact resolution, logistic GK save
   model, second-ball classification; typed match events (`FirstContactEvent`, `ShotEvent`
@@ -246,10 +246,10 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 - Corner kick position moved onto the corner arc (0.3 m inside both lines).
 
 ### Known limitations (Phase-3 targets)
-- Outcome rates uncalibrated (keeper-claim share high; goal rate ~5% vs real 2–3%); all
+- Outcome rates uncalibrated (keeper-claim share high; goal rate ~5% vs real 2-3%); all
   rate-shaping constants are named `EngineConfig` calibration knobs.
 
-### Added — Phase 1: Ball Physics Core (2026-06-12) · `ENGINE_VERSION sim/0.1.0`
+### Added - Phase 1: Ball Physics Core (2026-06-12) · `ENGINE_VERSION sim/0.1.0`
 
 - **Build-vs-buy assessment** for the physics/simulation stack:
   [ADR-001](docs/adr/ADR-001-physics-stack-build-vs-buy.md) (NumPy + SciPy-as-oracle +
@@ -273,17 +273,17 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
   energy-invariant property for bounce, Roberto Carlos 1997 plausibility recreation,
   kernel↔reference equivalence (≤ 1e-9).
 - Benchmark framework: pytest-benchmark suite + throughput gate. Measured: 10k flights
-  0.98 s single-core (10.2k flights/s) — 6.9× the NumPy path, meeting the roadmap budget.
+  0.98 s single-core (10.2k flights/s) - 6.9× the NumPy path, meeting the roadmap budget.
 - [Simulation assumptions registry](docs/simulation-assumptions.md): P-1…P-15 with citations,
   calibration-knob tags, and V1 validation evidence.
 - 98 new tests (130 total).
 
-### Added — Phase 0: Repository Foundation (2026-06-11)
+### Added - Phase 0: Repository Foundation (2026-06-11)
 
 - Monorepo: uv workspace (Python 3.12) + npm workspaces under one roof.
 - `packages/simulation-core` (`restart`): pure-domain package with the canonical 105×68 m
   coordinate frame, pitch geometry constants, `ENGINE_VERSION`, and `py.typed`.
-- `apps/backend` (`restart_api`): FastAPI skeleton — app factory with settings injection,
+- `apps/backend` (`restart_api`): FastAPI skeleton - app factory with settings injection,
   `RESTART_`-prefixed pydantic-settings (SecretStr secrets, no credentialed defaults),
   `/healthz`, `/readyz`, `/api/v1/meta`, CORS, typed DTOs.
 - `apps/frontend`: Next.js 16 (App Router, Turbopack) + TypeScript strict + Tailwind v4,
@@ -292,13 +292,13 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
   `transpilePackages`.
 - Tooling: ruff, black, mypy (strict), pytest (importlib mode), eslint (flat config),
   prettier, pre-commit hooks.
-- CI: GitHub Actions — python job (ruff/black/mypy/pytest) + frontend job
+- CI: GitHub Actions - python job (ruff/black/mypy/pytest) + frontend job
   (build/eslint/tsc/vitest/prettier).
 - `scripts/verify.{sh,ps1}`: the full CI suite, runnable locally on any OS.
 - `infra/docker-compose.yml`: Postgres 16 + Redis 7 (localhost-bound) for later phases.
 - Data lake skeleton (`data/raw|staging|marts`, git-ignored) with layout README.
 - Documentation: README quickstart, setup guide, development guide, contributing guide;
-  design package (docs/01–08) updated to as-built layout.
+  design package (docs/01-08) updated to as-built layout.
 
 ### Security
 

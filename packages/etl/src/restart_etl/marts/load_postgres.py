@@ -1,4 +1,4 @@
-"""Idempotent Postgres mart loader — a drop-in beside the DuckDB loader (ADR-007 d1).
+"""Idempotent Postgres mart loader - a drop-in beside the DuckDB loader (ADR-007 d1).
 
 The default warehouse is file-based DuckDB (server-free CI). For a server
 deployment the same committed mart Parquet is loaded into Postgres with the

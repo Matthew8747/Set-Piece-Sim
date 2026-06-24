@@ -40,7 +40,7 @@ export function ReplayPanel({ runId }: ReplayPanelProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Guard: jsdom (and very old browsers) lack matchMedia — degrade to motion on.
+    // Guard: jsdom (and very old browsers) lack matchMedia - degrade to motion on.
     if (typeof window.matchMedia !== "function") return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReducedMotion(mq.matches);
@@ -52,7 +52,7 @@ export function ReplayPanel({ runId }: ReplayPanelProps) {
   useEffect(() => {
     if (!runId) return;
     // Apply results only in the async callbacks (no synchronous setState in the
-    // effect body — avoids cascading renders) and ignore a stale in-flight fetch
+    // effect body - avoids cascading renders) and ignore a stale in-flight fetch
     // when the run or sample changes mid-request.
     let active = true;
     api

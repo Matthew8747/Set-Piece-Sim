@@ -108,7 +108,7 @@ def near_post_man() -> DefensiveScheme:
     the primary aerial threats. 7 zonal + 3 markers = 10 outfielders.
 
     Zonal points (7):
-      Near-post anchor:   (50.5, -2.5)  — the headline near-post man
+      Near-post anchor:   (50.5, -2.5)  - the headline near-post man
       Near-post outer:    (50.0, -5.0)
       Central goal cover:  (50.0,  0.0)
       Far-post guard:     (50.5,  2.5)

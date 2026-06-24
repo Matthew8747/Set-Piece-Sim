@@ -497,7 +497,7 @@ export interface components {
         };
         /**
          * ProblemDetail
-         * @description RFC 9457 problem-details body — the API's single error contract.
+         * @description RFC 9457 problem-details body - the API's single error contract.
          */
         ProblemDetail: {
             /** Detail */

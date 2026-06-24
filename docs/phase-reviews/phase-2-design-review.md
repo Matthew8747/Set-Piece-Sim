@@ -11,7 +11,7 @@ implementation (ADR-003, ADR-004 accepted)
 | Large-scale scenario generation (P3/P5) | Scenario assembly out of the hot path: `compile()` once → `run(program, seed)` many; programs hashable/reusable |
 | Bayesian optimization (P5) | Routine Spec fields are the genome: typed, bounded, validated; objective evaluations must be deterministic per seed (CRN support) |
 | Set-piece search (P5) | Infeasible-spec rejection at validation (the optimizer learns real constraints) |
-| Feature extraction (P4/P5) | Events carry features at generation time (ShotEvent embeds geometry: distance, angle, header flag, …) — no post-hoc trajectory mining |
+| Feature extraction (P4/P5) | Events carry features at generation time (ShotEvent embeds geometry: distance, angle, header flag, …) - no post-hoc trajectory mining |
 | ML pipelines (P4) | Event vocabulary stable and typed (`restart.simulation.events` is the contract) |
 | Deterministic replay | Agent tracks recorded at tick resolution; one RNG stream per sim, fixed draw order |
 | Numba compatibility | All per-tick math expressible over float64/int64 arrays; no Python objects in tick state |
@@ -20,14 +20,14 @@ implementation (ADR-003, ADR-004 accepted)
 
 Per corner sim: ~6 s horizon × 50 Hz agent tick = **~300 agent ticks**; per tick: 22 agents ×
 (kinematics ≈ 15 flops) + 231 separation pairs + ~22 interception updates against ≤ 1 flight
-sample each ≈ **~2–4 k flops + bookkeeping**. Ball flight: integrated once (Phase-1 kernel,
+sample each ≈ **~2-4 k flops + bookkeeping**. Ball flight: integrated once (Phase-1 kernel,
 ~0.1 ms) + once more post-contact.
 
 - **Phase-2 NumPy single-sim estimate:** ~300 ticks × ~30 vector ops ≈ 10⁴ NumPy calls ≈
-  **5–20 ms/sim**. Fine for Phase 2 (library validation, replays) — *would miss Phase 3 budget
-  by ~5–10×*, exactly as the Phase-1 NumPy path did.
-- **Phase-3 fused-kernel projection:** ~300 ticks × 22 agents × ~50 ns ≈ **0.3–0.7 ms/sim**
-  single-core → 10k sims ≈ 1–2 s/core, ~0.5 s on 4 cores with `prange` — comfortably inside
+  **5-20 ms/sim**. Fine for Phase 2 (library validation, replays) - *would miss Phase 3 budget
+  by ~5-10×*, exactly as the Phase-1 NumPy path did.
+- **Phase-3 fused-kernel projection:** ~300 ticks × 22 agents × ~50 ns ≈ **0.3-0.7 ms/sim**
+  single-core → 10k sims ≈ 1-2 s/core, ~0.5 s on 4 cores with `prange` - comfortably inside
   the 60 s budget with ~30× headroom for contest logic and event recording.
 - **Conclusion:** the risk is not the math; it is *state shape*. Hence ADR-003 d8: the SoA
   `SimProgram` contract is the Phase-2 deliverable that de-risks Phase 3. Phase 2's NumPy
@@ -56,7 +56,7 @@ and re-design before Phase 3 inherits it. None identified at review time.
 | A | Sonnet sub-agent | `restart/players/` (attributes w/ column IntEnum, Player, Team, demo teams), `restart/agents/` (kinematics kernels, interception, separation, AgentConfig), `restart/simulation/rng.py` + tests |
 | B | Sonnet sub-agent | `restart/tactics/` (RoutineSpec rs/1.0, DefensiveScheme + library, Scenario, compile→SimProgram, marking assignment, FK wall) + tests |
 | C | Opus sub-agent | `restart/engine/` (EngineConfig, SetPieceEngine, contests, GK model, outcomes), event-vocabulary extension, corner routine library, integration tests incl. FK feasibility, benchmarks |
-| — | Fable (lead) | Design docs, review of WP output, assumptions registry G-*, verification, handoff refresh, commit |
+| - | Fable (lead) | Design docs, review of WP output, assumptions registry G-*, verification, handoff refresh, commit |
 
 Acceptance for the phase = roadmap Phase-2 criteria: 10 scripted corners to terminal state with
 zero kinematic-invariant violations; determinism bitwise; FK compiles & runs ("configuration,

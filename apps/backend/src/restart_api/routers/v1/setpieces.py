@@ -1,7 +1,7 @@
 """Set-piece endpoints: routine catalog, single simulation, Monte Carlo.
 
 The catalog is the simulation-core content library; squads are the real
-mart-derived nations (demo squads retired from the runtime — ADR-007 d2). The
+mart-derived nations (demo squads retired from the runtime - ADR-007 d2). The
 engine/runner/catalog and the program builder are shared with the async job
 worker via ``restart_api.programs``. Sim counts are hard-bounded (cost-bomb
 protection, security checklist doc 02 §9).

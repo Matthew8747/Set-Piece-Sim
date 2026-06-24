@@ -65,7 +65,7 @@ def compute_features(
 
     ``freeze_frame`` items are dicts with keys ``x_m``, ``y_m``, ``teammate``,
     ``is_gk`` (as produced by staging). When the frame is empty, traffic counts
-    are zero and GK distances default to the goal line — callers gate on
+    are zero and GK distances default to the goal line - callers gate on
     ``has_gk`` / a separate has_freeze_frame flag and impute downstream.
     """
     distance = shot_distance_m(x_m, y_m)

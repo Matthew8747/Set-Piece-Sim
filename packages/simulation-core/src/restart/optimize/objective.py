@@ -4,7 +4,7 @@ Pure and deterministic per (params, root_seed): the same genome and root seed
 always produce the same value, so the driver can compare candidates under common
 random numbers (M-3). The objective evaluates by building the genome's Scenario,
 compiling it, running a Monte Carlo batch on an xG-enabled engine, and reporting
-mean xG (doc 06 sec2.3). Counterattack risk is reported, not optimized — the
+mean xG (doc 06 sec2.3). Counterattack risk is reported, not optimized - the
 multi-objective extension is future work (doc 06 sec3.2).
 """
 
@@ -21,7 +21,7 @@ from restart.optimize.genome import Genome, SearchSpace
 from restart.simulation.events import SetPieceOutcome
 from restart.tactics.compile import Scenario, compile_scenario
 
-#: Outcomes where the defending side ends with (or controls) the ball — the
+#: Outcomes where the defending side ends with (or controls) the ball - the
 #: coarse counterattack-risk proxy. A read of existing outcomes: no engine change.
 _DEFENSE_RECOVERY: frozenset[SetPieceOutcome] = frozenset(
     {
@@ -61,7 +61,7 @@ class RoutineObjective:
 
     Deterministic per (values, root_seed): supports common random numbers across
     optimizer trials and the confirm stage (M-3). Infeasible genomes raise
-    ``ValueError`` from the genome builder — the driver prunes the trial.
+    ``ValueError`` from the genome builder - the driver prunes the trial.
     """
 
     def __init__(

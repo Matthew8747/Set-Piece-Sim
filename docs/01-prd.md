@@ -1,4 +1,4 @@
-# Product Requirements Document — Restart Lab
+# Product Requirements Document - Restart Lab
 
 **Version:** 0.1 (design review draft)
 **Date:** 2026-06-11
@@ -15,7 +15,7 @@ routine optimization to answer one question:
 
 > **"Given our players and their defenders, what is the highest-value way to take this set piece?"**
 
-Set pieces are the correct wedge for this product. Roughly 25–35% of goals at recent World Cups
+Set pieces are the correct wedge for this product. Roughly 25-35% of goals at recent World Cups
 came from set-piece situations (2022: ~31% including penalties), they are the most controllable
 moments in football, and they are the area where analytics has most visibly changed elite practice
 (e.g., the dedicated set-piece coach trend). A simulator is genuinely useful here in a way it is
@@ -38,7 +38,7 @@ describe what happened but cannot search the space of what *could* happen.
 | **Set-piece coach** ("Nicolas") | Concrete routines to train: who runs where, when, what delivery. Wants diagrams and replays, not statistics jargon. | Scenario Builder, Replay, Routine Report |
 | **Performance analyst** ("Priya") | Opponent-specific weaknesses, confidence intervals, defensible numbers for the head coach. | Simulation Lab, Team Intelligence, Comparisons |
 | **Data scientist** ("Marcus") | Model transparency, calibration evidence, reproducibility, API access. | API, model cards, experiment tracking |
-| **Portfolio reviewer** (hiring manager) | Evidence of engineering depth, ML judgment, product taste — in under 10 minutes. | Live demo, case study, README |
+| **Portfolio reviewer** (hiring manager) | Evidence of engineering depth, ML judgment, product taste - in under 10 minutes. | Live demo, case study, README |
 
 The fourth persona is honest and load-bearing: every scoping decision in this document is made
 with "demoable in 10 minutes, defensible in a 60-minute interview" as a constraint.
@@ -63,7 +63,7 @@ with "demoable in 10 minutes, defensible in a 60-minute interview" as a constrai
 ### FR-1 Physics simulation
 - FR-1.1 Ball flight under gravity, quadratic drag, and Magnus force (3D spin vector).
 - FR-1.2 Ground interaction: bounce (restitution), friction, spin transfer.
-- FR-1.3 Contact events: kicks, headers, volleys, deflections, goalkeeper interventions —
+- FR-1.3 Contact events: kicks, headers, volleys, deflections, goalkeeper interventions -
   modeled as impulse events with skill-conditioned noise.
 - FR-1.4 Deterministic replay: identical seed + inputs ⇒ identical trajectory.
 - FR-1.5 All physical constants and assumptions documented in the simulation assumptions doc.
@@ -108,7 +108,7 @@ with "demoable in 10 minutes, defensible in a 60-minute interview" as a constrai
 
 ### FR-6 Data platform
 - FR-6.1 Reproducible ingestion of StatsBomb Open Data (international tournaments).
-- FR-6.2 Player profile store: height, weight, preferred foot, pace, jumping, heading, strength —
+- FR-6.2 Player profile store: height, weight, preferred foot, pace, jumping, heading, strength -
   with per-attribute source/provenance tags.
 - FR-6.3 Custom player and custom team creation.
 - FR-6.4 Data dictionary covering every persisted field.
@@ -139,10 +139,10 @@ with "demoable in 10 minutes, defensible in a 60-minute interview" as a constrai
 ## 6. Success metrics
 
 **Scientific credibility (the project fails without these):**
-- Simulator calibration: simulated corner outcome rates within published real-world bands —
-  goal rate per corner ~1.5–3.5%, shot rate ~20–30%, attacking first contact ~45–55%
+- Simulator calibration: simulated corner outcome rates within published real-world bands -
+  goal rate per corner ~1.5-3.5%, shot rate ~20-30%, attacking first contact ~45-55%
   (bands sourced and pinned in the calibration doc during Phase 3).
-- xG model: Brier score ≤ logistic baseline; calibration curve slope 0.9–1.1 on held-out data.
+- xG model: Brier score ≤ logistic baseline; calibration curve slope 0.9-1.1 on held-out data.
 - Optimizer: discovers routines with statistically significant xG improvement (non-overlapping
   95% CIs) over a naive baseline routine within a fixed simulation budget.
 
@@ -160,20 +160,20 @@ with "demoable in 10 minutes, defensible in a 60-minute interview" as a constrai
 
 ## 7. Scope and cut lines
 
-The brief is a 6–12 month team-sized product. To stay honest about a 12-week solo build, scope
-is tiered. **Tier 1 is the contract; Tiers 2–3 are sequenced stretch.**
+The brief is a 6-12 month team-sized product. To stay honest about a 12-week solo build, scope
+is tiered. **Tier 1 is the contract; Tiers 2-3 are sequenced stretch.**
 
 | Tier | Contents |
 |---|---|
-| **Tier 1 (core, weeks 1–12)** | Corner kicks end-to-end (physics → agents → Monte Carlo → xG → Bayesian optimization → 2D UI + replay + reports). Attacking **and** defensive corner analysis. 6–8 curated national teams. Deployed demo. |
-| **Tier 2 (in-roadmap stretch)** | Free kicks (direct + crossed) and long throw-ins as Routine Spec variants — engine is built to make this cheap (same delivery/contest machinery, different initial conditions and constraints). CMA-ES + GA comparison study. 3D replay (React Three Fiber). |
+| **Tier 1 (core, weeks 1-12)** | Corner kicks end-to-end (physics → agents → Monte Carlo → xG → Bayesian optimization → 2D UI + replay + reports). Attacking **and** defensive corner analysis. 6-8 curated national teams. Deployed demo. |
+| **Tier 2 (in-roadmap stretch)** | Free kicks (direct + crossed) and long throw-ins as Routine Spec variants - engine is built to make this cheap (same delivery/contest machinery, different initial conditions and constraints). CMA-ES + GA comparison study. 3D replay (React Three Fiber). |
 | **Tier 3 (post-roadmap)** | Reinforcement-learning agents, opponent-adaptive defenses, full 32-team coverage, video-derived defensive structures, multi-user accounts. |
 
 **Challenged assumption (from the brief):** "Support corners, free kicks, and throw-ins" as
 co-equal Tier-1 deliverables. Rejected: building three set-piece types shallowly produces a worse
 portfolio artifact than one type built deeply with the others demonstrably cheap to add. The
 Routine Spec and tactical engine are designed from day one so free kicks and throws are
-*configuration*, not new subsystems — that design constraint is in Tier 1 even though the content
+*configuration*, not new subsystems - that design constraint is in Tier 1 even though the content
 is Tier 2.
 
 **Explicit non-goals (v1):** open-play simulation, penalties (no search space), live match data,
@@ -189,22 +189,22 @@ betting use cases, mobile apps, multi-tenancy/auth beyond API keys.
 - Canonical demo scenarios shipped with the product: *England attacking corners vs Argentina
   zonal*, *France direct free kicks*, *USA long throws*, *Brazil corner defense stress-test*.
 - Player pools based on plausible 2026 squads, clearly labeled as analyst-curated projections
-  (rosters are not announced at design time). `ASSUMPTION: A-1` — squad uncertainty is handled
+  (rosters are not announced at design time). `ASSUMPTION: A-1` - squad uncertainty is handled
   editorially (curated pools), not modeled.
 
 ---
 
-## 9. Top risks (summary — full register in roadmap §11)
+## 9. Top risks (summary - full register in roadmap §11)
 
-1. **Simulator realism** — the existential risk. Mitigation: calibration is a Phase-3 gate, not
+1. **Simulator realism** - the existential risk. Mitigation: calibration is a Phase-3 gate, not
    an afterthought; publish honest validation results either way.
-2. **Scope explosion** — mitigated by tiering (§7) and per-phase acceptance criteria.
-3. **Data licensing** — mitigated by Phase-0 licensing audit and provenance-tagged attributes;
+2. **Scope explosion** - mitigated by tiering (§7) and per-phase acceptance criteria.
+3. **Data licensing** - mitigated by Phase-0 licensing audit and provenance-tagged attributes;
    no scraped ratings data, ever.
-4. **Performance of 100k runs** — mitigated by vectorized batch engine design (Simulation
+4. **Performance of 100k runs** - mitigated by vectorized batch engine design (Simulation
    Architecture §6) and by precomputing demo results so the live demo never depends on
    on-demand heavy compute.
-5. **Solo-developer bandwidth** — mitigated by vertical-slice sequencing: the project is
+5. **Solo-developer bandwidth** - mitigated by vertical-slice sequencing: the project is
    shippable (demoable + writeup-able) at the end of every phase from week 5 onward.
 
 ---
@@ -226,4 +226,4 @@ betting use cases, mobile apps, multi-tenancy/auth beyond API keys.
 - `A-1` (§8): 2026 squads are analyst-curated projections, not modeled uncertainty.
 - `A-2` (§6): published set-piece base-rate bands are stable enough to calibrate against.
 - `A-3` (§7): free kicks/throw-ins genuinely reuse corner machinery (validated by a design
-  spike in Phase 2 — see roadmap).
+  spike in Phase 2 - see roadmap).

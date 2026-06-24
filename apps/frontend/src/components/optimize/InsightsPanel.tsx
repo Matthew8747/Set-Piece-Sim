@@ -2,7 +2,7 @@
 
 // The differentiating coach-facing panel (doc 09 §7): plain-language SHAP
 // findings already computed offline by the surrogate. We render the strings as
-// data — the API never runs LightGBM/SHAP in the request (ADR-008). A "how?"
+// data - the API never runs LightGBM/SHAP in the request (ADR-008). A "how?"
 // affordance links to the methodology of record.
 
 export interface InsightsPanelProps {

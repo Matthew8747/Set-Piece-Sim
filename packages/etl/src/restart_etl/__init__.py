@@ -7,7 +7,7 @@ separate concerns. The xG training package (``restart_ml``) consumes the marts
 this package produces.
 
 Licensing (design doc 04 §2): StatsBomb Open Data is free for non-commercial
-use *with attribution* and *prohibits raw redistribution* — which is why the
+use *with attribution* and *prohibits raw redistribution* - which is why the
 raw cache is git-ignored and only derived, source-tagged marts are committed.
 Every mart row carries a ``source`` checked mechanically by the license gate.
 """

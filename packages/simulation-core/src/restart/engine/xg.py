@@ -2,12 +2,12 @@
 
 The engine emits a :class:`ShotContext` (geometry + traffic at the strike); a
 :class:`XGScorer` turns it into a calibrated P(goal). This module is the *single
-source of truth* for the xG feature surface — the training package (restart_ml)
+source of truth* for the xG feature surface - the training package (restart_ml)
 builds its design matrix by constructing the same :class:`ShotContext` from real
 shots and calling :func:`shot_feature_vector`, so train-time and score-time
 features are identical quantities (design doc 06 §2.3).
 
-Purity (the dependency rule): this is closed-form NumPy/math only — no sklearn,
+Purity (the dependency rule): this is closed-form NumPy/math only - no sklearn,
 no file I/O. The shipped logistic model lives here as plain coefficients loaded
 from a dict; gradient-boosted alternatives, if they win the calibration bake-off,
 are injected from the adapter via the :class:`XGScorer` protocol. Either way the
