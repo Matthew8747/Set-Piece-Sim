@@ -18,4 +18,15 @@ step "tsc --noEmit";     npm run typecheck
 step "vitest";           npm run test
 step "prettier --check"; npm run format:check
 
+# OpenAPI / shared-types drift gate: regenerate the committed schema + TS client
+# and fail if either changed (ADR-007 d6 — codegen replaces hand-mirroring).
+step "openapi/shared-types drift"
+uv run python apps/backend/scripts/dump_openapi.py
+npm run gen -w "@restart/shared-types"
+if ! git diff --exit-code -- apps/backend/openapi.json packages/shared-types/src/generated.ts; then
+  printf '\nOpenAPI schema or generated types are stale. Run:\n'
+  printf "  uv run python apps/backend/scripts/dump_openapi.py; npm run gen -w '@restart/shared-types'\n"
+  exit 1
+fi
+
 printf '\nAll verification steps passed.\n'

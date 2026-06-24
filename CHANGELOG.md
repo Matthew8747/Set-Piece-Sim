@@ -6,6 +6,31 @@ carries its own `ENGINE_VERSION`, surfaced at `/healthz`).
 
 ## [Unreleased]
 
+### Added — Phase 10 (in progress): Throughput — fused Numba scenario kernel · `ENGINE_VERSION sim/0.5.0` (unchanged)
+
+- **Externalized RNG (`SimDraws` draw plan)** — all per-sim randomness is drawn up front into category
+  sub-streams (delivery, jitter, contest, shot, second-ball) with fixed budgets, so the njit kernel and
+  the NumPy reference engine can consume *identical* Philox draws. Numba's in-kernel RNG can't reproduce
+  NumPy Philox bit-for-bit, so this externalization is what makes the kernel a true `≤1e-9` drop-in. The
+  engine now reads draws instead of calling `rng`; a deliberate one-time draw-plan change (model
+  identical, aggregates within Monte Carlo noise, `ENGINE_VERSION` unchanged).
+  ([ADR-011](docs/adr/ADR-011-throughput-kernel.md))
+- **njit agent kernels** — scalar-loop `step_agents` / `time_to_point` / `earliest_interception` in
+  `agents/_kernels.py`, each equivalence-tested to `≤1e-9` against its broadcast NumPy reference (the
+  same discipline as the physics flight kernel). The composable pieces the fused per-sim kernel will call.
+- *Remaining:* the fused per-sim kernel (flight-trajectory port + contest/shot), the throughput
+  benchmark with an honesty gate, and the canonical re-baseline.
+
+### Changed — Frontend: production-grade console (2026-06-23)
+
+- A persistent **app shell** (sidebar nav with active state) replaces standalone pages; the real
+  **type system** the tokens always declared is now loaded (Bricolage Grotesque display, Hanken Grotesk
+  body, IBM Plex Mono numerals via `next/font`); dependency-free **page transitions** + staggered list
+  reveals (disabled under `prefers-reduced-motion`); surface **atmosphere** (signal-green glow + pitch-line
+  lattice), focus rings, themed scrollbars, and standardised `.btn`/`.card` classes. The Scenario
+  Workbench (all four modes) and the Optimization study surface were brought onto the same system. No
+  data-surface behaviour changed; all component tests preserved.
+
 ### Added — Phase 9: Evolutionary routine search (2026-06-21) · `ENGINE_VERSION sim/0.5.0` (unchanged)
 
 - **Evolutionary search behind the existing sampler dispatch** — `make_sampler` gains `nsga2` (a

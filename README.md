@@ -50,16 +50,28 @@ replay JSON. ✅ **Phase 8** (`sim/0.5.0`) — **scenario realism**: the corner 
 **basic free-kick genome**, and a structured `near_post_man` defence; the canonical study is
 re-baselined. See [ADR-009](docs/adr/ADR-009-scenario-realism.md).
 
+✅ **Phase 9** — **evolutionary routine search** (`restart-opt`): a genuine **NSGA-II** genetic
+algorithm and **CMA-ES** evolution strategy plug into the same screen→confirm pipeline as TPE/random,
+each trial carrying its **generation** lineage; the canonical study runs all three at equal budget and
+records which sampler produced the winner. Honest result at the scoped budget: evolution beats random,
+TPE still wins — a GA needs bigger populations/more generations, which Phase 10 unlocks. See
+[ADR-010](docs/adr/ADR-010-evolutionary-search.md). The UI is also now production-grade: a persistent
+app shell, real type system, and motion across the Workbench and Optimization surfaces.
+
 ```bash
 # Run the Scenario Workbench locally:
-uv run uvicorn restart_api.main:app --app-dir apps/backend/src   # API :8000
-npm run dev -w @restart/frontend                                 # web :3000 -> /scenarios
+uv run uvicorn restart_api.main:app --reload --app-dir apps/backend/src   # API :8000
+npm run dev -w apps/frontend                                              # web :3000 -> /scenarios
 ```
 
-🏗️ **Next: Phase 9** — throughput: a fused **Numba scenario kernel** to lift the engine from
-~3 sims/s toward 10⁵–10⁶-sim studies (the keystone dependency). The full forward roadmap —
-calibration via simulation-based inference, evolutionary/multi-objective search, CVaR/robust
-objectives, multi-touch fidelity — is in
+🏗️ **In progress: Phase 10** — throughput: a fused **Numba scenario kernel** to lift the engine from
+~3 sims/s toward 10⁴–10⁵ sims/s (the keystone that scales evolution). It externalizes the per-sim RNG
+into a `SimDraws` draw plan so the njit kernel and the NumPy reference consume identical Philox draws —
+a true `≤1e-9` drop-in (no `ENGINE_VERSION` bump). RNG externalization and the njit agent kernels have
+landed with equivalence tests; the fused per-sim kernel, throughput benchmark, and canonical
+re-baseline remain. See [ADR-011](docs/adr/ADR-011-throughput-kernel.md). The full forward roadmap —
+calibration via simulation-based inference, multi-objective Pareto search, CVaR/robust objectives,
+multi-touch fidelity — is in
 [`docs/ROADMAP-future-enhancements.md`](docs/ROADMAP-future-enhancements.md).
 
 The complete design package — PRD, system architecture, database schema, data pipeline,
