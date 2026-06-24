@@ -219,13 +219,113 @@ def _earliest_interception_kernel(
     return result
 
 
+def _separate_kernel(pos: FloatArray, radius: float, passes: int) -> FloatArray:
+    """Scalar port of kinematics.separate (soft-disc separation, G-7).
+
+    Faithful to the reference's ordering: degenerate agents are detected from the
+    *original* positions (never the partially-relocated copy), and each cleanup
+    pass selects its overlapping pair set from the *pass-start* snapshot while
+    pushing with *live* distances — so the float sequence matches to <=1e-9.
+    """
+    n = pos.shape[0]
+    pos_out = pos.copy()
+    min_dist = 2.0 * radius
+    tiny = 1e-6
+    md2 = min_dist * min_dist
+    tiny2 = tiny * tiny
+
+    # Earliest exit: nobody overlapping (the common per-tick case).
+    min_d2 = np.inf
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            dx = pos_out[i, 0] - pos_out[j, 0]
+            dy = pos_out[i, 1] - pos_out[j, 1]
+            d2 = dx * dx + dy * dy
+            if d2 < min_d2:
+                min_d2 = d2
+    if min_d2 >= md2:
+        return pos_out
+
+    # Grid-seed degenerate clusters (only when near-coincident agents exist).
+    # Detection uses the ORIGINAL positions so early relocations don't un-mark
+    # later agents still sitting on the pile.
+    # Integer ceil(sqrt(n)) — matches np.ceil(np.sqrt(n)) at these arities while
+    # staying pure-int (numba's math.ceil returns a float; this avoids the cast).
+    floor_sqrt = int(math.sqrt(n))
+    cols = floor_sqrt if floor_sqrt * floor_sqrt >= n else floor_sqrt + 1
+    grid_spacing = min_dist * 1.05
+    cx = 0.0
+    cy = 0.0
+    for i in range(n):
+        cx += pos[i, 0]
+        cy += pos[i, 1]
+    cx /= n
+    cy /= n
+    if min_d2 < tiny2:
+        for i in range(n):
+            degenerate = False
+            for j in range(n):
+                if i == j:
+                    continue
+                dx = pos[i, 0] - pos[j, 0]
+                dy = pos[i, 1] - pos[j, 1]
+                if dx * dx + dy * dy < tiny2:
+                    degenerate = True
+                    break
+            if degenerate:
+                row = i // cols
+                col = i % cols
+                pos_out[i, 0] = cx + (col - (cols - 1) / 2.0) * grid_spacing
+                pos_out[i, 1] = cy + (row - (cols - 1) / 2.0) * grid_spacing
+
+    # Cleanup sweeps over the overlapping pairs (i < j, ascending = triu order).
+    snap = np.empty((n, 2))
+    for _ in range(passes):
+        for i in range(n):
+            snap[i, 0] = pos_out[i, 0]
+            snap[i, 1] = pos_out[i, 1]
+        any_pair = False
+        for i in range(n):
+            for j in range(i + 1, n):
+                sdx = snap[j, 0] - snap[i, 0]
+                sdy = snap[j, 1] - snap[i, 1]
+                if sdx * sdx + sdy * sdy < md2:
+                    any_pair = True
+                    dx = pos_out[j, 0] - pos_out[i, 0]
+                    dy = pos_out[j, 1] - pos_out[i, 1]
+                    d = math.sqrt(dx * dx + dy * dy)
+                    if d >= min_dist:
+                        continue
+                    overlap = min_dist - d
+                    if d < tiny:
+                        ax = 1.0
+                        ay = 0.0
+                    else:
+                        ax = dx / d
+                        ay = dy / d
+                    push_x = 0.5 * overlap * ax
+                    push_y = 0.5 * overlap * ay
+                    pos_out[i, 0] -= push_x
+                    pos_out[i, 1] -= push_y
+                    pos_out[j, 0] += push_x
+                    pos_out[j, 1] += push_y
+        if not any_pair:
+            break
+
+    return pos_out
+
+
 if TYPE_CHECKING:
     step_agents_kernel = _step_agents_kernel
     time_to_point_kernel = _time_to_point_kernel
     earliest_interception_kernel = _earliest_interception_kernel
+    separate_kernel = _separate_kernel
 else:  # pragma: no cover - decoration, not logic
     from numba import njit
 
     step_agents_kernel = njit(cache=True, fastmath=False)(_step_agents_kernel)
     time_to_point_kernel = njit(cache=True, fastmath=False)(_time_to_point_kernel)
     earliest_interception_kernel = njit(cache=True, fastmath=False)(_earliest_interception_kernel)
+    separate_kernel = njit(cache=True, fastmath=False)(_separate_kernel)

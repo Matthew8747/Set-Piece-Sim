@@ -10,7 +10,7 @@ import numpy as np
 
 from restart.agents import _kernels
 from restart.agents.interception import earliest_interception
-from restart.agents.kinematics import step_agents, time_to_point
+from restart.agents.kinematics import separate, step_agents, time_to_point
 
 
 def _ball_flight(m: int = 60) -> tuple[np.ndarray, np.ndarray]:
@@ -170,3 +170,38 @@ class TestEarliestInterceptionEquivalence:
             pos, vel, top_speed, accel, reach, ready, ball_times, ball_pos
         )
         np.testing.assert_array_equal(got, np.full(5, -1, dtype=np.int64))
+
+
+class TestSeparateEquivalence:
+    RADIUS = 0.4
+    PASSES = 4
+
+    def test_overlapping_clusters_match_reference(self) -> None:
+        # Tight clusters force real separation sweeps (the interesting path).
+        for seed in range(10):
+            rng = np.random.default_rng(seed)
+            pos = rng.uniform(-1.0, 1.0, (22, 2))  # dense -> many overlaps
+            ref = separate(pos, self.RADIUS, passes=self.PASSES)
+            got = _kernels.separate_kernel(pos, self.RADIUS, self.PASSES)
+            np.testing.assert_allclose(got, ref, atol=1e-9, rtol=0.0)
+
+    def test_degenerate_pile_matches_reference(self) -> None:
+        # All agents coincident -> grid-seed branch, then sweeps.
+        pos = np.zeros((12, 2))
+        ref = separate(pos, self.RADIUS, passes=self.PASSES)
+        got = _kernels.separate_kernel(pos, self.RADIUS, self.PASSES)
+        np.testing.assert_allclose(got, ref, atol=1e-9, rtol=0.0)
+
+    def test_no_overlap_returns_input_unchanged(self) -> None:
+        # Well-separated agents: early-exit, positions untouched.
+        pos = np.array([[0.0, 0.0], [5.0, 0.0], [0.0, 5.0], [5.0, 5.0]])
+        ref = separate(pos, self.RADIUS, passes=self.PASSES)
+        got = _kernels.separate_kernel(pos, self.RADIUS, self.PASSES)
+        np.testing.assert_array_equal(got, ref)
+        np.testing.assert_array_equal(got, pos)
+
+    def test_does_not_mutate_input(self) -> None:
+        pos = np.random.default_rng(0).uniform(-1.0, 1.0, (16, 2))
+        snapshot = pos.copy()
+        _kernels.separate_kernel(pos, self.RADIUS, self.PASSES)
+        np.testing.assert_array_equal(pos, snapshot)
