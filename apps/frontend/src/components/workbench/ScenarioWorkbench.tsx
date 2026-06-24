@@ -73,24 +73,48 @@ export function ScenarioWorkbench({ scenarioId }: { scenarioId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{scenario.name}</h1>
-        <nav className="flex gap-1" aria-label="Workbench mode">
-          {MODES.map((m) => (
-            <button
-              key={m.mode}
-              type="button"
-              onClick={() => setMode(m.mode)}
-              aria-pressed={mode === m.mode}
-              className={`rounded px-3 py-1.5 text-sm ${
-                mode === m.mode
-                  ? "bg-(--color-signal) font-medium text-black"
-                  : "border border-(--color-line)/20 opacity-70"
-              }`}
-            >
-              {m.label} <span className="font-mono text-xs opacity-50">{m.key}</span>
-            </button>
-          ))}
+      <header className="flex flex-col gap-4 border-b border-(--color-line)/10 pb-5">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+            Scenario
+          </span>
+          <h1 className="text-3xl font-semibold tracking-tight">{scenario.name}</h1>
+          <p className="font-mono text-xs text-(--color-line-muted)">
+            {scenario.spec.attacking_team_id} vs {scenario.spec.defending_team_id} ·{" "}
+            {scenario.spec.routine_id} · {scenario.spec.scheme_id}
+          </p>
+        </div>
+        <nav
+          className="inline-flex w-fit gap-1 rounded-xl border border-(--color-line)/10 bg-(--color-surface-raised)/60 p-1"
+          aria-label="Workbench mode"
+        >
+          {MODES.map((m) => {
+            const active = mode === m.mode;
+            return (
+              <button
+                key={m.mode}
+                type="button"
+                onClick={() => setMode(m.mode)}
+                aria-pressed={active}
+                className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-sm transition-all ${
+                  active
+                    ? "bg-(--color-signal) font-medium text-[#04130c] shadow-[0_4px_14px_-6px_color-mix(in_oklab,var(--color-signal)_80%,transparent)]"
+                    : "text-(--color-line-muted) hover:bg-(--color-line)/5 hover:text-(--color-line)"
+                }`}
+              >
+                {m.label}
+                <kbd
+                  className={`rounded px-1 font-mono text-[10px] leading-4 ${
+                    active
+                      ? "bg-black/15 text-[#04130c]"
+                      : "bg-(--color-line)/8 text-(--color-line-muted)"
+                  }`}
+                >
+                  {m.key}
+                </kbd>
+              </button>
+            );
+          })}
         </nav>
       </header>
 

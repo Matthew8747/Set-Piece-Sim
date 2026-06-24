@@ -70,34 +70,33 @@ export function SimulatePanel({ scenarioId, onComplete }: SimulatePanelProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          Simulations
+      <div className="card flex flex-wrap items-end gap-4 p-4">
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+            Simulations
+          </span>
           <input
             type="number"
             min={1}
             max={2000}
             value={nSims}
             onChange={(e) => setNSims(Number(e.target.value))}
-            className="w-28 rounded border border-(--color-line)/20 bg-(--color-surface-raised) px-2 py-1.5 font-mono"
+            className="w-28 rounded-lg border border-(--color-line)/15 bg-(--color-surface) px-3 py-2 font-mono tabular-nums transition-colors focus:border-(--color-signal)/50"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Seed
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+            Seed
+          </span>
           <input
             type="number"
             min={0}
             value={seed}
             onChange={(e) => setSeed(Number(e.target.value))}
-            className="w-28 rounded border border-(--color-line)/20 bg-(--color-surface-raised) px-2 py-1.5 font-mono"
+            className="w-28 rounded-lg border border-(--color-line)/15 bg-(--color-surface) px-3 py-2 font-mono tabular-nums transition-colors focus:border-(--color-signal)/50"
           />
         </label>
-        <button
-          type="button"
-          onClick={run}
-          disabled={busy}
-          className="rounded bg-(--color-signal) px-4 py-2 font-medium text-black disabled:opacity-40"
-        >
+        <button type="button" onClick={run} disabled={busy} className="btn btn-primary ml-auto">
           {busy ? "running…" : `Run ${nSims}×`}
         </button>
       </div>

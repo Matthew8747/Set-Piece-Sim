@@ -43,42 +43,48 @@ export function StudyDetail({ detail }: StudyDetailProps) {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{detail.name}</h1>
-          <p className="text-sm opacity-60">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-(--color-line)/10 pb-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11px] tracking-widest text-(--color-line-muted) uppercase">
+            Study
+          </span>
+          <h1 className="text-3xl font-semibold tracking-tight">{detail.name}</h1>
+          <p className="text-sm text-(--color-line)/60">
             {detail.matchup.attacking} attacking · {detail.matchup.defending}{" "}
             {detail.matchup.scheme} defense
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="card flex flex-col items-end gap-1 px-4 py-3">
+          <span className="font-mono text-[10px] tracking-widest text-(--color-line-muted) uppercase">
+            winner mean xG
+          </span>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-lg tabular-nums">{pct(detail.winner.mean_xg)}</span>
+            <span className="font-mono text-2xl tabular-nums">{pct(detail.winner.mean_xg)}</span>
             {detail.winner.beats_baseline ? (
               <span
                 data-testid="beats-badge"
-                className="rounded bg-(--color-signal)/15 px-2 py-0.5 text-xs font-medium text-(--color-signal)"
+                className="rounded-md bg-(--color-signal)/15 px-2 py-0.5 text-xs font-medium text-(--color-signal)"
               >
                 beats baseline
               </span>
             ) : (
               <span
                 data-testid="no-sig-badge"
-                className="rounded border border-(--color-line)/20 px-2 py-0.5 text-xs opacity-60"
+                className="rounded-md border border-(--color-line)/20 px-2 py-0.5 text-xs text-(--color-line)/60"
               >
                 no significant edge
               </span>
             )}
           </div>
-          <span className="font-mono text-[10px] opacity-40">
+          <span className="font-mono text-[10px] text-(--color-line)/40">
             {detail.engine_version} · {detail.trials.length} trials
             {detail.stale ? " · ⚠ engine drift" : ""}
           </span>
         </div>
       </header>
 
-      <section className="grid gap-8 lg:grid-cols-2">
-        <div className="flex flex-col gap-2">
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="card flex flex-col gap-3 p-5">
           <h3 className="text-sm font-semibold tracking-tight">Convergence (best-so-far)</h3>
           <ConvergencePlot
             tpe={tpe}
@@ -98,14 +104,14 @@ export function StudyDetail({ detail }: StudyDetailProps) {
         <InsightsPanel insights={detail.insights} />
       </section>
 
-      <section className="flex flex-col gap-2">
+      <section className="card flex flex-col gap-3 p-5">
         <h3 className="text-sm font-semibold tracking-tight">Search space (every trial)</h3>
         <ParallelCoordinates trials={trials} axes={axes} />
       </section>
 
       <SensitivityBanner sensitivity={detail.sensitivity} />
 
-      <section className="flex flex-col gap-2">
+      <section className="card flex flex-col gap-3 p-5">
         <h3 className="text-sm font-semibold tracking-tight">Confirmed routines vs baseline</h3>
         <TopKTable
           rows={detail.confirm.map((c, i) => ({
