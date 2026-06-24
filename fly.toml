@@ -1,0 +1,52 @@
+# Fly.io deploy config for the Restart Lab API (FastAPI backend).
+#
+# Chosen host: Fly.io — first-class Docker (we ship apps/backend/Dockerfile),
+# a free allowance, global regions, and persistent volumes for the marts +
+# SQLite store. The frontend deploys separately to Vercel; Postgres (the scaled
+# path) is Neon. See the README "Deploying" section.
+#
+#   fly launch --no-deploy        # once, to create the app (edit the name below)
+#   fly volumes create restart_data --size 1 --region lhr
+#   fly secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
+#   fly deploy
+#
+# Default deploy is server-free (SQLite + in-process queue). To scale out, set
+# RESTART_DATABASE_URL (Neon) and RESTART_REDIS_URL (Upstash) as secrets.
+
+app = "restart-lab-api"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "apps/backend/Dockerfile"
+
+[env]
+  RESTART_APP_ENV = "prod"
+  RESTART_DEBUG = "false"
+  # Non-secret; override with `fly secrets set` to the real frontend origin(s).
+  RESTART_CORS_ORIGINS = '["http://localhost:3000"]'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/healthz"
+
+# Persists the SQLite app store + the StatsBomb-derived marts (run the ETL, then
+# upload to the volume). The committed optimization_studies/ is baked into the
+# image, so /optimize works even with an empty volume.
+[mounts]
+  source = "restart_data"
+  destination = "/app/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

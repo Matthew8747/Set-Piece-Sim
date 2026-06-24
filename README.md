@@ -146,26 +146,40 @@ tests/          cross-package integration tests
 
 ## Deploying
 
-The app is two deployables. Nothing here is bespoke to one host.
+Two deployables, one recommended stack — **Fly.io** (backend), **Vercel** (frontend), **Neon**
+(Postgres, only when scaling past the server-free default). Nothing is bespoke to these hosts; the
+backend is a standard container and runs anywhere (Render, Railway, Cloud Run).
 
-- **Backend (FastAPI).** A container image is provided — build from the repo root:
-  ```bash
-  docker build -f apps/backend/Dockerfile -t restart-api .
-  docker run -p 8000:8000 \
-    -e RESTART_CORS_ORIGINS='["https://your-frontend.example"]' \
-    -v "$PWD/data:/app/data" -v "$PWD/optimization_studies:/app/optimization_studies" \
-    restart-api
-  ```
-  The image installs only the backend + simulation core (no optimizer/ML stack). It boots
-  **server-free** (SQLite + in-process queue); set `RESTART_DATABASE_URL` and `RESTART_REDIS_URL`
-  to switch to the Postgres + Arq/Redis drop-ins. Liveness/readiness are at `/healthz` and `/readyz`.
-  Runs on any container host (Railway, Fly, Render, Cloud Run).
-- **Frontend (Next.js).** Deploys to Vercel with zero config; set `NEXT_PUBLIC_API_BASE_URL` to the
-  backend's public URL (and `NEXT_PUBLIC_API_KEY` if the backend sets `RESTART_API_KEY` for writes).
-- **Data.** The `/optimize` surface works out of the box from the committed `optimization_studies/`.
-  The `/scenarios` squads + xG need the marts: run the StatsBomb ETL
-  ([docs/etl-runbook.md](docs/etl-runbook.md)) to populate `data/marts`, then mount it (the marts are
-  derived locally and not redistributed — see License & data below).
+**Backend → Fly.io.** A [`fly.toml`](fly.toml) and a lean [`apps/backend/Dockerfile`](apps/backend/Dockerfile)
+(backend + simulation core only — no optimizer/ML stack) are provided:
+
+```bash
+fly launch --no-deploy                                    # create the app (edit the name in fly.toml)
+fly volumes create restart_data --size 1 --region lhr     # persists the marts + SQLite store
+fly secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
+fly deploy
+```
+
+It boots **server-free** (SQLite + in-process queue) — no database required for the demo. To scale
+out, set `RESTART_DATABASE_URL` (a Neon `postgresql+psycopg://…` URL) and `RESTART_REDIS_URL` (Upstash)
+as secrets; the Postgres + Arq/Redis adapters are drop-ins. Liveness/readiness: `/healthz`, `/readyz`.
+
+**Frontend → Vercel.** Zero-config; set the project root directory to `apps/frontend` and
+`NEXT_PUBLIC_API_BASE_URL` to the Fly backend URL (plus `NEXT_PUBLIC_API_KEY` if the backend sets
+`RESTART_API_KEY` for writes).
+
+**Data.** `/optimize` works out of the box from the committed `optimization_studies/` (baked into the
+image). The `/scenarios` squads + xG need the marts: run the StatsBomb ETL
+([docs/etl-runbook.md](docs/etl-runbook.md)) to build `data/marts`, then upload them to the Fly volume
+(the marts are derived locally and not redistributed — see License & data below).
+
+For a plain container run anywhere:
+
+```bash
+docker build -f apps/backend/Dockerfile -t restart-api .
+docker run -p 8000:8000 -e RESTART_CORS_ORIGINS='["https://your-frontend.example"]' \
+  -v "$PWD/data:/app/data" restart-api
+```
 
 ## License & data
 
