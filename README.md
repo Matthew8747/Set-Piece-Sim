@@ -27,6 +27,28 @@ There are two consoles:
   parallel-coordinates view of every trial, the SHAP explanation of what made the winners win, and an
   honesty banner that refuses to call something a winner unless the statistics back it.
 
+## Screens
+
+![Restart Lab landing](docs/assets/screens/landing.png)
+
+**Optimization study.** Convergence against the mandatory random baseline, the parallel-coordinates
+trial cloud, plain-language SHAP insights, and an honesty banner that withholds a "winner" unless the
+statistics back it.
+
+![Optimization study detail](docs/assets/screens/optimize-detail.png)
+
+**Scenario Workbench.** Build a set piece from real squads, simulate it with confidence intervals, and
+replay the worst, median or best delivery in 2D or 3D.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screens/workbench-build.png" alt="Workbench: build a scenario from real squads" /></td>
+    <td width="50%"><img src="docs/assets/screens/workbench-simulate.png" alt="Workbench: Monte Carlo distributions with confidence intervals" /></td>
+  </tr>
+</table>
+
+![Workbench replay](docs/assets/screens/workbench-replay-2d.png)
+
 ## Why it is interesting
 
 The engineering decisions are the point, not the football. A few that hold the project together:
