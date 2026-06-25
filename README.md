@@ -47,7 +47,9 @@ replay the worst, median or best delivery in 2D or 3D.
   </tr>
 </table>
 
-![Workbench replay](docs/assets/screens/workbench-replay-2d.png)
+**Replay.** Scrub the worst, median or best delivery as it plays out, in 2D or an on-demand 3D view.
+
+![Replay of a simulated corner](docs/assets/screens/replay.gif)
 
 ## Why it is interesting
 
