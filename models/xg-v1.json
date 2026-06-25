@@ -76,8 +76,8 @@
       "model_id": "xg-header"
     }
   },
-  "created_at": "2026-06-14T10:29:43.379923+00:00",
-  "engine_version": "sim/0.4.0",
+  "created_at": "2026-06-25T10:57:36.146814+00:00",
+  "engine_version": "sim/0.5.0",
   "metrics": {
     "foot": {
       "auc": 0.790396710208031,

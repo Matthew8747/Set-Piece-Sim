@@ -1,6 +1,6 @@
 # Model Card - Restart Lab xG v1 (`xg-header` + `xg-foot`)
 
-*Generated 2026-06-14 · engine `sim/0.4.0` · ml/0.1.0*
+*Generated 2026-06-25 · engine `sim/0.5.0` · ml/0.1.0*
 
 ## Model details
 Two calibrated logistic expected-goals models - one for headers/non-foot first
