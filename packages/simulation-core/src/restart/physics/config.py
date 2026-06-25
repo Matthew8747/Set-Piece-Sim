@@ -83,7 +83,7 @@ class EnvironmentConfig(_Frozen):
         """Isothermal barometric approximation (scale height 8,500 m).
 
         WC2026 relevance: Mexico City (Estadio Azteca, 2,240 m) gives
-        rho ~ 0.94 kg/m^3 — about 23% less drag and Magnus than sea level,
+        rho ~ 0.94 kg/m^3 - about 23% less drag and Magnus than sea level,
         which materially changes deliveries (P-2 note).
         """
         if not 0.0 <= altitude_m <= 4000.0:

@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
 
     # Where persisted optimizer studies live. The optimization surface is
-    # read-only: the API loads ``study.json`` as DATA — ``restart_opt`` (Optuna /
+    # read-only: the API loads ``study.json`` as DATA - ``restart_opt`` (Optuna /
     # LightGBM / SHAP) is never imported in the request path (ADR-006/008).
     studies_dir: Path = Path("optimization_studies")
 

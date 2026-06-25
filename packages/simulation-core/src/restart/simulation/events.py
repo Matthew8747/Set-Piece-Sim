@@ -6,7 +6,7 @@ Event times/positions are refined by in-step linear interpolation (P-14), so
 they are more precise than the integrator grid.
 
 The Phase-1 vocabulary covers ball flight. Match events (first contact, shot,
-clearance, ...) extend this module in Phases 2-3 — same base, richer kinds.
+clearance, ...) extend this module in Phases 2-3 - same base, richer kinds.
 """
 
 from dataclasses import dataclass

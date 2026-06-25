@@ -1,6 +1,6 @@
 """Agent kinematics and interception kernels for the set-piece simulation.
 
-Provides broadcast NumPy kernels over agent arrays (SoA contract — ADR-003 d8)
+Provides broadcast NumPy kernels over agent arrays (SoA contract - ADR-003 d8)
 and the frozen ``AgentConfig`` pydantic model. All kernels are Numba-portable:
 pure functions over float64 arrays, no Python objects in hot signatures.
 

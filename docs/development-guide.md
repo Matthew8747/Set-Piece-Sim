@@ -19,13 +19,13 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
 ## Architecture rules (enforced, not aspirational)
 
 1. **`packages/simulation-core` (`restart`) is pure domain.** It may import numpy and the
-   standard library — never FastAPI, SQLAlchemy, httpx, or anything from `apps/`.
+   standard library - never FastAPI, SQLAlchemy, httpx, or anything from `apps/`.
    (import-linter contract lands with the first adapter in Phase 1; until then PR review owns it.)
 2. **`apps/backend` (`restart_api`) is a web adapter.** Routers translate DTOs ⇄ domain calls.
    If you're writing an algorithm in `restart_api`, it belongs in `restart`.
 3. **DTOs at the boundary.** Domain objects never serialize to JSON directly; pydantic models in
    `restart_api/schemas.py` are the contract, mirrored by hand in `packages/shared-types`
-   (tech debt: OpenAPI codegen planned for Phase 6 — see Known tech debt).
+   (tech debt: OpenAPI codegen planned for Phase 6 - see Known tech debt).
 4. **Engine versioning.** Any change to simulation behavior bumps `restart.ENGINE_VERSION`.
 
 ## Conventions & decisions
@@ -38,7 +38,7 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
   `--import-mode=importlib`: this is what lets one strict mypy run cover three `tests/` trees
   without duplicate-module collisions.
 - **Pre-commit is fast-only** (whitespace, ruff, black, private-key detection). mypy, pytest,
-  eslint, vitest, and next build are CI gates — keeping commits snappy locally while CI stays
+  eslint, vitest, and next build are CI gates - keeping commits snappy locally while CI stays
   authoritative.
 - **Frontend tests use Vitest globals** (`globals: true`): required by Testing Library's
   auto-cleanup between tests.
@@ -48,11 +48,11 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
 
 ## Security ground rules
 
-- No secrets in code, config files, or tests — environment variables only (`RESTART_` prefix;
+- No secrets in code, config files, or tests - environment variables only (`RESTART_` prefix;
   `SecretStr` for anything sensitive). `.env.example` documents every variable.
 - The credentials in `infra/docker-compose.yml` are local-dev only by policy: the services bind
   to 127.0.0.1 and those values must never appear in any deployed environment.
-- `npm audit` / dependency hygiene is part of verification; CI fails on lint, types, or tests —
+- `npm audit` / dependency hygiene is part of verification; CI fails on lint, types, or tests -
   vulnerability scanning gets a dedicated job when the first deployment lands (Phase 8).
 
 ## Known tech debt
@@ -66,7 +66,7 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
 | `readyz` checks report `skipped` | P0 | No Postgres/Redis consumers exist yet | Real checks wired in Phase 4/6 |
 | No Dockerfile for the apps themselves | P0 | Nothing to deploy yet | Phase 8 (deployment) |
 | Single-trajectory simulator is slow (~0.4 s/trajectory) | P1 | It's the replay/analysis path, not the Monte Carlo path; readability is its job | Acceptable until Phase 3 replay sampling; fuse a kernel variant only if profiling demands |
-| Physics formulas duplicated in JIT kernel (`_kernels.py`) vs `forces.py` | P1 | Numba can't call the class-based force objects; duplication is the cost of the 6.9× speedup | Kernel↔reference equivalence test (1e-9) fails CI on any drift — change both together |
+| Physics formulas duplicated in JIT kernel (`_kernels.py`) vs `forces.py` | P1 | Numba can't call the class-based force objects; duplication is the cost of the 6.9× speedup | Kernel↔reference equivalence test (1e-9) fails CI on any drift - change both together |
 | Batch engine stops at first ground contact (no bounce chains / plane crossings) | P1 | Phase-3 Monte Carlo layer owns batch event extraction (P-13) | Phase 3 |
 | `mu_roll = 0.06` produces generous roll-out distances | P1 | Literature-anchored prior; flagged during smoke testing | Early Phase-3 calibration target (P-8) |
 | Magnus constants (P-4) are priors with wide literature spread | P1 | Plausibility-banded by the Roberto Carlos test | Phase-3 calibration; constants are config, not code |
@@ -76,7 +76,7 @@ How to work on Restart Lab day to day. Companion to [setup-guide.md](setup-guide
 
 ## Updating documentation
 
-Documentation reflects current implementation — that's a merge requirement, not a suggestion:
+Documentation reflects current implementation - that's a merge requirement, not a suggestion:
 
 - Behavior change → update the relevant design doc section and this guide if conventions moved.
 - New endpoint → API docs (OpenAPI is generated; worked examples live in docs from Phase 6).

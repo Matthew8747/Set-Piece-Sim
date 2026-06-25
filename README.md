@@ -1,157 +1,129 @@
 # Restart Lab
 
-**AI-assisted set-piece optimization for international football — built around the FIFA World Cup 2026.**
+**Find the highest-value way to take a corner or a free kick.**
 
-A physics-grounded simulator, agent-based player models, Monte Carlo experimentation, and
-machine-learning-driven routine search, wrapped in an analyst-grade web platform. The question
-it answers: *given our players and their defenders, what is the highest-value way to take this
-corner, free kick, or throw-in?*
+Restart Lab plays a set piece out thousands of times in a physics engine, scores every chance it
+creates with a real-data expected-goals model, then searches for the routine that works best against a
+specific defence. It is an analyst's console, built around the 2026 World Cup.
 
-## Status
+> Status: the platform is feature-complete and runs end-to-end. The current work in progress is a
+> Numba throughput kernel (an internal speed-up, not a blocker). See [Roadmap](#roadmap).
 
-✅ **Phase 0 complete** — monorepo foundation: Python uv workspace (FastAPI backend +
-simulation-core package), Next.js frontend, shared API types, CI, pre-commit, full
-lint/type/test gates green.
+## What it does
 
-✅ **Phase 1 complete** (`sim/0.1.0`) — ball physics core: RK4 flight with drag-crisis drag and
-Magnus lift, Coulomb bounce with spin transfer, event-extracting trajectory simulator, and a
-fused JIT batch engine (10k flights < 1 s single-core, equivalence-tested against a NumPy
-reference and a SciPy oracle). See the
-[assumptions registry](docs/simulation-assumptions.md) and
-[ADR-001](docs/adr/ADR-001-physics-stack-build-vs-buy.md) /
-[ADR-002](docs/adr/ADR-002-integration-strategy.md).
+The product is one loop, three steps.
 
-✅ **Phase 2 complete** (`sim/0.2.0`) — player agents and the tactical engine: validated player
-attributes, Routine Spec `rs/1.0` compiled to array-form SimPrograms, defensive schemes with
-marking and free-kick walls, and a deterministic set-piece engine that plays full corners to
-terminal outcomes (goal/saved/cleared/keeper-claim/second-ball) with typed events and replay
-tracks. Outcome rates intentionally uncalibrated until Phase 3.
-
-✅ **Phase 3 complete** (`sim/0.3.0`) — Monte Carlo batches with Wilson confidence intervals,
-outcome metrics, optimization interfaces (Optuna/CMA-ES-ready, no algorithms yet), and a working
-**MVP vertical slice**: REST API + Scenario Workbench (`/workbench`) — pick a corner routine and
-defensive scheme, simulate one delivery or a Monte Carlo batch, watch the animated pitch replay
-and read goal/shot/clearance probabilities with CIs.
-
-✅ **Phase 4** (`sim/0.4.0`) — StatsBomb ETL → marts, derived player profiles, and a calibrated
-real-data xG model wired into the engine. ✅ **Phase 5** — the System B routine optimizer
-(`restart-opt`): Optuna TPE vs an equal-budget random baseline, screen-then-confirm under common
-random numbers, LightGBM+SHAP insights. ✅ **Phase 6** — the hardened API and the **Scenario
-Workbench** on real squads from the marts: Build → Simulate (async runs, polled progress, xG
-distributions + KPI/CI cards) → Replay (worst/median/best), with a Playwright E2E of the 3-minute
-journey.
-
-✅ **Phase 7** (parallel PR) — the **optimization UI** (`/optimize`: convergence ± CI, the
-parallel-coordinates trial cloud, top-k vs baseline, plain-language SHAP insights), a workbench
-**compare mode** (two scenarios under common random numbers; a winner only when the paired-difference
-CI excludes zero), and **on-demand 3D replay** (React Three Fiber, dynamic-imported) over the same
-replay JSON. ✅ **Phase 8** (`sim/0.5.0`) — **scenario realism**: the corner template now fields up to
-**7 attackers** with off-ball roles (lurkers/recyclers, not seven bodies in the six-yard box), a
-**basic free-kick genome**, and a structured `near_post_man` defence; the canonical study is
-re-baselined. See [ADR-009](docs/adr/ADR-009-scenario-realism.md).
-
-✅ **Phase 9** — **evolutionary routine search** (`restart-opt`): a genuine **NSGA-II** genetic
-algorithm and **CMA-ES** evolution strategy plug into the same screen→confirm pipeline as TPE/random,
-each trial carrying its **generation** lineage; the canonical study runs all three at equal budget and
-records which sampler produced the winner. Honest result at the scoped budget: evolution beats random,
-TPE still wins — a GA needs bigger populations/more generations, which Phase 10 unlocks. See
-[ADR-010](docs/adr/ADR-010-evolutionary-search.md). The UI is also now production-grade: a persistent
-app shell, real type system, and motion across the Workbench and Optimization surfaces.
-
-```bash
-# Run the Scenario Workbench locally:
-uv run uvicorn restart_api.main:app --reload --app-dir apps/backend/src   # API :8000
-npm run dev -w apps/frontend                                              # web :3000 -> /scenarios
-```
-
-🏗️ **In progress: Phase 10** — throughput: a fused **Numba scenario kernel** to lift the engine from
-~3 sims/s toward 10⁴–10⁵ sims/s (the keystone that scales evolution). It externalizes the per-sim RNG
-into a `SimDraws` draw plan so the njit kernel and the NumPy reference consume identical Philox draws —
-a true `≤1e-9` drop-in (no `ENGINE_VERSION` bump). RNG externalization and the njit agent kernels have
-landed with equivalence tests; the fused per-sim kernel, throughput benchmark, and canonical
-re-baseline remain. See [ADR-011](docs/adr/ADR-011-throughput-kernel.md). The full forward roadmap —
-calibration via simulation-based inference, multi-objective Pareto search, CVaR/robust objectives,
-multi-touch fidelity — is in
-[`docs/ROADMAP-future-enhancements.md`](docs/ROADMAP-future-enhancements.md).
-
-The complete design package — PRD, system architecture, database schema, data pipeline,
-simulation architecture, ML architecture, UI/UX plan, and 12-week roadmap — lives in
-[`docs/`](docs/README.md).
-
-## Key design decisions (and the rationale)
-
-The "why did you build it this way?" answers, each with its canonical source:
-
-| Decision | Rationale (short) | Where it's documented |
+| | Step | What happens |
 |---|---|---|
-| **Pure-domain core** — `restart` imports no web/DB/ML/IO | The simulator stays a testable, deterministic library; every adapter (API, optimizer driver, ETL) depends inward, never the reverse | [ADR-005](docs/adr/ADR-005-data-platform-and-xg.md), [ADR-006](docs/adr/ADR-006-routine-optimizer.md) |
-| **`ENGINE_VERSION` + determinism** — every persisted result carries the engine build id; same `Scenario` compiles byte-identical | Reproducibility is a product feature; physics/context-affecting changes bump the version (P8: `sim/0.4.0` → `sim/0.5.0`) so stale results are detectable, not silent | [restart/\_\_init\_\_.py](packages/simulation-core/src/restart/__init__.py), [ADR-009](docs/adr/ADR-009-scenario-realism.md) |
-| **7-attacker template, fixed arity per study** | More attackers with off-ball roles makes the searched scenario realistic; arity stays *fixed within a study* so the search space is constant — keeping common-random-number pairing and SHAP attribution valid (variable-arity excluded, assumption O-2) | [ADR-009](docs/adr/ADR-009-scenario-realism.md) §1, [O-2](docs/handoff/ASSUMPTIONS_REGISTER.md) |
-| **`fk_position` on the `Scenario`, not in the genome** | The kick origin is *study configuration*, not a thing to optimize; the genome searches delivery + runner behaviour, the wall is the defence's concern — so the free-kick and corner genomes share one builder and can't drift | [ADR-009](docs/adr/ADR-009-scenario-realism.md) §2, [genome.py](packages/simulation-core/src/restart/optimize/genome.py) |
-| **Optimizer honesty** — mandatory equal-budget random baseline; no "winner" without non-overlapping/zero-excluding CIs | An optimizer that can't beat random search at equal budget is theatre; a "winner" without a significant CI is a deception trap | [doc 09](docs/09-optimization-methodology.md) §4–5 |
-| **Throughput trade-off** — scoped study budgets, fused kernel deferred | The reference engine is ~3 sims/s; rather than block the product on a large kernel port, budgets are scoped + documented, and the kernel is a planned phase (now more pressing post-P8) | [ADR-006](docs/adr/ADR-006-routine-optimizer.md), [roadmap §1](docs/ROADMAP-future-enhancements.md) |
-| **`restart_opt` out of the API runtime** — the optimization UI reads persisted `study.json` as data | Optuna/LightGBM/SHAP never enter a web request; searches are an offline/CLI concern, surfaced read-only (a guard test enforces the boundary) | ADR-006, ADR-008 (P7 branch) |
-| **Hand-rolled SVG charts (not visx)** | visx peers cap at React 18; the app is React 19 — so charts are plain SVG, with R3F the sole exception for 3D | ADR-007 d7 (P7 branch) |
+| **Simulate** | Play the set piece out | A deterministic engine flies the ball with real spin, drag and bounce, moves every attacker and defender, and resolves the delivery into a shot, a clearance or a scramble. |
+| **Measure** | Score it with real xG | Each simulated chance is graded by an expected-goals model trained on real World Cup and Euros data (StatsBomb open data), reported with confidence intervals so noise never reads as a result. |
+| **Optimise** | Search for the best routine | An optimizer tunes the delivery, the runs and the timing across thousands of trials. Any routine it proposes has to beat random search before it counts. |
 
-## The 60-second pitch
+There are two consoles:
 
-- **Simulate**: a vectorized physics engine (drag, Magnus, bounce) plus kinematically honest
-  player agents play out a set piece 10,000 times in under a minute.
-- **Measure**: goal/shot/first-contact probabilities with confidence intervals, scored by
-  xG models trained on real World Cup and Euros data (StatsBomb Open Data).
-- **Optimize**: Bayesian optimization searches the routine space — delivery, runs, screens,
-  timing — and explains *why* the winners win.
-- **Calibrate honestly**: simulated outcome rates are gated against real-world base rates
-  before any predictive claim is made.
+- **Scenario Workbench** (`/scenarios`): build a set piece from real squads, simulate it, watch the 2D
+  and 3D replay, and compare two routines under common random numbers.
+- **Optimization studies** (`/optimize`): read a completed routine search. Convergence, a
+  parallel-coordinates view of every trial, the SHAP explanation of what made the winners win, and an
+  honesty banner that refuses to call something a winner unless the statistics back it.
+
+## Screens
+
+![Restart Lab landing](docs/assets/screens/landing.png)
+
+**Optimization study.** Convergence against the mandatory random baseline, the parallel-coordinates
+trial cloud, plain-language SHAP insights, and an honesty banner that withholds a "winner" unless the
+statistics back it.
+
+![Optimization study detail](docs/assets/screens/optimize-detail.png)
+
+**Scenario Workbench.** Build a set piece from real squads, simulate it with confidence intervals, and
+replay the worst, median or best delivery in 2D or 3D.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screens/workbench-build.png" alt="Workbench: build a scenario from real squads" /></td>
+    <td width="50%"><img src="docs/assets/screens/workbench-simulate.png" alt="Workbench: Monte Carlo distributions with confidence intervals" /></td>
+  </tr>
+</table>
+
+**Replay.** Scrub the worst, median or best delivery as it plays out, in 2D or an on-demand 3D view.
+
+![Replay of a simulated corner](docs/assets/screens/replay.gif)
+
+## Why it is interesting
+
+The engineering decisions are the point, not the football. A few that hold the project together:
+
+- **An honest optimizer.** Every search runs an equal-budget random baseline. A routine is never
+  reported as a winner unless its confidence interval clears the baseline's. An optimizer that cannot
+  beat random search at equal budget is theatre, and the UI says so out loud.
+- **Reproducibility as a feature.** Every persisted result carries the engine build id
+  (`ENGINE_VERSION`). The same scenario compiles to a byte-identical program, and the same seed
+  produces a byte-identical result, independent of batch size. Anything physics-affecting bumps the
+  version so stale results are detectable rather than silent.
+- **A pure simulation core.** The `restart` package imports no web, database, ML or IO code. Every
+  adapter (the API, the optimizer driver, the ETL) depends inward on the core, never the reverse, so
+  the simulator stays a small, deterministic, testable library.
+- **A verified speed-up.** The throughput kernel is a Numba port of the engine, checked to `1e-9`
+  against the readable NumPy reference, the same discipline used for the physics formulas. The
+  randomness is externalized so the fast path and the reference produce identical draws.
+- **Provenance, not scraped ratings.** No proprietary player ratings are used. Every attribute is
+  derived from open event data and tagged with where it came from.
 
 ## Quickstart
 
-Prerequisites: [uv](https://docs.astral.sh/uv/) ≥ 0.5, Node.js ≥ 24, Docker (optional, for
-later phases). uv provisions Python 3.12 automatically.
+Prerequisites: [uv](https://docs.astral.sh/uv/) 0.5+ and Node.js 24+. uv provisions Python 3.12 for
+you.
 
 ```bash
 git clone <repo-url> && cd Set-Piece-Sim
-cp .env.example .env          # local config; never commit .env
+cp .env.example .env            # local config; never commit .env
 
-uv sync --all-packages        # Python workspace (backend + simulation-core)
-npm install                   # TypeScript workspace (frontend + shared-types)
-uv run pre-commit install     # git hooks
+uv sync --all-packages          # Python workspace (backend + simulation core)
+npm install                     # TypeScript workspace (frontend + shared types)
+uv run pre-commit install       # git hooks
 
 # Run everything CI runs:
-./scripts/verify.sh           # or: powershell -File scripts/verify.ps1
+./scripts/verify.sh             # or: powershell -File scripts/verify.ps1
 
 # Dev servers:
 uv run uvicorn restart_api.main:app --reload --app-dir apps/backend/src   # API on :8000
 npm run dev -w apps/frontend                                              # web on :3000
 ```
 
-Full instructions: [docs/setup-guide.md](docs/setup-guide.md) ·
-[docs/development-guide.md](docs/development-guide.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
+The API boots server-free: with no database configured it uses a local SQLite store and an in-process
+job queue, so nothing external is required. The `/optimize` pages work immediately from the committed
+study. The `/scenarios` squads need the marts, built locally by the StatsBomb ETL
+([etl-runbook.md](docs/etl-runbook.md)).
 
-## Repository layout
+Full guides: [setup](docs/setup-guide.md), [development](docs/development-guide.md),
+[contributing](CONTRIBUTING.md).
+
+## Architecture
 
 ```
 apps/
-  backend/      FastAPI application (restart_api) — web adapter, no domain logic
-  frontend/     Next.js 16 app (TypeScript, Tailwind v4)
+  backend/      FastAPI application (restart_api): web adapter, no domain logic
+  frontend/     Next.js 16 app (TypeScript, Tailwind v4, React Three Fiber for 3D)
 packages/
-  simulation-core/  Pure-domain Python package (restart) — physics/agents/tactics/MC
-  shared-types/     TypeScript mirrors of the API contract
-data/           raw → staging → marts data lake (git-ignored, rebuildable)
-docs/           design package + living guides
-infra/          docker-compose (Postgres + Redis for later phases)
-scripts/        verify.{sh,ps1} — the full CI suite, locally
-tests/          cross-package integration tests
+  simulation-core/  Pure-domain Python package (restart): physics, agents, tactics, Monte Carlo
+  etl/ ml/ optimizer/   StatsBomb ETL, the xG model, and the routine optimizer (offline, out of the API)
+  shared-types/     TypeScript types generated from the API's OpenAPI schema (drift-gated in CI)
+  pitch-kit/        Shared SVG pitch and chart primitives
+docs/           design package, ADRs, and living guides
+infra/          docker-compose (Postgres + Redis) for the scaled path
+scripts/        verify.{sh,ps1}: the full CI suite, locally
 ```
 
 ## Deploying
 
-Two deployables, one recommended stack — **Fly.io** (backend), **Vercel** (frontend), **Neon**
-(Postgres, only when scaling past the server-free default). Nothing is bespoke to these hosts; the
-backend is a standard container and runs anywhere (Render, Railway, Cloud Run).
+Recommended stack: **Fly.io** (backend), **Vercel** (frontend), **Neon** (Postgres, only when scaling
+past the server-free default). The backend is a standard container and runs anywhere (Render, Railway,
+Cloud Run). A full runbook, including whether to host at all, is in [docs/GO-LIVE.md](docs/GO-LIVE.md).
 
-**Backend → Fly.io.** A [`fly.toml`](fly.toml) and a lean [`apps/backend/Dockerfile`](apps/backend/Dockerfile)
-(backend + simulation core only — no optimizer/ML stack) are provided:
+A [`fly.toml`](fly.toml) and a lean [backend Dockerfile](apps/backend/Dockerfile) (backend plus
+simulation core only, no optimizer or ML stack) are provided:
 
 ```bash
 fly launch --no-deploy                                    # create the app (edit the name in fly.toml)
@@ -160,34 +132,42 @@ fly secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
 fly deploy
 ```
 
-It boots **server-free** (SQLite + in-process queue) — no database required for the demo. To scale
-out, set `RESTART_DATABASE_URL` (a Neon `postgresql+psycopg://…` URL) and `RESTART_REDIS_URL` (Upstash)
-as secrets; the Postgres + Arq/Redis adapters are drop-ins. Liveness/readiness: `/healthz`, `/readyz`.
+The frontend deploys to Vercel with zero config: set the project root directory to `apps/frontend` and
+`NEXT_PUBLIC_API_BASE_URL` to the backend URL. Liveness and readiness are at `/healthz` and `/readyz`.
 
-**Frontend → Vercel.** Zero-config; set the project root directory to `apps/frontend` and
-`NEXT_PUBLIC_API_BASE_URL` to the Fly backend URL (plus `NEXT_PUBLIC_API_KEY` if the backend sets
-`RESTART_API_KEY` for writes).
+## Key design decisions
 
-**Data.** `/optimize` works out of the box from the committed `optimization_studies/` (baked into the
-image). The `/scenarios` squads + xG need the marts: run the StatsBomb ETL
-([docs/etl-runbook.md](docs/etl-runbook.md)) to build `data/marts`, then upload them to the Fly volume
-(the marts are derived locally and not redistributed — see License & data below).
+The short answers to "why did you build it this way?", each with its source.
 
-For a plain container run anywhere:
+| Decision | Rationale | Source |
+|---|---|---|
+| Pure-domain core (`restart` imports no web, DB, ML or IO) | The simulator stays a testable, deterministic library; every adapter depends inward, never the reverse | [ADR-005](docs/adr/ADR-005-data-platform-and-xg.md), [ADR-006](docs/adr/ADR-006-routine-optimizer.md) |
+| `ENGINE_VERSION` and determinism | Reproducibility is a product feature; physics-affecting changes bump the version so stale results are detectable | [ADR-009](docs/adr/ADR-009-scenario-realism.md) |
+| Mandatory random baseline | A search that cannot beat random at equal budget is theatre, and a "winner" without a significant interval is a deception trap | [doc 09](docs/09-optimization-methodology.md) |
+| Optimizer kept out of the API runtime | Optuna, LightGBM and SHAP never enter a web request; the optimization UI reads the persisted study as data (a guard test enforces it) | [ADR-006](docs/adr/ADR-006-routine-optimizer.md), [ADR-008](docs/adr/ADR-008-optimization-surface-and-3d-replay.md) |
+| Externalized RNG for the Numba kernel | Numba's in-kernel RNG cannot reproduce NumPy's Philox stream, so the draws are externalized and both paths consume them, giving a `1e-9` drop-in | [ADR-011](docs/adr/ADR-011-throughput-kernel.md) |
+| Build vs buy, logged | Existing libraries are used wherever they fit; what is hand-built and why is recorded | [build-vs-buy ledger](docs/legacy-and-from-scratch.md) |
 
-```bash
-docker build -f apps/backend/Dockerfile -t restart-api .
-docker run -p 8000:8000 -e RESTART_CORS_ORIGINS='["https://your-frontend.example"]' \
-  -v "$PWD/data:/app/data" restart-api
-```
+## Roadmap
 
-## License & data
+Phases 0 through 9 are complete and merged: the physics core, player agents and the tactical engine,
+Monte Carlo batches, the real-data xG model, the routine optimizer, the API and Scenario Workbench, the
+optimization UI with 3D replay, wider scenario realism (`sim/0.5.0`), and evolutionary routine search
+(NSGA-II and CMA-ES).
+
+Phase 10, the Numba throughput kernel, is in progress: the RNG externalization and the njit agent
+kernels have landed with `1e-9` equivalence tests; the fused per-sim kernel, the benchmark, and the
+canonical re-baseline remain. The forward plan (calibration, multi-objective Pareto search, richer
+fidelity) is in [docs/ROADMAP-future-enhancements.md](docs/ROADMAP-future-enhancements.md).
+
+The complete design package (PRD, system architecture, data pipeline, simulation and ML architecture,
+UI plan) lives in [docs/](docs/README.md).
+
+## License and data
 
 The original source code is released under the **MIT License** ([LICENSE](LICENSE)). The MIT grant
-covers the code only — it does not relicense third-party data. This project uses
-[StatsBomb Open Data](https://github.com/statsbomb/open-data) under StatsBomb's **non-commercial**
-research terms, with attribution; that data is **not redistributed** here (the derived marts are
-rebuilt locally by the ETL), and any use of the StatsBomb-derived data or models trained on it
-remains subject to StatsBomb's terms. No proprietary ratings data is used; every player attribute is
-provenance-tagged. This is a research/portfolio project and is not affiliated with FIFA, StatsBomb,
-or any national federation.
+covers the code only. This project uses [StatsBomb open data](https://github.com/statsbomb/open-data)
+under StatsBomb's non-commercial research terms, with attribution; that data is not redistributed here
+(the marts are rebuilt locally by the ETL), and any use of the StatsBomb-derived data or of models
+trained on it remains subject to StatsBomb's terms. No proprietary ratings data is used. This is a
+research and portfolio project and is not affiliated with FIFA, StatsBomb, or any national federation.

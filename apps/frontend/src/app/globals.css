@@ -4,10 +4,10 @@
 @import "@restart/pitch-kit/tokens.css";
 
 /* ----------------------------------------------------------------------------
-   Base — typography + atmosphere
+   Base - typography + atmosphere
    Restraint over glow (doc 07 §1): a near-black ground with one barely-there
    signal-green wash in the top-left and a faint pitch-line lattice. Tuned low
-   enough to read as paper texture, never as a neon backdrop — the data is the
+   enough to read as paper texture, never as a neon backdrop - the data is the
    only thing that should glow.
 ---------------------------------------------------------------------------- */
 body {
@@ -50,7 +50,7 @@ h3 {
 }
 
 /* ----------------------------------------------------------------------------
-   Motion — one orchestrated reveal per navigation + staggered list entrances
+   Motion - one orchestrated reveal per navigation + staggered list entrances
 ---------------------------------------------------------------------------- */
 @keyframes page-enter {
   from {
@@ -112,7 +112,7 @@ h3 {
 }
 
 /* ----------------------------------------------------------------------------
-   Chrome — focus, selection, scrollbars
+   Chrome - focus, selection, scrollbars
 ---------------------------------------------------------------------------- */
 :focus-visible {
   outline: 2px solid color-mix(in oklab, var(--color-signal) 70%, transparent);
@@ -145,7 +145,7 @@ h3 {
 }
 
 /* ----------------------------------------------------------------------------
-   Components — buttons + cards (standardised so pages stay declarative)
+   Components - buttons + cards (standardised so pages stay declarative)
 ---------------------------------------------------------------------------- */
 @layer components {
   .btn {
@@ -182,7 +182,7 @@ h3 {
     background: color-mix(in oklab, var(--color-surface-raised) 60%, transparent);
   }
 
-  /* Hover lifts on neutral elevation — depth, not a green halo. A thin accent
+  /* Hover lifts on neutral elevation - depth, not a green halo. A thin accent
      bar marks the hovered row instead of recolouring the whole border. */
   .card-interactive {
     position: relative;

@@ -1,4 +1,4 @@
-# Machine Learning Architecture — Restart Lab
+# Machine Learning Architecture - Restart Lab
 
 **Version:** 0.1 · **Status:** Design review draft
 
@@ -28,7 +28,7 @@ routine params ──▶ simulator ──▶ shot contexts ──▶ mean xG  �
         └──────────────────────── proposes next routine ──────────────────────────────┘
 ```
 
-## 2. System A — Expected-goals layer
+## 2. System A - Expected-goals layer
 
 ### 2.1 Models
 
@@ -36,7 +36,7 @@ Four contexts, two deployed models **(reversible)**:
 
 - **`xg-header`**: headers and other non-foot first contacts.
 - **`xg-foot`**: volleys, first-time shots, rebounds/second-ball strikes (with
-  `set_piece_phase` and `is_rebound` features rather than separate models — set-piece foot-shot
+  `set_piece_phase` and `is_rebound` features rather than separate models - set-piece foot-shot
   samples are too small to slice four ways; ~thousands, not tens of thousands, of open-data
   set-piece shots. Sliced models revisited only if learning curves say data permits).
 
@@ -48,12 +48,12 @@ position/depth, delivery speed proxy, under-pressure flag.
 
 | Candidate | Role | Expectation |
 |---|---|---|
-| Logistic regression (+ splines on distance/angle) | **Mandatory baseline** | Strong — xG is famously near-linear in the right basis; if GBMs can't beat it honestly, ship the baseline (that finding is itself portfolio-credible) |
+| Logistic regression (+ splines on distance/angle) | **Mandatory baseline** | Strong - xG is famously near-linear in the right basis; if GBMs can't beat it honestly, ship the baseline (that finding is itself portfolio-credible) |
 | XGBoost / LightGBM | Primary candidates | Win if interactions (traffic × angle × phase) carry signal |
 | CatBoost | Included in CV sweep only | Few high-cardinality categoricals here ⇒ unlikely to differentiate |
 | Random forest | Included in sweep only | Dominated by boosting on tabular, kept as honest comparison |
 
-Protocol: **grouped CV by match** (leakage guard — shots from one match never straddle folds),
+Protocol: **grouped CV by match** (leakage guard - shots from one match never straddle folds),
 metrics = log-loss, Brier, AUC, **calibration slope/intercept + reliability curves** (the metric
 that matters for a model whose output feeds expectations), isotonic/Platt post-calibration
 compared. Class imbalance (~10% conversion) handled by calibration-aware evaluation, not
@@ -74,11 +74,11 @@ Model cards (template per Google model-card schema: data, license, metrics, cali
 intended use, limitations) stored in `ml_models.model_card`, rendered in the UI. MLflow tracks
 every training run; `training_data_hash` chains model → mart snapshot.
 
-## 3. System B — Routine optimizer
+## 3. System B - Routine optimizer
 
 ### 3.1 Search space
 
-Parameterized subset of the Routine Spec, mixed-type, ~10–20 dims typical:
+Parameterized subset of the Routine Spec, mixed-type, ~10-20 dims typical:
 delivery type (categorical) × target point (2 cont.) × speed/spin (2 cont.) × per-runner start
 zones and target zones (categorical-on-grid; keeps dimensionality sane vs raw coordinates) ×
 run timing offsets (cont.) × role counts (int: how many attack vs screen vs edge).
@@ -94,7 +94,7 @@ Infeasible combos rejected by spec validation (optimizer sees a failure status, 
 | **CMA-ES (`cmaes` lib)** | **Comparison study (Tier-2)** | Strong on continuous sub-space (delivery parameters); natural head-to-head experiment for the case study |
 | Genetic algorithm (DEAP) | Comparison study, time-permitting | Crossover over routine "genes" is narratively appealing; typically less sample-efficient; honest test |
 | Evolutionary strategies (OpenAI-style) | Rejected | Gradient-estimator flavor suited to high-dim continuous policies, wrong shape here |
-| Reinforcement learning | **Rejected for v1, scoped Tier-3** | This is a *one-shot design* problem (pick a routine), not a sequential policy problem — RL's machinery (credit assignment over time) is mostly dead weight; sample hunger × noisy sparse rewards × solo timeline = schedule killer. The honest framing where RL *would* fit: adaptive in-play agent behavior (Tier-3 research extension). Documenting this judgment is the portfolio value |
+| Reinforcement learning | **Rejected for v1, scoped Tier-3** | This is a *one-shot design* problem (pick a routine), not a sequential policy problem - RL's machinery (credit assignment over time) is mostly dead weight; sample hunger × noisy sparse rewards × solo timeline = schedule killer. The honest framing where RL *would* fit: adaptive in-play agent behavior (Tier-3 research extension). Documenting this judgment is the portfolio value |
 
 **Noise handling (the technically interesting part):** objective = mean xG over n sims/trial.
 Budget allocation: 500-sim screens via TPE with median pruning → top-k re-evaluated at 10k sims
@@ -104,14 +104,14 @@ headline methodological feature.
 
 **Anti-exploit guard:** optimizer discoveries that hinge on physics-edge behavior (e.g. deliveries
 at validation boundaries) are flagged by rule (parameters within ε of bounds) and reviewed in V4
-face-validity passes — optimizers find simulator bugs before they find football insights.
+face-validity passes - optimizers find simulator bugs before they find football insights.
 
 ### 3.3 Surrogate & explainability
 
 After studies accumulate trials: fit LightGBM on (routine params → mean xG) across all trials;
 SHAP on the surrogate answers *"what makes a good corner against this defense?"* (e.g. "against
 this zonal line, delivery 2 m beyond far-post zone + late near-post decoy = +0.04 xG"). Rendered
-as a plain-language "insights" panel — the single most differentiating UI feature for the
+as a plain-language "insights" panel - the single most differentiating UI feature for the
 coach persona.
 
 ## 4. Experiment infrastructure

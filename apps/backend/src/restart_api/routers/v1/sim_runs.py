@@ -1,6 +1,6 @@
 """Asynchronous Monte Carlo sim runs (ADR-007 d3, doc 02 4.1).
 
-POST enqueues a job (202) — or returns the existing run on an idempotency hit
+POST enqueues a job (202) - or returns the existing run on an idempotency hit
 (200); GET polls status/progress and, once complete, the aggregate result with
 xG samples. The events endpoint replays a representative single sim (the
 worst/median/best by xG) for the workbench Replay picker.

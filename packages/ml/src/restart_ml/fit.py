@@ -3,7 +3,7 @@
 The model is trained as ``StandardScaler -> LogisticRegression`` for numerical
 conditioning, then the standardization is *folded into raw coefficients* so the
 simulation core's :class:`LogisticXGScorer` can apply them directly to the
-closed-form features — no scaler, no sklearn at score time. Calibration is a
+closed-form features - no scaler, no sklearn at score time. Calibration is a
 Platt map fit on out-of-fold probabilities, embedded in the artifact.
 """
 

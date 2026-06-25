@@ -1,4 +1,4 @@
-"""Tests for RoutineSpec rs/1.0 — validation rules per ADR-004 d2.
+"""Tests for RoutineSpec rs/1.0 - validation rules per ADR-004 d2.
 
 All validation must reject; no silent repairs.
 """
@@ -21,7 +21,7 @@ from restart.tactics.routine import (
 )
 
 # ---------------------------------------------------------------------------
-# Helpers — minimal valid objects
+# Helpers - minimal valid objects
 # ---------------------------------------------------------------------------
 
 

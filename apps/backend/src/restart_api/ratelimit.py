@@ -1,4 +1,4 @@
-"""Per-IP rate limiting (slowapi) — cost-bomb protection (doc 02 9, ADR-007 d5).
+"""Per-IP rate limiting (slowapi) - cost-bomb protection (doc 02 9, ADR-007 d5).
 
 A process-wide ``limiter`` singleton (slowapi needs one to decorate routes at
 import time) whose limit *values* are read from the active :class:`Settings`

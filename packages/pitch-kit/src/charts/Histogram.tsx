@@ -11,7 +11,7 @@ export interface HistogramProps {
   color?: string;
   /** Fixed [min, max] domain. Compare mode passes the shared domain to both
    *  histograms so a difference is read off one x-scale, not two (the classic
-   *  deception trap — doc 07 §3). Omitted → domain is the sample min/max. */
+   *  deception trap - doc 07 §3). Omitted → domain is the sample min/max. */
   domain?: readonly [number, number];
 }
 
@@ -49,7 +49,7 @@ export function Histogram({
   if (samples.length === 0) {
     return (
       <p role="note" className="font-mono text-xs opacity-50">
-        no samples yet — run a simulation
+        no samples yet - run a simulation
       </p>
     );
   }

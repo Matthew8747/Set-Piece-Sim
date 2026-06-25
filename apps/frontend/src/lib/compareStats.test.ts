@@ -31,7 +31,7 @@ describe("compareStats (common-random-number paired difference)", () => {
     expect(r.ciHi).toBeLessThan(0);
   });
 
-  it("throws on unpaired lengths — CRN requires same seed + n", () => {
+  it("throws on unpaired lengths - CRN requires same seed + n", () => {
     expect(() => compareStats([0.1], [0.1, 0.2])).toThrow();
   });
 

@@ -6,7 +6,7 @@ NumPy Philox bit-for-bit). Draws are raw unit variates; the engine/kernel apply
 the program+config scaling. The central property tested here is **category
 isolation**: each draw category is an independent SeedSequence sub-stream, so
 over-provisioning one (e.g. the variable-count contest Gumbels) never shifts
-another category's draws — the property that makes a fixed-budget plan safe.
+another category's draws - the property that makes a fixed-budget plan safe.
 """
 
 import numpy as np

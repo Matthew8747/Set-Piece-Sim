@@ -1,4 +1,4 @@
-"""Restart Lab System B — the routine optimizer (design doc 06 sec3).
+"""Restart Lab System B - the routine optimizer (design doc 06 sec3).
 
 This package owns the search algorithms (Optuna TPE primary; random-search
 baseline at equal budget), the screen-then-confirm pipeline with common random

@@ -1,4 +1,4 @@
-# Database Schema — Restart Lab
+# Database Schema - Restart Lab
 
 **Version:** 0.1 · **Status:** Design review draft
 **Engine:** PostgreSQL 16 · **Migrations:** Alembic
@@ -10,12 +10,12 @@
 | Data | Store | Rationale |
 |---|---|---|
 | Teams, players, attributes, routines, scenarios, run metadata, KPI summaries, optimization studies/trials, model registry | **Postgres** | Relational, queried by the app, small-to-medium volume |
-| Per-simulation event logs (100k sims × ~5–30 events) and sampled full trajectories | **Parquet** (path referenced from Postgres) | Columnar, append-once, read analytically via DuckDB; keeps Postgres lean |
+| Per-simulation event logs (100k sims × ~5-30 events) and sampled full trajectories | **Parquet** (path referenced from Postgres) | Columnar, append-once, read analytically via DuckDB; keeps Postgres lean |
 | Raw + staged source data (StatsBomb JSON, staging Parquet) | **Filesystem under `data/`**, not the app DB | ETL concern; reproducible from source; only marts land in Postgres |
 | Model artifacts (pickled pipelines, SHAP explainers) | **Object storage/volume**, path + hash in Postgres `ml_models` | Artifacts are files; DB stores identity + metadata |
 
 **Challenged assumption:** "simulation platform ⇒ all results in the database." Rejected:
-storing 100k-run event logs as rows is the classic mistake here — write amplification, vacuum
+storing 100k-run event logs as rows is the classic mistake here - write amplification, vacuum
 pressure, and slow analytics. Postgres stores *identity and summaries*; bulk data is columnar.
 
 ## 2. Entity-relationship overview
@@ -215,16 +215,16 @@ CREATE TABLE mart_setpiece_shots (      -- training table for xG models
 ## 4. Indexing & access patterns
 
 - `sim_runs(scenario_id, status)`, `optimization_trials(study_id, objective_value DESC)`,
-  `mart_setpiece_shots(set_piece_phase, body_part)` — the three hot query paths.
+  `mart_setpiece_shots(set_piece_phase, body_part)` - the three hot query paths.
 - JSONB GIN index only on `routines.spec` (library search by delivery type/zone); other JSONB
-  columns are read-by-id only — **no speculative GIN indexes**.
+  columns are read-by-id only - **no speculative GIN indexes**.
 - Summary KPIs are denormalized columns (not JSONB) precisely because the comparison UI
   sorts/filters on them.
 
 ## 5. Data lifecycle & retention
 
 - Parquet event logs: retained for pinned/canonical runs; ad-hoc demo runs garbage-collected
-  after 7 days (artifact row kept with `uri=NULL`, summary kept forever — summaries are tiny).
+  after 7 days (artifact row kept with `uri=NULL`, summary kept forever - summaries are tiny).
 - Engine version bump does **not** invalidate old results; the UI badges results with their
   engine version and refuses cross-version comparison by default.
 - Postgres backups: platform-native daily snapshot (Railway/Fly volumes), plus `pg_dump`
@@ -235,6 +235,6 @@ CREATE TABLE mart_setpiece_shots (      -- training table for xG models
 | Decision | Alternative | Why rejected |
 |---|---|---|
 | UUIDv7 PKs | bigserial | UUIDs survive ETL merges and client-side creation; v7 keeps index locality |
-| JSONB Routine Spec | Fully relational routine tables (runs, waypoints as rows) | Spec is a *document* with a schema version — the optimizer mutates it as a unit; relational decomposition buys nothing the app queries for |
+| JSONB Routine Spec | Fully relational routine tables (runs, waypoints as rows) | Spec is a *document* with a schema version - the optimizer mutates it as a unit; relational decomposition buys nothing the app queries for |
 | Alembic migrations | SQLModel auto-create | Migrations are a portfolio signal and a production necessity |
 | Separate `mart_*` namespace | ETL writes into app tables | Clean blast radius: pipelines can rebuild marts without touching user data |

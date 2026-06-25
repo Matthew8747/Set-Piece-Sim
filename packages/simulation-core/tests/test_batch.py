@@ -64,7 +64,7 @@ class TestValidation:
 class TestConsistencyWithSingleTrajectory:
     def test_landing_matches_first_bounce_of_trajectory_sim(self) -> None:
         """The batch engine and the event simulator must agree on first
-        ground contact to floating-point noise — same kernels, same dt."""
+        ground contact to floating-point noise - same kernels, same dt."""
         batch = lofted_batch(5)
         result = simulate_flights(batch)
         sim = TrajectorySimulator()

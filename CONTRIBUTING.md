@@ -1,15 +1,15 @@
 # Contributing
 
-Restart Lab is a solo portfolio project, but it runs on team discipline — the process below is
+Restart Lab is a solo portfolio project, but it runs on team discipline - the process below is
 the contract whether the contributor is the author or a guest.
 
 ## Workflow
 
 1. Branch from `main` (`feat/...`, `fix/...`, `docs/...`).
 2. Keep commits scoped; write messages in imperative mood with a body explaining *why*.
-3. Run `./scripts/verify.sh` (or `scripts/verify.ps1`) before pushing — it is exactly CI.
+3. Run `./scripts/verify.sh` (or `scripts/verify.ps1`) before pushing - it is exactly CI.
 4. Open a PR. CI (lint, strict types, tests, build, format) must be green to merge.
-5. Update `CHANGELOG.md` (Unreleased section) and any documentation your change makes stale —
+5. Update `CHANGELOG.md` (Unreleased section) and any documentation your change makes stale -
    stale docs are treated as test failures.
 
 ## Standards (the short version)

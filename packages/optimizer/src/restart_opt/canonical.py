@@ -131,7 +131,7 @@ def run_canonical(
     ``on_phase`` (optional) is called with a short label at each phase boundary
     (screens / confirm / sensitivity / save). The long non-Optuna phases (confirm,
     sensitivity) emit no per-trial logs, so this is what makes a stall there
-    distinguishable from progress — used by the observable re-baseline wrapper.
+    distinguishable from progress - used by the observable re-baseline wrapper.
     """
     from restart.players.demo import demo_team  # local: demo squads are a P6 stand-in
 
@@ -143,14 +143,14 @@ def run_canonical(
     att = att if att is not None else demo_team("ENG", "England", 1)
     deff = deff if deff is not None else demo_team("ARG", "Argentina", 2)
     bundle = bundle if bundle is not None else load_bundle()
-    # Phase 8: a realistic overload — kicker + 6 runners (box contesters + off-ball
+    # Phase 8: a realistic overload - kicker + 6 runners (box contesters + off-ball
     # roles) vs the always-11 defence, against the near-post-covering zonal scheme.
     genome = CornerGenome(n_runners=6)
     base = _scenario_for(near_post_inswinger(), att, deff)
     confirm_seed = cfg.seed + 1000
 
     # Three searches at equal budget: TPE, the mandatory random baseline, and the
-    # evolutionary GA (NSGA-II) — the headline "routines develop by simulation".
+    # evolutionary GA (NSGA-II) - the headline "routines develop by simulation".
     # Evolutionary samplers run pruning-off (handled inside run_screen).
     phase("screen: tpe")
     tpe = run_screen(

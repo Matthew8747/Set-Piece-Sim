@@ -2,7 +2,7 @@
 
 The raw layer is immutable and git-ignored (size + license). Every file pulled
 from a source is hashed and recorded in ``manifest.json`` with its url, sha256,
-byte count, fetch timestamp, and license string — so a frozen raw snapshot is
+byte count, fetch timestamp, and license string - so a frozen raw snapshot is
 content-addressable and the reproducibility gate (doc 04 §5) can assert stable
 hashes. Nothing here is ever edited in place; a re-fetch overwrites and the
 manifest is rewritten.
@@ -38,7 +38,7 @@ class Manifest(BaseModel):
     entries: list[ManifestEntry] = Field(default_factory=list)
 
     def content_hash(self) -> str:
-        """Stable hash over (path, sha256) pairs — the frozen-snapshot fingerprint.
+        """Stable hash over (path, sha256) pairs - the frozen-snapshot fingerprint.
 
         Order-independent: entries are sorted so a re-fetch in a different order
         yields the same fingerprint for identical bytes.

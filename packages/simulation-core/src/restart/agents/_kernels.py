@@ -3,7 +3,7 @@
 EQUIVALENCE CONTRACT: each function here must reproduce its broadcast NumPy
 reference in ``agents/kinematics.py`` to <= 1e-9 absolute; ``tests/
 test_agents_kernels.py`` enforces it. Formulas and guard epsilons are copied
-*verbatim in semantics* from kinematics.py — change both together or the
+*verbatim in semantics* from kinematics.py - change both together or the
 equivalence test will catch you.
 
 These are the per-tick hot path the fused scenario kernel (Phase 10) calls with
@@ -225,7 +225,7 @@ def _separate_kernel(pos: FloatArray, radius: float, passes: int) -> FloatArray:
     Faithful to the reference's ordering: degenerate agents are detected from the
     *original* positions (never the partially-relocated copy), and each cleanup
     pass selects its overlapping pair set from the *pass-start* snapshot while
-    pushing with *live* distances — so the float sequence matches to <=1e-9.
+    pushing with *live* distances - so the float sequence matches to <=1e-9.
     """
     n = pos.shape[0]
     pos_out = pos.copy()
@@ -251,7 +251,7 @@ def _separate_kernel(pos: FloatArray, radius: float, passes: int) -> FloatArray:
     # Grid-seed degenerate clusters (only when near-coincident agents exist).
     # Detection uses the ORIGINAL positions so early relocations don't un-mark
     # later agents still sitting on the pile.
-    # Integer ceil(sqrt(n)) — matches np.ceil(np.sqrt(n)) at these arities while
+    # Integer ceil(sqrt(n)) - matches np.ceil(np.sqrt(n)) at these arities while
     # staying pure-int (numba's math.ceil returns a float; this avoids the cast).
     floor_sqrt = int(math.sqrt(n))
     cols = floor_sqrt if floor_sqrt * floor_sqrt >= n else floor_sqrt + 1

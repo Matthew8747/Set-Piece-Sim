@@ -2,7 +2,7 @@
 
 // Top-k confirmed routines vs the library baseline. A routine only earns the
 // "beats baseline" marker when its CI lower bound clears the baseline CI upper
-// bound (non-overlapping 95% CIs — the honest bar from doc 09 §4). Anti-exploit
+// bound (non-overlapping 95% CIs - the honest bar from doc 09 §4). Anti-exploit
 // flags (bound-pinning / face-validity) ride along so a flagged "winner" is
 // never read uncritically.
 
@@ -48,7 +48,7 @@ export function TopKTable({ rows, baseline, flags }: TopKTableProps) {
           <td>
             [{pct(baseline.ci[0])}, {pct(baseline.ci[1])}]
           </td>
-          <td>—</td>
+          <td>-</td>
         </tr>
         {rows.map((row, i) => {
           const beats = row.ciLo > baselineHi;

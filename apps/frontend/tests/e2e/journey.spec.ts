@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 /**
  * The 3-minute reviewer journey (PRD §6), at the reduced deterministic budget
- * (n_sims=24 — ADR-007 throughput reality): build → run → distributions →
+ * (n_sims=24 - ADR-007 throughput reality): build → run → distributions →
  * replay, end to end against the real backend + real squads.
  */
 test("build → simulate (24) → distributions → replay", async ({ page }) => {

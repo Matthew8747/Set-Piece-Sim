@@ -5,7 +5,7 @@ Optimizers find simulator bugs before they find football insights (doc 06
 sec3.2). Two cheap, rule-based screens feed the face-validity review of the
 top-k: (1) parameters pinned within epsilon of a search bound (the optimizer is
 riding a wall, often a model edge), and (2) an implausibly high objective (real
-corner mean xG is far below the ceiling — a high value signals a degenerate
+corner mean xG is far below the ceiling - a high value signals a degenerate
 strike geometry the engine over-rewards).
 """
 

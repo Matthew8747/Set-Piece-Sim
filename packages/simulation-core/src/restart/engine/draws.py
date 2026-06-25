@@ -11,14 +11,14 @@ Design (ADR-011 decision 2): each draw *category* is an independent
 ``SeedSequence`` sub-stream, each with a fixed budget. Independence means
 over-provisioning one category (notably the variable-count contest Gumbels,
 budgeted to the max ``na + nd`` potential contestants) never shifts another
-category's draws — the property a single lazy stream lacks, and the reason the
+category's draws - the property a single lazy stream lacks, and the reason the
 old single-stream draw order is replaced (a one-time canonical re-baseline;
 model identical, ``ENGINE_VERSION`` unchanged).
 
 Draws are raw, unit-scale variates (standard normal / U(0,1) / U(-1,1) /
 standard Gumbel); the engine and kernel apply the program+config scaling. So
-``SimDraws`` is a pure function of ``(seed, n_attackers, n_defenders)`` —
-scenario- and config-independent — which keeps determinism byte-identical across
+``SimDraws`` is a pure function of ``(seed, n_attackers, n_defenders)`` -
+scenario- and config-independent - which keeps determinism byte-identical across
 batch sizes (the carried hard constraint).
 """
 
@@ -42,14 +42,14 @@ class SimDraws:
     Arrays are float64, C-contiguous, read-only. Scaling is applied by the
     consumer (engine/kernel), not here.
 
-    delivery     : (2,)      standard normal — [direction error, speed multiplier]
-    jitter       : (na+nd,)  U(-1, 1)        — reaction jitter, attackers then defenders
-    contest      : (na+nd,)  standard Gumbel — one slot per potential contestant by index
-    shot_aim_y   : scalar    U(-1, 1)        — lateral aim
-    shot_aim_z   : scalar    U(0, 1)         — vertical aim
-    shot_perturb : (2,)      standard normal — header/volley direction perturbation
-    shot_final   : scalar    U(0, 1)         — xG Bernoulli (xG path) OR GK save (placeholder path)
-    second_ball  : scalar    U(0, 1)         — near-tie jitter for the loose-ball race
+    delivery     : (2,)      standard normal - [direction error, speed multiplier]
+    jitter       : (na+nd,)  U(-1, 1)        - reaction jitter, attackers then defenders
+    contest      : (na+nd,)  standard Gumbel - one slot per potential contestant by index
+    shot_aim_y   : scalar    U(-1, 1)        - lateral aim
+    shot_aim_z   : scalar    U(0, 1)         - vertical aim
+    shot_perturb : (2,)      standard normal - header/volley direction perturbation
+    shot_final   : scalar    U(0, 1)         - xG Bernoulli (xG path) OR GK save (placeholder path)
+    second_ball  : scalar    U(0, 1)         - near-tie jitter for the loose-ball race
     """
 
     delivery: FloatArray

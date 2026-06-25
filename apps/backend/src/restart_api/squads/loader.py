@@ -6,7 +6,7 @@ this lives in ``restart_api`` and hands the core plain validated domain objects.
 Player identities and the derived, provenance-tagged attributes come from
 ``mart_players`` / ``mart_player_attributes`` (StatsBomb-derived, no scraped
 ratings). The marts hold a multi-match pool per nation, so an XI is selected by
-a fixed, deterministic rule — registered as a simulation assumption because
+a fixed, deterministic rule - registered as a simulation assumption because
 attribute priors can dominate outcomes (risk R9):
 
 * goalkeeper: the most active GK (aerial + delivery involvement as a minutes
@@ -87,7 +87,7 @@ class MartSquadLoader:
             raise FileNotFoundError(msg)
         # One in-memory connection; parquet paths are read per query. The loader
         # is a process-wide singleton AND the in-process job worker runs on a
-        # threadpool, so queries go through per-call cursors — a DuckDB connection
+        # threadpool, so queries go through per-call cursors - a DuckDB connection
         # is not safe to use concurrently from multiple threads, but cursors off
         # it are independent (without this, a job thread and a polling request
         # racing on the shared connection corrupt results -> "unknown team").

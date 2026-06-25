@@ -38,7 +38,7 @@ def bounce(
 ) -> tuple[FloatArray, FloatArray]:
     """Resolve one ground bounce. Returns (velocity', spin'); inputs unchanged.
 
-    Single-state kernel ``(3,)`` — bounces are resolved per-trajectory in
+    Single-state kernel ``(3,)`` - bounces are resolved per-trajectory in
     Phase 1; the batch variant lands with the Monte Carlo layer (ADR-002 d4).
     """
     v = np.asarray(velocity, dtype=np.float64).copy()
@@ -78,7 +78,7 @@ def total_kinetic_energy(velocity: FloatArray, spin: FloatArray, ball: BallConfi
 
     The conserved-or-dissipated quantity across a bounce. Translational KE
     alone can legitimately *increase* (strong backspin converts rotational
-    energy into horizontal velocity — the classic spin-back); the total never
+    energy into horizontal velocity - the classic spin-back); the total never
     does, which is the invariant the property tests pin.
     """
     m = ball.mass_kg

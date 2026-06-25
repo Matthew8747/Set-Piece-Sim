@@ -129,7 +129,7 @@ def confirm_params(
     root_seed: int,
 ) -> list[ConfirmResult]:
     """Confirm an explicit list of candidate genomes under one CRN seed (so the
-    candidates — whatever sampler found them — are compared on equal footing)."""
+    candidates - whatever sampler found them - are compared on equal footing)."""
     runner = MonteCarloRunner(engine=SetPieceEngine(xg_scorer=bundle))
     return confirm_candidates(samples_fn(base, genome, runner), candidates, n_confirm, root_seed)
 

@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| **Current phase** | Phase 9 — Evolutionary routine search (NSGA-II GA + CMA-ES). Built on P8. Next: Phase 10 (throughput — Numba scenario kernel) |
-| **Completed phases** | Design · P0–P6 · P7 Optimization UI & 3D replay (PR #7) · P8 Scenario realism (`sim/0.5.0`, PR #8) · P9 Evolutionary search (`restart_opt`) |
+| **Current phase** | Phase 9 - Evolutionary routine search (NSGA-II GA + CMA-ES). Built on P8. Next: Phase 10 (throughput - Numba scenario kernel) |
+| **Completed phases** | Design · P0-P6 · P7 Optimization UI & 3D replay (PR #7) · P8 Scenario realism (`sim/0.5.0`, PR #8) · P9 Evolutionary search (`restart_opt`) |
 | **Current branch** | `feat/phase9-evolution` (off `feat/phase8-scenario-realism`; PR → `main`) |
 | **Latest main commit** | `dd29ce4` (origin/main = P6 merge); P7 (PR #7) + P8 (PR #8) branch off main; P9 stacks on P8 |
-| **Engine version** | `sim/0.5.0` (unchanged in P9 — optimizer-only; the engine was bumped in P8) |
+| **Engine version** | `sim/0.5.0` (unchanged in P9 - optimizer-only; the engine was bumped in P8) |
 | **Test count** | ~555 (Python across core/etl/ml/optimizer/backend + frontend/pitch-kit vitest + Playwright) · mypy strict clean · ruff/black/eslint/tsc/prettier clean · OpenAPI drift gate green |
 
 ## What works end-to-end now (the Scenario Workbench, real squads)
@@ -36,17 +36,17 @@ the new `restart_opt` package. Studies persist to `optimization_studies/` and lo
 
 ## Active / upcoming milestones
 
-- **Phase 9 (current — done):** evolutionary routine search — NSGA-II genetic algorithm (full mixed
+- **Phase 9 (current - done):** evolutionary routine search - NSGA-II genetic algorithm (full mixed
   genome) + CMA-ES, behind the existing sampler dispatch; the canonical study runs TPE vs random vs
   evolution at equal budget with per-trial generation lineage. See
   [ADR-010](../adr/ADR-010-evolutionary-search.md).
-- **Phase 8 (done, PR #8):** scenario realism — 7-attacker template, basic free kicks, `near_post_man`
+- **Phase 8 (done, PR #8):** scenario realism - 7-attacker template, basic free kicks, `near_post_man`
   defence; `ENGINE_VERSION` `sim/0.5.0`. **Phase 7 (PR #7):** optimization UI + CRN compare + 3D replay.
-- **Phase 10 (next — 🔴 throughput):** fused Numba scenario kernel (ADR-003 d8) — scales evolution
-  (bigger populations / more generations) + unlocks 10⁵–10⁶-sim studies. Reference engine ≈ 3 sims/s;
+- **Phase 10 (next - 🔴 throughput):** fused Numba scenario kernel (ADR-003 d8) - scales evolution
+  (bigger populations / more generations) + unlocks 10⁵-10⁶-sim studies. Reference engine ≈ 3 sims/s;
   studies run at a scoped budget until it lands ([roadmap](../ROADMAP-future-enhancements.md) §1).
-- **Calibration (🔴 owed):** fit the engine `[knob]`s to real base rates (goal ~5% sim vs 2–3% real)
-  — roadmap §2 (simulation-based inference).
+- **Calibration (🔴 owed):** fit the engine `[knob]`s to real base rates (goal ~5% sim vs 2-3% real)
+  - roadmap §2 (simulation-based inference).
 
 ## Known blockers
 

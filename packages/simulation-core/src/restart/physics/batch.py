@@ -1,9 +1,9 @@
-"""Vectorized batch flight engine — the Monte Carlo throughput path.
+"""Vectorized batch flight engine - the Monte Carlo throughput path.
 
 Two implementations, one contract:
 
 * **Production path** (default force model): the fused Numba kernel in
-  ``_kernels.py`` — adopted after the NumPy path measured 6.8 s for 10k
+  ``_kernels.py`` - adopted after the NumPy path measured 6.8 s for 10k
   flights against the 1 s budget (ADR-001 addendum).
 * **Reference path** (``_simulate_flights_numpy``): the readable NumPy
   lockstep implementation. It defines the semantics, serves custom force
@@ -77,7 +77,7 @@ def simulate_flights(
     """Fly a batch of packed states ``(n, 9)`` to first ground contact.
 
     Deterministic: identical inputs produce bit-identical outputs (a single
-    production code path — the JIT kernel — guarantees this for the default
+    production code path - the JIT kernel - guarantees this for the default
     force model; passing a custom ``force`` routes to the NumPy reference).
     """
     cfg = config if config is not None else PhysicsConfig.default()

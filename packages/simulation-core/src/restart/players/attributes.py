@@ -3,9 +3,9 @@
 Attributes are the capability envelope consumed by the agent layer (design doc
 05 §3.1; DB schema doc 03 `player_attributes`). Two representations:
 
-* ``PlayerAttributes`` — frozen pydantic model, validated bounds, the boundary
+* ``PlayerAttributes`` - frozen pydantic model, validated bounds, the boundary
   type (built by hand, by ETL in Phase 4, or by the UI later).
-* The attribute **matrix** — ``(n_players, N_ATTR)`` float64, column order
+* The attribute **matrix** - ``(n_players, N_ATTR)`` float64, column order
   fixed by :class:`Attr`. This is what SimPrograms carry and what (future)
   Numba kernels index. **Column order is a compiled-program ABI: append-only.**
 

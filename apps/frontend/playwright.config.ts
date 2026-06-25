@@ -9,7 +9,7 @@ const isCI = !!process.env.CI;
 
 /**
  * E2E boots BOTH servers as webServers: the FastAPI backend (test env,
- * in-process job queue — ADR-007 d2) and the Next dev server. The journey runs
+ * in-process job queue - ADR-007 d2) and the Next dev server. The journey runs
  * at the reduced deterministic budget (n_sims=24, ~8 s) over the identical
  * build → run → distributions → replay path (throughput reality, ADR-007).
  */

@@ -1,4 +1,4 @@
-"""Arq/Redis job queue adapter — a drop-in for the in-process queue (ADR-007 d2).
+"""Arq/Redis job queue adapter - a drop-in for the in-process queue (ADR-007 d2).
 
 Selected at runtime when ``RESTART_REDIS_URL`` is set. The API side only needs
 ``submit`` (enqueue to Redis); a separate worker process runs the batch:

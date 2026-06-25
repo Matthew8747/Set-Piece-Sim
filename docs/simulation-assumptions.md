@@ -12,10 +12,10 @@ value/model, its literature anchor, and its calibration status:
 
 | ID | Assumption | Implementation | Anchor |
 |----|-----------|----------------|--------|
-| P-1 | Ball is a FIFA Quality Programme size-5: m = 0.430 kg, r = 0.110 m **[fixed]** | `BallConfig` (bounds 0.40–0.46 kg per Law 2) | IFAB Laws of the Game, Law 2; FIFA Quality Programme test ranges |
+| P-1 | Ball is a FIFA Quality Programme size-5: m = 0.430 kg, r = 0.110 m **[fixed]** | `BallConfig` (bounds 0.40-0.46 kg per Law 2) | IFAB Laws of the Game, Law 2; FIFA Quality Programme test ranges |
 | P-2 | Uniform gravity 9.81 m/s²; still air, sea-level density 1.225 kg/m³; **altitude exposed as scenario parameter** via isothermal barometric model (scale height 8.5 km) **[fixed]** | `EnvironmentConfig`, `EnvironmentConfig.at_altitude()` | US Standard Atmosphere; WC2026 note: Estadio Azteca (2,240 m) → ρ ≈ 0.94 kg/m³, ~23 % less drag/Magnus |
 | P-3 | Quadratic drag with a **smooth (logistic) drag crisis**: C_d from 0.45 (subcritical) to 0.25 (supercritical) around v_crit = 12 m/s, width 1.5 m/s **[knob: all four]** | `DragConfig`, `QuadraticDrag` | Asai et al. (2007) *Fundamental aerodynamics of the soccer ball*; Goff & Carré (2009) *Trajectory analysis of a soccer ball*, Am. J. Phys. 77; Achenbach (1972) for the sphere drag crisis. Smoothing is an idealization of the experimentally sharp transition (keeps the ODE C¹) |
-| P-4 | Magnus lift via spin parameter S = rω/v: C_l = S/(aS + b), a = 2.2, b = 0.7, S clamped at 0.6 **[knob: a, b, clamp]** | `MagnusConfig`, `MagnusLift`; force direction unit(ω × v), vanishing smoothly for ω ∥ v | Empirical-fit family per Goff & Carré (2009, 2010); published fits vary materially — constants are first-class calibration targets, see test `test_roberto_carlos_1997_bends_around_the_wall` for the plausibility envelope (2–9 m deflection; reconstructions estimate ~4 m, e.g. Dupeux et al. 2010) |
+| P-4 | Magnus lift via spin parameter S = rω/v: C_l = S/(aS + b), a = 2.2, b = 0.7, S clamped at 0.6 **[knob: a, b, clamp]** | `MagnusConfig`, `MagnusLift`; force direction unit(ω × v), vanishing smoothly for ω ∥ v | Empirical-fit family per Goff & Carré (2009, 2010); published fits vary materially - constants are first-class calibration targets, see test `test_roberto_carlos_1997_bends_around_the_wall` for the plausibility envelope (2-9 m deflection; reconstructions estimate ~4 m, e.g. Dupeux et al. 2010) |
 | P-5 | Spin decays exponentially, τ = 8 s **[knob]**; integrated inside the state vector (dω/dt = −ω/τ) | `make_derivative` | Minor effect over ≤ 4 s flights; order-of-magnitude from flight-analysis literature |
 
 ## Integration & events
@@ -30,9 +30,9 @@ value/model, its literature anchor, and its calibration status:
 
 | ID | Assumption | Implementation | Anchor |
 |----|-----------|----------------|--------|
-| P-7 | Normal restitution e = 0.65 on dry grass **[knob, range 0.55–0.75]**; contact at ball-center height z = r | `BounceConfig`, `bounce()` | Wesson, *The Science of Soccer* (bounce ch.); FIFA Quality Programme rebound test ranges |
-| P-8 | Tangential bounce: **Coulomb friction impulse on contact-point slip** (couples velocity & spin) with stick/slide branch, μ = 0.40 **[knob]**; rolling regime decelerates at μ_roll·g, μ_roll = 0.06 **[knob — flagged: produces generous roll-out distances, early calibration target]**; rest below 0.2 m/s | `bounce()` (impulse derivation in module docstring), `_step_rolling` | Standard sports-ball bounce mechanics (e.g. Cross 2002, *Grip-slip behavior of a bouncing ball*, Am. J. Phys. 70) |
-| P-9 | Ball inertia: thin spherical shell, I = (2/3)mr² **[fixed]**; **no twisting friction** — spin about the contact normal unchanged across bounce **[simplification]** | `BallConfig.moment_of_inertia`, `bounce()` | Shell idealization standard for footballs; energy invariant property-tested (total KE never increases across bounce, 300 random cases) |
+| P-7 | Normal restitution e = 0.65 on dry grass **[knob, range 0.55-0.75]**; contact at ball-center height z = r | `BounceConfig`, `bounce()` | Wesson, *The Science of Soccer* (bounce ch.); FIFA Quality Programme rebound test ranges |
+| P-8 | Tangential bounce: **Coulomb friction impulse on contact-point slip** (couples velocity & spin) with stick/slide branch, μ = 0.40 **[knob]**; rolling regime decelerates at μ_roll·g, μ_roll = 0.06 **[knob - flagged: produces generous roll-out distances, early calibration target]**; rest below 0.2 m/s | `bounce()` (impulse derivation in module docstring), `_step_rolling` | Standard sports-ball bounce mechanics (e.g. Cross 2002, *Grip-slip behavior of a bouncing ball*, Am. J. Phys. 70) |
+| P-9 | Ball inertia: thin spherical shell, I = (2/3)mr² **[fixed]**; **no twisting friction** - spin about the contact normal unchanged across bounce **[simplification]** | `BallConfig.moment_of_inertia`, `bounce()` | Shell idealization standard for footballs; energy invariant property-tested (total KE never increases across bounce, 300 random cases) |
 
 ## Deliberate exclusions (Phase 1)
 
@@ -47,7 +47,7 @@ value/model, its literature anchor, and its calibration status:
 
 | ID | Assumption | Implementation | Status |
 |----|-----------|----------------|--------|
-| G-1 | Capability envelope: top speed 5.5–9.8 m/s, accel 2–8 m/s², bounds from sprint literature **[fixed rails, per-player knobs]** | `PlayerAttributes`, enforced by `step_agents`; envelope property-tested from recorded tracks | validated |
+| G-1 | Capability envelope: top speed 5.5-9.8 m/s, accel 2-8 m/s², bounds from sprint literature **[fixed rails, per-player knobs]** | `PlayerAttributes`, enforced by `step_agents`; envelope property-tested from recorded tracks | validated |
 | G-2 | Turn-rate limit ∝ agility, tighter at speed **[knob]** | `step_agents` heading clamp | tested |
 | G-3 | Reaction latency gates *reading* the flight; pre-committed scripted runners pay none **[knob: jitter ±15%]** | ready-time gating in engine §4 | tested |
 | G-4′ | No airborne jump state: vertical = reach at contest + timing noise **[simplification vs design 05 jump-commit]** | contest model | registered |
@@ -62,8 +62,8 @@ value/model, its literature anchor, and its calibration status:
 | G-13 | Interception planned once from kick-instant states (no in-flight re-planning) **[simplification]** | engine §4 | registered |
 
 **Phase-2 honesty note:** outcome *rates* are not calibrated (keeper-claim share measurably
-high; goal rate ~5% vs real 2–3%). Every rate-shaping constant above is a named `EngineConfig`
-field — exactly the surface the Phase-3 calibration harness searches.
+high; goal rate ~5% vs real 2-3%). Every rate-shaping constant above is a named `EngineConfig`
+field - exactly the surface the Phase-3 calibration harness searches.
 
 ## Engine xG scoring (Phase 4, `sim/0.4.0`)
 
@@ -74,12 +74,12 @@ field — exactly the surface the Phase-3 calibration harness searches.
 
 **Phase-4 honesty note:** the xG models are calibrated (shipped logistic slope ≈ 1.00) but the
 engine's *upstream* `[knob]`s (G-6/G-9/G-11 contest, delivery, traffic) remain uncalibrated, so
-the **distribution** of simulated shot contexts is not yet validated against reality — only the
+the **distribution** of simulated shot contexts is not yet validated against reality - only the
 mapping from a context to P(goal) is. The G-9 GK-save logit is retained as the fallback when no
 xG model is wired. Closing the upstream calibration gap stays the owed week-5 credibility task.
 
 `ASSUMPTION D-1` (data, design doc 04 §2): StatsBomb Open Data remains available under current
-terms; the raw cache is downloaded once and kept locally (permitted for use, not redistribution —
+terms; the raw cache is downloaded once and kept locally (permitted for use, not redistribution -
 hence git-ignored). xG trains on **real data only**, never on simulator output (doc 06 §1).
 
 ## Validation evidence (V1 gate, Phase 1)
@@ -92,7 +92,7 @@ hence git-ignored). xG trains on **real data only**, never on simulator output (
 | Terminal velocity | matches √(2mg/ρAC_d) within 1 % |
 | Spin decay | matches ω₀e^(−t/τ) within 1e-6 relative |
 | Bounce energy invariant | total KE non-increasing, 300 random cases (Hypothesis) + restitution exact on normal axis |
-| Roberto Carlos 1997 recreation | same strike ±spin: lateral deflection within the published-plausibility band (2–9 m; reconstructions ≈ 4 m) |
+| Roberto Carlos 1997 recreation | same strike ±spin: lateral deflection within the published-plausibility band (2-9 m; reconstructions ≈ 4 m) |
 | JIT kernel ≡ NumPy reference | ≤ 1e-9 absolute agreement on 100 random flights (landing state, time, apex) |
 | Throughput | 10k flights: 0.98 s single-core (target < 1 s); 1k flights ≈ 99 ms |
 

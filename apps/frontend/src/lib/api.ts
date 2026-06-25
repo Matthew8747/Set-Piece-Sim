@@ -28,7 +28,7 @@ async function fail(res: Response, method: string, path: string): Promise<never>
     const body = (await res.json()) as Partial<ProblemDetail>;
     if (body.title || body.detail) detail = `${body.title ?? res.status}: ${body.detail ?? ""}`;
   } catch {
-    /* non-JSON error body — keep the status code */
+    /* non-JSON error body - keep the status code */
   }
   throw new Error(`${method} ${path} → ${detail}`);
 }
@@ -83,7 +83,7 @@ export const api = {
     get<OptimizationDetail>(`/api/v1/optimizations/${encodeURIComponent(id)}`),
 
   /**
-   * Poll a sim run to a terminal state (the single progress seam — polling, not
+   * Poll a sim run to a terminal state (the single progress seam - polling, not
    * SSE, per ADR-007 d4). Calls onProgress on each tick; resolves with the final
    * status; rejects if the run fails or the deadline passes.
    */

@@ -3,7 +3,7 @@
 After a study accumulates trials, fit a LightGBM regressor on
 (routine params -> mean xG) and run SHAP on it to answer "what makes a good
 corner against this defense?". The surrogate is an *explanation* of the trials,
-not a replacement for the simulator — its job is to turn the trial cloud into a
+not a replacement for the simulator - its job is to turn the trial cloud into a
 few plain-language findings a coach could act on (the differentiating UI panel).
 
 Encoding is pandas-free (the project avoids pandas under mypy --strict):

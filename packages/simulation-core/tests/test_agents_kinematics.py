@@ -1,4 +1,4 @@
-"""Tests for restart.agents.kinematics — invariant properties and correctness."""
+"""Tests for restart.agents.kinematics - invariant properties and correctness."""
 
 import numpy as np
 import pytest

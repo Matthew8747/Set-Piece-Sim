@@ -2,7 +2,7 @@
 
 The optimizer objective is mean xG, so the engine must carry the real-data xG
 model. The bundle is the small committed coefficient artifact under ``models/``
-(restart_ml.artifacts writes it). We load it with the *pure* ``from_dict`` — no
+(restart_ml.artifacts writes it). We load it with the *pure* ``from_dict`` - no
 ``restart_ml`` import, so the optimizer never pulls the training stack.
 """
 

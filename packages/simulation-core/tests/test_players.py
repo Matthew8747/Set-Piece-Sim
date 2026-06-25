@@ -1,4 +1,4 @@
-"""Tests for restart.players — attributes, player, team, and demo data."""
+"""Tests for restart.players - attributes, player, team, and demo data."""
 
 import numpy as np
 import pytest

@@ -73,7 +73,7 @@ class TestStepAgentsEquivalence:
             np.testing.assert_allclose(k_vel, ref_vel, atol=1e-9, rtol=0.0)
 
     def test_zero_velocity_agents(self) -> None:
-        # Slow/stationary agents take the can_turn_free branch — exercise it.
+        # Slow/stationary agents take the can_turn_free branch - exercise it.
         s = _rng_state(10, 99)
         s["vel"][:] = 0.0
         ref_pos, ref_vel = step_agents(

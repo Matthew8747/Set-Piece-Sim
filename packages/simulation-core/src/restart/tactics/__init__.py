@@ -1,4 +1,4 @@
-"""Restart Lab tactics layer — set-piece routine specs, schemes, and compilation.
+"""Restart Lab tactics layer - set-piece routine specs, schemes, and compilation.
 
 Implements the rs/1.0 contract (ADR-004): a validated pydantic ``RoutineSpec``
 document + ``DefensiveScheme`` → ``Scenario`` → ``SimProgram`` pipeline.

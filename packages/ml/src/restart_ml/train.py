@@ -5,7 +5,7 @@ grouped-by-match CV (the method-comparison deliverable, doc 06 §5), then fit an
 calibrate the shipped logistic model into a pure scorer. The two scorers form the
 engine bundle. Everything is logged to MLflow when enabled. The decision to ship
 the logistic model (keeping the simulation core dependency-free) is recorded with
-its held-out calibration evidence — GBMs are evaluated and reported, not shipped.
+its held-out calibration evidence - GBMs are evaluated and reported, not shipped.
 """
 
 from __future__ import annotations

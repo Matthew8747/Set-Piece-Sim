@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 // Studies library (doc 07 IA): convergence/parallel-coords live on the detail
-// page; here we list the persisted studies with the honest headline — a "beats
+// page; here we list the persisted studies with the honest headline - a "beats
 // baseline" badge only when the winner's CI clears the baseline's (the stats
 // policy, enforced by the backend's beats_baseline flag).
 
@@ -34,7 +34,7 @@ export default function OptimizePage() {
         </span>
         <h1 className="text-3xl font-semibold tracking-tight">Optimization studies</h1>
         <p className="max-w-2xl text-sm text-(--color-line)/60">
-          Routine searches against a defensive scheme — convergence, the search space, and what beat
+          Routine searches against a defensive scheme: convergence, the search space, and what beat
           the library baseline.
         </p>
       </header>

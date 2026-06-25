@@ -1,4 +1,4 @@
-"""DefensiveScheme — validated defensive configuration for set pieces.
+"""DefensiveScheme - validated defensive configuration for set pieces.
 
 The scheme is orthogonal to the attacking routine (ADR-004 d1): the optimizer
 searches the attacking space against a *fixed* opponent scheme, so defence must
@@ -38,7 +38,7 @@ class DefensiveScheme(BaseModel):
         compile_scenario to the highest-threat attackers.
     gk_position:
         Goalkeeper starting position. Defaults to just off the goal-line
-        center (51.5, 0) — realistic set-piece positioning.
+        center (51.5, 0) - realistic set-piece positioning.
     wall_size:
         Number of defenders in the FK wall (0 for corners, 0-6 for FKs).
         The wall is positioned by compile_scenario at 9.15 m from kick_pos.

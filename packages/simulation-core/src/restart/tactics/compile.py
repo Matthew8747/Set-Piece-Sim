@@ -8,9 +8,9 @@ lookups, no string comparisons, and no pydantic objects after this point.
 Spin-sign convention (z-axis = vertical up; positive spin = counter-clockwise
 from above):
 
-A RIGHT-side corner is taken from (52.2, -33.7) — bottom-right corner arc.
+A RIGHT-side corner is taken from (52.2, -33.7) - bottom-right corner arc.
 The delivery velocity is dominantly +y. Magnus acceleration ~ unit(w x v):
-w = +z gives z_hat x y_hat = -x_hat — the ball curls AWAY from the goal line
+w = +z gives z_hat x y_hat = -x_hat - the ball curls AWAY from the goal line
 (out-swing). w = -z curls toward +x, into the goal mouth (in-swing). Verified
 empirically against the flight model (engine integration tests).
 
@@ -49,7 +49,7 @@ from restart.tactics.routine import (
 from restart.tactics.scheme import DefensiveScheme
 
 # ---------------------------------------------------------------------------
-# Scenario — validated "compile input"
+# Scenario - validated "compile input"
 # ---------------------------------------------------------------------------
 
 
@@ -57,7 +57,7 @@ class Scenario(BaseModel):
     """Everything needed to compile a SimProgram for one set-piece execution.
 
     Validation rules (all raise ValueError on violation):
-    * role_assignments must cover exactly the routine's roles — no missing,
+    * role_assignments must cover exactly the routine's roles - no missing,
       no extra.
     * All player_ids in role_assignments must be in attacking_team.
     * kicker_id must be in attacking_team and NOT among role_assignment values
@@ -136,7 +136,7 @@ class Scenario(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# SimProgram — flat read-only SoA arrays for the hot loop
+# SimProgram - flat read-only SoA arrays for the hot loop
 # ---------------------------------------------------------------------------
 
 
@@ -145,38 +145,38 @@ class SimProgram:
     """Compiled, flat, read-only representation of a set-piece scenario.
 
     All arrays are float64 or int64/int8, C-contiguous, read-only. No dicts,
-    strings, or pydantic objects are reachable from the hot loop — only this
+    strings, or pydantic objects are reachable from the hot loop - only this
     dataclass and its arrays (ADR-003 d8, ADR-004 d4).
 
     Array shapes and dtypes
     -----------------------
-    set_piece: int — 0=corner, 1=free_kick
-    kick_pos: (2,) float64 — [x, y] kick position
-    delivery_type: int — DeliveryType code (INSWINGER=0..SHORT=4)
+    set_piece: int - 0=corner, 1=free_kick
+    kick_pos: (2,) float64 - [x, y] kick position
+    delivery_type: int - DeliveryType code (INSWINGER=0..SHORT=4)
     delivery_target: (2,) float64
     delivery_speed_ms: float
-    delivery_spin_rps: float — magnitude (after type-scaling)
-    spin_sign: float — +1/-1/0 (see module docstring for derivation)
+    delivery_spin_rps: float - magnitude (after type-scaling)
+    spin_sign: float - +1/-1/0 (see module docstring for derivation)
 
-    n_attackers: int — number of assignment runners (kicker excluded)
-    att_attr: (na, N_ATTR) float64 — attribute matrix
-    att_start: (na, 2) float64 — starting positions
-    att_intent: (na,) int8 — INTENT_CODES values
-    att_player_ids: tuple[str, ...] — for event/replay labelling only
-    att_legs_to: (na, 3, 2) float64 — padded NaN for unused legs
-    att_legs_trigger: (na, 3) int8 — TRIGGER_CODES; -1 for unused legs
-    att_legs_delay: (na, 3) float64 — 0.0 for unused legs
-    att_n_legs: (na,) int64 — actual number of legs per attacker
+    n_attackers: int - number of assignment runners (kicker excluded)
+    att_attr: (na, N_ATTR) float64 - attribute matrix
+    att_start: (na, 2) float64 - starting positions
+    att_intent: (na,) int8 - INTENT_CODES values
+    att_player_ids: tuple[str, ...] - for event/replay labelling only
+    att_legs_to: (na, 3, 2) float64 - padded NaN for unused legs
+    att_legs_trigger: (na, 3) int8 - TRIGGER_CODES; -1 for unused legs
+    att_legs_delay: (na, 3) float64 - 0.0 for unused legs
+    att_n_legs: (na,) int64 - actual number of legs per attacker
 
     n_defenders: int
     def_attr: (nd, N_ATTR) float64
     def_start: (nd, 2) float64
-    def_player_ids: tuple[str, ...] — for event/replay labelling only
-    gk_index: int — index into defender arrays for the GK
-    def_mark_target: (nd,) int64 — attacker index (-1 = zonal/no target)
+    def_player_ids: tuple[str, ...] - for event/replay labelling only
+    gk_index: int - index into defender arrays for the GK
+    def_mark_target: (nd,) int64 - attacker index (-1 = zonal/no target)
 
     kicker_attr: (N_ATTR,) float64
-    kicker_id: str — for event/replay labelling only
+    kicker_id: str - for event/replay labelling only
     """
 
     # Delivery
@@ -271,7 +271,7 @@ def compile_scenario(scenario: Scenario) -> SimProgram:
     After this function returns, the engine touches only arrays and scalars.
 
     Determinism: same Scenario (same field values) always produces identical
-    byte-level array content — no randomness, no process-state dependence.
+    byte-level array content - no randomness, no process-state dependence.
     """
     routine = scenario.routine
     scheme = scenario.scheme

@@ -54,7 +54,7 @@ export function KpiCard({ label, p, lo, hi, k, n, howText, modelCardHref }: KpiC
           </p>
           {(k !== undefined || n !== undefined) && (
             <p className="font-mono tabular-nums opacity-60">
-              {k ?? "—"} / {n ?? "—"} sims
+              {k ?? "-"} / {n ?? "-"} sims
             </p>
           )}
           {modelCardHref && (

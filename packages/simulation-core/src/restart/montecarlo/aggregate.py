@@ -1,6 +1,6 @@
 """Outcome aggregation: probabilities with Wilson 95% CIs (M-2).
 
-SciPy's ``binomtest(...).proportion_ci(method="wilson")`` per ADR-001 —
+SciPy's ``binomtest(...).proportion_ci(method="wilson")`` per ADR-001 -
 statistics are bought, not built.
 """
 

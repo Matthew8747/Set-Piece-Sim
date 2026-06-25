@@ -2,7 +2,7 @@
 
 Centralizes the pyarrow boundary so the rest of the package speaks plain Python
 dicts. Nested/variable-length fields (e.g. a shot freeze frame) are carried as a
-JSON string column — Parquet stays flat and the schema is trivially stable.
+JSON string column - Parquet stays flat and the schema is trivially stable.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """Data-quality + license gates run in CI on every pipeline change (doc 04 §5).
 
-Three severities: FAIL (impossible data or a license violation — build red),
-FLAG (drift outside an expected band — surfaced, not fatal), PASS. Licensing is
+Three severities: FAIL (impossible data or a license violation - build red),
+FLAG (drift outside an expected band - surfaced, not fatal), PASS. Licensing is
 enforced *mechanically* here, not by a policy document: every mart row's
 ``source`` must be in the approved allow-list.
 """

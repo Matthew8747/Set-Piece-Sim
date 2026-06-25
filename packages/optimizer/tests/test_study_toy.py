@@ -101,7 +101,7 @@ class TestEvolutionarySamplers:
         assert out.sampler == "nsga2"
         # Real signal, far better than an arbitrary corner of the space.
         assert out.best_value > peak({"x": 0.0, "y": 10.0})
-        # The genetic algorithm runs in generations — they are recorded.
+        # The genetic algorithm runs in generations - they are recorded.
         gens = {t.generation for t in out.trials if t.generation is not None}
         assert len(gens) >= 2  # at least a couple of generations evolved
 

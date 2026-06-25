@@ -61,7 +61,7 @@ class TestAltitude:
         assert env.air_density_kgm3 == pytest.approx(1.225)
 
     def test_mexico_city_thinner_air(self) -> None:
-        """WC2026: Estadio Azteca at 2,240 m — materially less drag/Magnus."""
+        """WC2026: Estadio Azteca at 2,240 m - materially less drag/Magnus."""
         env = EnvironmentConfig.at_altitude(2240.0)
         assert 0.90 < env.air_density_kgm3 < 1.0
 

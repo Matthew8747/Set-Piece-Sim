@@ -1,8 +1,8 @@
-# Restart Lab — Design Documentation
+# Restart Lab - Design Documentation
 
 **AI-Assisted Set-Piece Optimization for International Football (FIFA World Cup 2026)**
 
-> "Restart" is the coaching term for any dead-ball resumption of play — corners, free kicks,
+> "Restart" is the coaching term for any dead-ball resumption of play - corners, free kicks,
 > throw-ins. This platform simulates and optimizes them.
 
 This directory is the design package for the platform. Read in order:
@@ -22,17 +22,24 @@ This directory is the design package for the platform. Read in order:
 
 | Document | Purpose |
 |---|---|
-| [Setup Guide](setup-guide.md) | Zero → verified local environment |
+| [Setup Guide](setup-guide.md) | Zero to verified local environment |
 | [Development Guide](development-guide.md) | Commands, conventions, architecture rules, tech-debt register |
-| [Simulation Assumptions Registry](simulation-assumptions.md) | Every physics assumption (P-1…P-15): value, citation, calibration status, validation evidence |
-| [ADRs](adr/README.md) | Architectural decision records (build-vs-buy, integration strategy) |
+| [Optimization Methodology](09-optimization-methodology.md) | The honest-search policy: baselines, confirmation, sensitivity |
+| [Forward Roadmap](ROADMAP-future-enhancements.md) | Where the system goes next, and the trade-offs |
+| [Go-Live Runbook](GO-LIVE.md) | Step-by-step launch plan and the hosting decision |
+| [Build-vs-Buy Ledger](legacy-and-from-scratch.md) | What is hand-built versus imported, and why |
+| [Simulation Assumptions Registry](simulation-assumptions.md) | Every physics assumption (P-1…P-15): value, citation, calibration status |
+| [ADRs](adr/README.md) | Architectural decision records (ADR-001 through ADR-011) |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Workflow and review standards |
 | [../CHANGELOG.md](../CHANGELOG.md) | Per-phase change history |
 
 ## Status
 
-- **Stage:** Phase 1 (ball physics core, `sim/0.1.0`) complete on `feat/phase1-physics-core`
-- **Next gate:** Phase 1 review → Phase 2 (agents & tactical engine, roadmap Phase 2)
+- **Engine:** `sim/0.5.0`. **Optimizer:** Optuna TPE and random baseline, plus CMA-ES and NSGA-II.
+- **Shipped (merged to `main`):** Phases 0 through 9, the physics core through evolutionary routine
+  search and the full analyst web app.
+- **In progress:** Phase 10, the Numba throughput kernel (RNG externalization and the njit agent
+  kernels landed with 1e-9 equivalence tests; the fused kernel and re-baseline remain).
 
 ## Document conventions
 

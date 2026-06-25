@@ -19,7 +19,7 @@ export function Ecdf({
   if (samples.length === 0) {
     return (
       <p role="note" className="font-mono text-xs opacity-50">
-        no samples yet — run a simulation
+        no samples yet - run a simulation
       </p>
     );
   }

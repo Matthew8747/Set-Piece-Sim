@@ -1,7 +1,7 @@
 """Model-card generation (Google model-card schema; design doc 06 §2.4).
 
 Renders a markdown card capturing data + license, the method comparison, the
-shipped model's calibration evidence, intended use, and limitations — the
+shipped model's calibration evidence, intended use, and limitations - the
 governance artifact the UI later renders and the interview talking-point.
 """
 
@@ -51,13 +51,13 @@ Method comparison (grouped-by-match 5-fold CV, out-of-fold):
 
 def render_model_card(result: TrainResult) -> str:
     now = datetime.now(UTC).strftime("%Y-%m-%d")
-    return f"""# Model Card — Restart Lab xG v1 (`xg-header` + `xg-foot`)
+    return f"""# Model Card - Restart Lab xG v1 (`xg-header` + `xg-foot`)
 
 *Generated {now} · engine `{ENGINE_VERSION}` · {ML_VERSION}*
 
 ## Model details
-Two calibrated logistic expected-goals models — one for headers/non-foot first
-contacts (`xg-header`), one for foot shots (`xg-foot`) — that score set-piece
+Two calibrated logistic expected-goals models - one for headers/non-foot first
+contacts (`xg-header`), one for foot shots (`xg-foot`) - that score set-piece
 shot contexts. Routed by body part at score time (`XGModelBundle`). Features are
 closed-form geometry + freeze-frame traffic, identical at train and serve time
 (`restart.engine.xg.shot_feature_vector`).
@@ -72,7 +72,7 @@ play-by-play match xG product; not for betting.
 - Corpus: real corner + free-kick shots from the configured competitions
   (`mart_setpiece_shots`), grouped by match for leakage-safe CV.
 - Training-data hash: `{result.training_data_hash[:16]}…` (chains model to mart).
-- The xG layer trains on **real data only** — never on simulator output
+- The xG layer trains on **real data only** - never on simulator output
   (design doc 06 §1), so it remains the simulator's reality anchor.
 
 ## Metrics & calibration
@@ -86,7 +86,7 @@ are evaluated and reported below but not shipped.
 
 ## Limitations
 - Real-data xG conditions on real shot selection; simulated contexts can sit
-  slightly off-manifold (doc 06 §2.3) — monitor feature overlap.
+  slightly off-manifold (doc 06 §2.3) - monitor feature overlap.
 - Freeze-frame traffic features require freeze frames; shots without them are
   excluded from training (graceful degradation, doc 04 risk #1).
 - Set-piece foot-shot samples are small; phases are encoded as features rather

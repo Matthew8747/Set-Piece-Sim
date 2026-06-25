@@ -2,11 +2,11 @@
 
 Determinism contract: sim *i* of a batch with ``root_seed`` always receives
 the same per-sim seed (SeedSequence-derived), independent of batch size or
-execution order — so (program, root_seed, n) is fully reproducible and any
+execution order - so (program, root_seed, n) is fully reproducible and any
 single sim can be replayed in isolation by its seed (ADR-003 d9).
 
 Parallelism note (registered tradeoff): the Phase-2 engine is the readable
-single-sim reference (~30-80 ms/sim). This runner is a sequential loop —
+single-sim reference (~30-80 ms/sim). This runner is a sequential loop -
 process-pool parallelism on Windows costs more in pickling/spawn than it buys
 at MVP batch sizes, and the real throughput answer is the Phase-3 fused batch
 kernel (ADR-003 d8), not worker pools around the reference engine. The

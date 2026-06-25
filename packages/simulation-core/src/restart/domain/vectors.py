@@ -15,7 +15,7 @@ import numpy.typing as npt
 FloatArray = npt.NDArray[np.float64]
 
 #: Guard against division by zero when normalizing; vectors shorter than this
-#: are treated as zero (their "unit vector" is the zero vector — see `unit`).
+#: are treated as zero (their "unit vector" is the zero vector - see `unit`).
 _EPS: float = 1e-12
 
 

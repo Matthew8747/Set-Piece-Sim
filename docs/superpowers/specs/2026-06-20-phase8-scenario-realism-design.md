@@ -1,4 +1,4 @@
-# Phase 8 — Scenario Realism — Design
+# Phase 8 - Scenario Realism - Design
 
 **Status:** Approved · **Engine:** `sim/0.4.0` → **`sim/0.5.0`** (first engine change since P4) ·
 **Branch:** `feat/phase8-scenario-realism` (off `main` @ `dd29ce4`; independent of P7/PR #7)
@@ -10,7 +10,7 @@ Make the searched scenario space look and play like a real set-piece. Review fee
 `compile_scenario` instantiates **only the routine's runners + kicker** as attackers
 (`compile.py:313-317`), while `DefensiveScheme` always accounts for **10 outfield + GK = 11**
 (`scheme.py` invariant). The genome (`CornerGenome`, `n_runners=4`, box-only `ZONE_GRID`) is the
-narrow part — the engine and the hand-built library already support richer routines (e.g.
+narrow part - the engine and the hand-built library already support richer routines (e.g.
 `edge_of_box_pullback`, `decoy_overload`, `direct_free_kick`).
 
 ## 2. Boundary (what this phase is and is NOT)
@@ -20,9 +20,9 @@ narrow part — the engine and the hand-built library already support richer rou
 - **Bumps `ENGINE_VERSION`** (`sim/0.4.0` → `sim/0.5.0`): more attackers placed in a scenario changes
   simulated outcomes for the same routine, so the engine build identifier must change. The committed
   canonical `study.json` is re-baselined.
-- **NOT in scope:** evolutionary search (GA/CMA-ES) + lineage viz — a later optimizer phase, and
-  gated on the 🔴 Numba kernel for budget. Offside lines + runners-from-off-the-ball + multi-touch —
-  stays O-3 (carried debt). Engine `[knob]` calibration (🔴) — untouched. Variable-arity search —
+- **NOT in scope:** evolutionary search (GA/CMA-ES) + lineage viz - a later optimizer phase, and
+  gated on the 🔴 Numba kernel for budget. Offside lines + runners-from-off-the-ball + multi-touch -
+  stays O-3 (carried debt). Engine `[knob]` calibration (🔴) - untouched. Variable-arity search -
   excluded (O-2 registered assumption).
 
 ## 3. Decisions (from brainstorming)
@@ -44,22 +44,22 @@ narrow part — the engine and the hand-built library already support richer rou
 - Extend `_DEFAULT_STARTS` to 7 entries; `_DEFAULT_ZONES`/`_DEFAULT_INTENTS`/`_DEFAULT_DELAYS` to 7,
   with the new slots defaulting to off-ball intents at off-ball zones.
 - `CornerGenome.n_runners` cap rises with `_DEFAULT_STARTS` (now 7); the **canonical study uses
-  `n_runners=6`**. `to_scenario` already raises if the attacking team lacks enough outfielders — keep
+  `n_runners=6`**. `to_scenario` already raises if the attacking team lacks enough outfielders - keep
   that guard.
 
 ### 4.2 Free-kick genome (`restart/optimize/genome.py`, new `FreeKickGenome`)
 - Builds a `FREE_KICK` `RoutineSpec` from the same per-runner template (zones/delays/intents) +
   delivery (target/speed/spin/type). `fk_position` is carried on the **base `Scenario`** (study
-  config), not searched — `to_scenario` preserves `base.fk_position` and sets
+  config), not searched - `to_scenario` preserves `base.fk_position` and sets
   `set_piece=FREE_KICK`. Wall is the defensive scheme's concern (`wall_size>0`), already compiled.
 - Validation reuse: `Scenario` already requires `fk_position` for FK and `wall_size==0` only for
-  corners — no new rules. Offside/off-ball timing: **not modeled** (documented O-3 deferral).
+  corners - no new rules. Offside/off-ball timing: **not modeled** (documented O-3 deferral).
 
 ### 4.3 Structured defensive defaults (`restart/tactics/library.py`)
 - Add one structured **`near_post_man`** `DefensiveScheme`: a near-post zonal anchor + a near-post
   man-marker + a flat line, summing to the =10 invariant. Add it to `all_schemes()`.
 - Point the canonical corner study at a near-post-covering scheme (today's `zonal_six_two` already
-  has near-post inner/outer guards — confirm/keep). No change to the scheme model or compile logic.
+  has near-post inner/outer guards - confirm/keep). No change to the scheme model or compile logic.
 
 ### 4.4 Engine version + re-baseline (`restart/__init__.py`, `optimization_studies/`)
 - `ENGINE_VERSION = "sim/0.5.0"`.
@@ -85,26 +85,26 @@ extra parallel-coords axes automatically and shows the study as current once bot
 - **Determinism:** same `Scenario` ⇒ identical `SimProgram` bytes (existing property extended to the
   new template).
 - **Re-baseline fallout (expected):** tests pinning canonical xG / SimProgram values or
-  `ENGINE_VERSION == "sim/0.4.0"` are updated to `sim/0.5.0` and the new template — gated by the
+  `ENGINE_VERSION == "sim/0.4.0"` are updated to `sim/0.5.0` and the new template - gated by the
   version bump, not silent drift.
 
 ## 7. Ripple & risks
 
 - **Frontend/API:** none required. `att_tracks` render dynamically (7 attackers just appear);
   parallel-coords gains axes; OpenAPI/shared-types unaffected (study.json shape stable).
-- **Risk — re-baseline invalidates pinned tests:** expected and intended; update them in the same
+- **Risk - re-baseline invalidates pinned tests:** expected and intended; update them in the same
   commit as the version bump so the gate stays green.
-- **Risk — throughput:** 7 attackers + wider space = more compute at ~3 sims/s; keep the scoped
+- **Risk - throughput:** 7 attackers + wider space = more compute at ~3 sims/s; keep the scoped
   study budget (the 🔴 kernel is still owed; do not widen the budget here).
-- **Risk — FK scope creep:** keep the FK genome to delivery + runners + wall; offside/off-ball is a
+- **Risk - FK scope creep:** keep the FK genome to delivery + runners + wall; offside/off-ball is a
   hard O-3 line not crossed in this phase.
 
 ## 8. Milestones
 
-- **M1 — Off-ball zones + 7-attacker corner template** (`genome.py`): zones, starts/defaults, cap,
+- **M1 - Off-ball zones + 7-attacker corner template** (`genome.py`): zones, starts/defaults, cap,
   tests. No version bump yet (additive; default canonical still 4 until M4 flips it).
-- **M2 — `near_post_man` scheme** (`library.py`): structured default + tests.
-- **M3 — `FreeKickGenome`** (`genome.py`): FK builder + tests.
-- **M4 — ENGINE_VERSION bump + re-baseline**: `sim/0.5.0`, canonical study `n_runners=6`, re-run
+- **M2 - `near_post_man` scheme** (`library.py`): structured default + tests.
+- **M3 - `FreeKickGenome`** (`genome.py`): FK builder + tests.
+- **M4 - ENGINE_VERSION bump + re-baseline**: `sim/0.5.0`, canonical study `n_runners=6`, re-run
   `restart-opt canonical`, update pinned tests, regenerate `study.json`. Full `verify.ps1` green.
-- **M5 — Docs + ADR-009 + handoff + PR** against `main`.
+- **M5 - Docs + ADR-009 + handoff + PR** against `main`.

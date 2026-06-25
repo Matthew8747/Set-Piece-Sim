@@ -3,7 +3,7 @@ random-search baseline at equal budget (design doc 06 sec3.2).
 
 Both samplers are seeded, so a study is reproducible (seed in => same trials
 out). Infeasible genomes (the objective raises ``ValueError``) are reported to
-Optuna as pruned trials, not crashes — the optimizer learns the real
+Optuna as pruned trials, not crashes - the optimizer learns the real
 constraints (doc 06 sec3.1). The objective is *maximized* (mean xG, higher is
 better).
 """
@@ -81,7 +81,7 @@ def make_sampler(
 
     ``cmaes`` (an evolution strategy, strongest on the continuous genes) and
     ``nsga2`` (a genetic algorithm that evolves the *full* mixed genome via
-    selection/crossover/mutation) are the evolutionary search options — both plug
+    selection/crossover/mutation) are the evolutionary search options - both plug
     into the same screen→confirm pipeline as TPE/random (Phase 9, ADR-010)."""
     if sampler == "tpe":
         return optuna.samplers.TPESampler(seed=seed)

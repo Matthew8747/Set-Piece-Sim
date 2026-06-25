@@ -122,7 +122,7 @@ class TestOptimizationInterface:
 class TestThroughputRecord:
     def test_100_sims_timing(self) -> None:
         """Records reference-engine MC throughput; generous CI gate. The fused
-        batch kernel (ADR-003 d8) is the real 100k answer — this documents the
+        batch kernel (ADR-003 d8) is the real 100k answer - this documents the
         baseline it must beat."""
         start = time.perf_counter()
         RUNNER.run(PROGRAM, 100, root_seed=9)

@@ -2,7 +2,7 @@
 
 Runs the Phase-2 SetPieceEngine across seeded Philox-derived streams and
 aggregates outcomes into probabilities with Wilson confidence intervals
-(SciPy, per ADR-001 — no hand-rolled statistics).
+(SciPy, per ADR-001 - no hand-rolled statistics).
 """
 
 from restart.montecarlo.aggregate import OutcomeStats, ProportionCI, aggregate

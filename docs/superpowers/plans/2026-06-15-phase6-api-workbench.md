@@ -1,16 +1,16 @@
-# Phase 6 — API & Scenario Workbench Implementation Plan
+# Phase 6 - API & Scenario Workbench Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make Restart Lab usable by a non-author — harden the FastAPI surface, run Monte Carlo as async jobs with progress, persist scenarios behind swappable file/Postgres adapters, wire **real squads** from the marts (retire demo squads), and ship a Scenario Workbench (Build / Simulate / Replay) plus a Playwright E2E of the 3-minute journey.
+**Goal:** Make Restart Lab usable by a non-author - harden the FastAPI surface, run Monte Carlo as async jobs with progress, persist scenarios behind swappable file/Postgres adapters, wire **real squads** from the marts (retire demo squads), and ship a Scenario Workbench (Build / Simulate / Replay) plus a Playwright E2E of the 3-minute journey.
 
-**Architecture:** Ports-and-adapters everywhere infrastructure touches the web layer. `apps/backend` (`restart_api`) stays the only adapter; `packages/simulation-core` (`restart`) stays pure (no web/DB/ML/IO imports). Repositories and a `JobQueue` are Protocols with a **file-first default** (DuckDB/SQLite/Parquet — server-free CI) and tested **Postgres/Arq** drop-in adapters. `ENGINE_VERSION` does **not** change (`sim/0.4.0` — no engine behaviour touched). Determinism is preserved end to end: same `(scenario, seed, engine_version)` ⇒ identical surfaced result, enforced by the scenario hash used as the idempotency key.
+**Architecture:** Ports-and-adapters everywhere infrastructure touches the web layer. `apps/backend` (`restart_api`) stays the only adapter; `packages/simulation-core` (`restart`) stays pure (no web/DB/ML/IO imports). Repositories and a `JobQueue` are Protocols with a **file-first default** (DuckDB/SQLite/Parquet - server-free CI) and tested **Postgres/Arq** drop-in adapters. `ENGINE_VERSION` does **not** change (`sim/0.4.0` - no engine behaviour touched). Determinism is preserved end to end: same `(scenario, seed, engine_version)` ⇒ identical surfaced result, enforced by the scenario hash used as the idempotency key.
 
 **Tech Stack:** FastAPI · pydantic v2 · slowapi (rate limit) · Arq + Redis (optional prod job adapter) · psycopg (optional Postgres adapter) · DuckDB/SQLite (default stores) · Next.js 16 / React 19 · hand-rolled SVG chart primitives (see note) · openapi-typescript (DTO codegen) · Playwright (E2E). uv for Python, npm workspaces for TS.
 
 ## PROGRESS (2026-06-16)
 
-Branch `feat/phase6-api-workbench`. **Backend complete and verified green (M0–M4).** Frontend + E2E + adapter-drop-ins remain (M5–M7).
+Branch `feat/phase6-api-workbench`. **Backend complete and verified green (M0-M4).** Frontend + E2E + adapter-drop-ins remain (M5-M7).
 
 - ✅ **M0** branch, deps, ADR-007.
 - ✅ **M1** API hardening: problem-details, pitch bounds, rate limiting (slowapi, hermetic test reset), API-key writes + demo mode, OpenAPI error schema/security. *Review checkpoint 1 passed.*
@@ -23,7 +23,7 @@ Branch `feat/phase6-api-workbench`. **Backend complete and verified green (M0–
 
 **New deviations recorded since plan v1:** (1) charts hand-rolled SVG instead of visx (React-19 peer block); (2) global per-IP rate limit + stricter compute-POST bucket (concurrent-job cap is the JobQueue semaphore); (3) `idempotency_key` folds `n_sims` (a larger batch is a different result); (4) codegen run with `--default-non-nullable false` so defaulted request fields stay optional. All carried-forward 🔴/O-3 debt untouched; `ENGINE_VERSION` still `sim/0.4.0`.
 
-> **Deviation (recorded in ADR-007):** doc 07 names *visx* for charts, but visx 3.x peers cap at React 18 and the app is React 19 (hard `ERESOLVE`); no React-19-compatible visx release exists. Rather than loosen peer resolution repo-wide, the histogram / ECDF / KPI-CI-whisker — all simple — are hand-rolled as plain SVG in pitch-kit. This honors doc 07's stated intent ("custom SVG, React owns the DOM, not a charting template") and drops a blocked dependency.
+> **Deviation (recorded in ADR-007):** doc 07 names *visx* for charts, but visx 3.x peers cap at React 18 and the app is React 19 (hard `ERESOLVE`); no React-19-compatible visx release exists. Rather than loosen peer resolution repo-wide, the histogram / ECDF / KPI-CI-whisker - all simple - are hand-rolled as plain SVG in pitch-kit. This honors doc 07's stated intent ("custom SVG, React owns the DOM, not a charting template") and drops a blocked dependency.
 
 ---
 
@@ -44,11 +44,11 @@ Branch `feat/phase6-api-workbench`. **Backend complete and verified green (M0–
 - **No `ENGINE_VERSION` bump** (P6 is API/UI).
 - **Gates green before every commit:** `scripts/verify.ps1` (ruff, black, mypy --strict, pytest, next build, eslint, tsc, vitest, prettier). New Python deps → the right `pyproject.toml` + `uv.lock`; mypy overrides for untyped libs (P4/P5 pattern). New TS deps → the right `package.json`.
 - **No scraped ratings.** Real squads come only from `mart_players` / `mart_player_attributes` (provenance-tagged, StatsBomb-derived).
-- **Carried-forward debt is NOT absorbed:** fused Numba scenario kernel (🔴), engine `[knob]` calibration (🔴), and first-contact-only fidelity (O-3) remain FUTURE ENGINE work — out of Phase 6.
+- **Carried-forward debt is NOT absorbed:** fused Numba scenario kernel (🔴), engine `[knob]` calibration (🔴), and first-contact-only fidelity (O-3) remain FUTURE ENGINE work - out of Phase 6.
 
 ## Throughput reality (drives async design)
 
-Reference engine ≈ **3 sims/s** with xG wired. So 1k sims ≈ 5.5 min — synchronous requests would block and the E2E cannot run 1000 real sims in CI. Therefore: Monte Carlo runs as a **job**; the E2E journey runs a **reduced, deterministic budget** (`n_sims=24`, ≈ 8 s) while exercising the identical build→run→distributions→replay path. This is documented, not hidden; the workbench still offers the full bounded range for real use.
+Reference engine ≈ **3 sims/s** with xG wired. So 1k sims ≈ 5.5 min - synchronous requests would block and the E2E cannot run 1000 real sims in CI. Therefore: Monte Carlo runs as a **job**; the E2E journey runs a **reduced, deterministic budget** (`n_sims=24`, ≈ 8 s) while exercising the identical build→run→distributions→replay path. This is documented, not hidden; the workbench still offers the full bounded range for real use.
 
 ---
 
@@ -109,7 +109,7 @@ apps/frontend/README.md                             # frontend architecture
 
 ## Milestone map (each is an independently-shippable, verify-green slice)
 
-- **M0** Branch + deps + ADR-007 (design recorded before code — bootstrap rule).
+- **M0** Branch + deps + ADR-007 (design recorded before code - bootstrap rule).
 - **M1** API hardening: problem-details, bounds, rate limit, API keys, OpenAPI. *(no new infra)*
 - **M2** Persistence ports + real squads from marts (retire demo squads in the sim path).
 - **M3** Async jobs: JobQueue port, sim-runs endpoints, idempotency, progress, per-sim xG samples.
@@ -122,7 +122,7 @@ apps/frontend/README.md                             # frontend architecture
 
 ---
 
-## M0 — Branch, dependencies, ADR
+## M0 - Branch, dependencies, ADR
 
 ### Task 0.1: Create the phase branch
 
@@ -161,13 +161,13 @@ arq = ["arq>=0.26", "redis>=5.2"]
 
 **Files:** Create `docs/adr/ADR-007-api-workbench-and-persistence.md`; update `docs/adr/README.md` index and `docs/handoff/ADR_SUMMARY.md`.
 
-- [ ] **Step 1:** Write ADR-007 capturing: ports-and-adapters for persistence + jobs; file-first default vs Postgres/Arq drop-ins; RFC 9457 problem-details; scenario-hash idempotency; real squads from marts; OpenAPI codegen; reduced-budget E2E rationale; explicit non-goals (no kernel, no calibration, no multi-touch — carried forward). Status: Accepted (P6). `ENGINE_VERSION` unchanged.
+- [ ] **Step 1:** Write ADR-007 capturing: ports-and-adapters for persistence + jobs; file-first default vs Postgres/Arq drop-ins; RFC 9457 problem-details; scenario-hash idempotency; real squads from marts; OpenAPI codegen; reduced-budget E2E rationale; explicit non-goals (no kernel, no calibration, no multi-touch - carried forward). Status: Accepted (P6). `ENGINE_VERSION` unchanged.
 - [ ] **Step 2:** Add the ADR-007 row to both index tables.
 - [ ] **Step 3:** Commit: `docs(adr): ADR-007 API & Scenario Workbench architecture`.
 
 ---
 
-## M1 — API hardening (no new infrastructure)
+## M1 - API hardening (no new infrastructure)
 
 ### Task 1.1: RFC 9457 problem-details errors
 
@@ -197,7 +197,7 @@ def test_unknown_routine_is_problem_json():
     assert r.json()["status"] == 404
 ```
 - [ ] **Step 2:** Run `uv run pytest apps/backend/tests/test_errors.py -v` → FAIL (content-type is `application/json`).
-- [ ] **Step 3 (implement):** `errors.py` — handlers mapping `RequestValidationError`, `StarletteHTTPException`, and domain exceptions (`InvalidRoutine`, `InfeasibleAssignment`, `CalibrationGateFailure` if importable from `restart`) to a `ProblemDetail` model `{type,title,status,detail,instance,errors?}`, media type `application/problem+json`. Provide `install_error_handlers(app)`.
+- [ ] **Step 3 (implement):** `errors.py` - handlers mapping `RequestValidationError`, `StarletteHTTPException`, and domain exceptions (`InvalidRoutine`, `InfeasibleAssignment`, `CalibrationGateFailure` if importable from `restart`) to a `ProblemDetail` model `{type,title,status,detail,instance,errors?}`, media type `application/problem+json`. Provide `install_error_handlers(app)`.
 - [ ] **Step 4:** `main.py`: call `install_error_handlers(app)` in `create_app`.
 - [ ] **Step 5:** Run the test → PASS. Add `ProblemDetail` to `schemas.py` so it appears in OpenAPI.
 - [ ] **Step 6:** Commit: `feat(api): RFC 9457 problem-details error responses`.
@@ -206,7 +206,7 @@ def test_unknown_routine_is_problem_json():
 
 **Files:** Modify `schemas.py`; Test `apps/backend/tests/test_setpieces.py` (extend).
 
-- [ ] **Step 1 (test):** out-of-range `n_sims`, negative seed, and (new) any pitch-coordinate field outside `[0,105]×[0,68]` are rejected 422. (Coordinate bounds become relevant in scenarios — Task 3.x; add a shared `PitchPoint` validator now.)
+- [ ] **Step 1 (test):** out-of-range `n_sims`, negative seed, and (new) any pitch-coordinate field outside `[0,105]×[0,68]` are rejected 422. (Coordinate bounds become relevant in scenarios - Task 3.x; add a shared `PitchPoint` validator now.)
 - [ ] **Step 2:** Add `PitchPoint(BaseModel)` with `x: float = Field(ge=0, le=105)`, `y: float = Field(ge=0, le=68)`; reuse in scenario DTOs.
 - [ ] **Step 3:** Run tests → PASS. Commit: `feat(api): pitch-coordinate bounds + stricter request validation`.
 
@@ -225,7 +225,7 @@ def test_unknown_routine_is_problem_json():
 **Files:** Create `security.py`; Modify routers, `main.py`; Test `test_security.py`.
 
 - [ ] **Step 1 (test):** when `Settings(api_key=...)` is set, a write endpoint without `X-API-Key` → 401 problem-json; with the correct key → allowed. When `api_key` is unset (demo), bounded writes allowed; oversized `n_sims` still 422.
-- [ ] **Step 2:** `security.py`: `require_write_access(settings, x_api_key: str | None)` dependency — constant-time compare against `settings.api_key.get_secret_value()`; if unset → demo mode (allow, bounds enforced by schema). Raise 401 via problem-json otherwise.
+- [ ] **Step 2:** `security.py`: `require_write_access(settings, x_api_key: str | None)` dependency - constant-time compare against `settings.api_key.get_secret_value()`; if unset → demo mode (allow, bounds enforced by schema). Raise 401 via problem-json otherwise.
 - [ ] **Step 3:** Apply the dependency to write/compute routes (`montecarlo`, `simulate`, later `scenarios`, `sim-runs`).
 - [ ] **Step 4:** OpenAPI: declare an `ApiKeyHeader` security scheme so `/docs` shows it.
 - [ ] **Step 5:** Run test → PASS. Commit: `feat(api): API-key gate on writes with demo-mode bounded access`.
@@ -238,11 +238,11 @@ def test_unknown_routine_is_problem_json():
 - [ ] **Step 2:** Set FastAPI `responses` defaults (4xx/5xx → `ProblemDetail`), `servers`, tags.
 - [ ] **Step 3:** Run test → PASS. **Run `scripts/verify.ps1` → all green.** Commit: `feat(api): OpenAPI error schema, servers, security metadata`.
 
-> **REVIEW CHECKPOINT 1** — API hardening complete, no new infra, all gates green.
+> **REVIEW CHECKPOINT 1** - API hardening complete, no new infra, all gates green.
 
 ---
 
-## M2 — Persistence ports + real squads from marts
+## M2 - Persistence ports + real squads from marts
 
 ### Task 2.1: Squad loader (mart parquet → pure `restart.Team`)
 
@@ -276,7 +276,7 @@ def test_team_selection_is_deterministic():
 - [ ] **Step 2:** Run → FAIL (`MartSquadLoader` missing).
 - [ ] **Step 3 (implement):** `MartSquadLoader(marts_dir)`:
   - Read `mart_players.parquet` + `mart_player_attributes.parquet` via duckdb (already a dep) or pyarrow.
-  - Filter by `team` (StatsBomb team name) — or `country` for national teams; pick the column that matches the marts (verify with a quick `duckdb` describe at implement time).
+  - Filter by `team` (StatsBomb team name) - or `country` for national teams; pick the column that matches the marts (verify with a quick `duckdb` describe at implement time).
   - **Selection rule (deterministic XI):** group attribute rows per `player_id` into a `PlayerAttributes`; map `position_group` string → `PositionGroup` (assert all four map; raise on unknown). Choose 1 GK (most appearances; tie → lowest player_id) + 10 outfield by a fixed priority (DF/MF/FW quota 4/4/2; within group rank by `heading + delivery` desc, tie → player_id). Stable sort everywhere.
   - Build `Player(player_id=str(pid), display_name=name, position_group=..., attributes=...)`; assemble `Team(team_id=<slug>, name=<team>, players=tuple(...))`.
   - Clamp/validate via the existing `PlayerAttributes` bounds (loader passes through; mart values already clamped).
@@ -316,11 +316,11 @@ class SimRunRepository(Protocol):
 - [ ] **Step 3:** `teams.py`: `GET /teams`, `GET /players`. Wire `setpieces.py` to build the program from `TeamRepository.get(...)` instead of `demo_team(...)`. Keep the kicker/role-assignment logic; it already keys off `attributes.delivery` and `PositionGroup`.
 - [ ] **Step 4:** Run tests → PASS. **verify.ps1 green.** Commit: `feat(api): real squads in sim endpoints; /teams + /players (demo squads retired)`.
 
-> Demo squads remain only for unit tests of the core (licensing-safe synthetic fixtures) — they are no longer in the API runtime path.
+> Demo squads remain only for unit tests of the core (licensing-safe synthetic fixtures) - they are no longer in the API runtime path.
 
 ---
 
-## M3 — Async jobs, idempotency, progress
+## M3 - Async jobs, idempotency, progress
 
 ### Task 3.1: Scenario hash (idempotency key)
 
@@ -361,11 +361,11 @@ def test_scenario_hash_is_canonical_and_stable():
 - [ ] **Step 2:** Add `ScenarioCreate`, `ScenarioRecord`, `SimRunCreate`, `SimRunStatus`, `SimRunResult` DTOs (reusing `MonteCarloResponse` fields + `xg_samples`). Implement routers; gate writes with `require_write_access` + rate limit.
 - [ ] **Step 3:** Run → PASS. **verify.ps1 green.** Commit: `feat(api): async sim-runs + scenarios endpoints with idempotency + progress`.
 
-> **REVIEW CHECKPOINT 2** — full async API contract complete; demo→real squads; deterministic surfaced results.
+> **REVIEW CHECKPOINT 2** - full async API contract complete; demo→real squads; deterministic surfaced results.
 
 ---
 
-## M4 — shared-types OpenAPI codegen
+## M4 - shared-types OpenAPI codegen
 
 ### Task 4.1: Commit the OpenAPI document + generate types
 
@@ -388,7 +388,7 @@ def test_scenario_hash_is_canonical_and_stable():
 
 ---
 
-## M5 — pitch-kit package
+## M5 - pitch-kit package
 
 ### Task 5.1: Scaffold the workspace
 
@@ -416,7 +416,7 @@ def test_scenario_hash_is_canonical_and_stable():
 
 ---
 
-## M6 — Scenario Workbench
+## M6 - Scenario Workbench
 
 ### Task 6.1: Expand design tokens + API client
 
@@ -444,17 +444,17 @@ def test_scenario_hash_is_canonical_and_stable():
 - [ ] **Step 4 (Replay):** `ReplayPlayer` over `Pitch` using `simRunEvents(id, sample=replay)`; event-marked scrubber; sample picker (median/best/worst/random).
 - [ ] **Step 5:** Run vitest → PASS. **verify.ps1 green.** Commit: `feat(frontend): Scenario Workbench (Build/Simulate/Replay) on real endpoints`.
 
-> **REVIEW CHECKPOINT 3** — the product is usable by a non-author end to end (local).
+> **REVIEW CHECKPOINT 3** - the product is usable by a non-author end to end (local).
 
 ---
 
-## M7 — E2E, optional adapters, docs, PR
+## M7 - E2E, optional adapters, docs, PR
 
 ### Task 7.1: Playwright E2E of the 3-minute journey
 
 **Files:** Create `apps/frontend/playwright.config.ts`, `apps/frontend/tests/e2e/journey.spec.ts`; Modify CI to run it.
 
-- [ ] **Step 1 (test):** the journey — open a scenario → Build (pick squads/routine/scheme) → Simulate at the **reduced budget** (`n_sims=24`) → distributions render with CIs → switch to Replay → scrubber advances. Assert determinism banner shows `seed`/`n`.
+- [ ] **Step 1 (test):** the journey - open a scenario → Build (pick squads/routine/scheme) → Simulate at the **reduced budget** (`n_sims=24`) → distributions render with CIs → switch to Replay → scrubber advances. Assert determinism banner shows `seed`/`n`.
 - [ ] **Step 2:** `playwright.config.ts` boots the Next dev server + the backend (uvicorn, `RESTART_APP_ENV=test`, in-process queue) as `webServer`s; generous timeout for the ~8 s run.
 - [ ] **Step 3:** Run `npx playwright test` locally → PASS. Add a CI job (Playwright browsers cached). Commit: `test(e2e): Playwright 3-minute journey (reduced deterministic budget)`.
 
@@ -490,7 +490,7 @@ def test_scenario_hash_is_canonical_and_stable():
 
 ---
 
-## Self-review — spec coverage
+## Self-review - spec coverage
 
 | Roadmap / task deliverable | Covered by |
 |---|---|
@@ -517,4 +517,4 @@ def test_scenario_hash_is_canonical_and_stable():
 | `ENGINE_VERSION` unchanged | global constraint; no engine file touched |
 | Carried-forward debt NOT absorbed | 0.4 ADR + 7.4 tech-debt notes |
 
-**Open risks flagged for review:** (a) E2E uses `n_sims=24` not 1000 — documented throughput compromise; (b) squad-selection rule is a new registered assumption (priors may dominate — links to R9); (c) Postgres/Arq adapters are tested-but-CI-skipped without servers (the file-first decision's accepted trade-off).
+**Open risks flagged for review:** (a) E2E uses `n_sims=24` not 1000 - documented throughput compromise; (b) squad-selection rule is a new registered assumption (priors may dominate - links to R9); (c) Postgres/Arq adapters are tested-but-CI-skipped without servers (the file-first decision's accepted trade-off).
