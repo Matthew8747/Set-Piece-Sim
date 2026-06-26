@@ -19,9 +19,10 @@ packages/shared-types
 **/.mypy_cache
 .ruff_cache
 htmlcov
+# data/marts is intentionally NOT ignored: the small squad + xG marts (~2 MB)
+# are baked into the image so /scenarios works with no volume (simplest deploy).
 data/raw
 data/staging
-data/marts
 test-results
 playwright-report
 *.log

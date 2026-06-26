@@ -5,13 +5,13 @@
 # SQLite store. The frontend deploys separately to Vercel; Postgres (the scaled
 # path) is Neon. See the README "Deploying" section.
 #
-#   fly launch --no-deploy        # once, to create the app (edit the name below)
-#   fly volumes create restart_data --size 1 --region lhr
-#   fly secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
-#   fly deploy
+#   flyctl auth login                                  # one-time, interactive
+#   flyctl launch --no-deploy --copy-config --name restart-lab-api --region lhr
+#   flyctl secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
+#   flyctl deploy
 #
-# Default deploy is server-free (SQLite + in-process queue). To scale out, set
-# RESTART_DATABASE_URL (Neon) and RESTART_REDIS_URL (Upstash) as secrets.
+# Server-free by default (SQLite + in-process queue, marts baked into the image).
+# To scale out, set RESTART_DATABASE_URL (Neon) and RESTART_REDIS_URL (Upstash).
 
 app = "restart-lab-api"
 primary_region = "lhr"
@@ -40,12 +40,9 @@ primary_region = "lhr"
     method = "GET"
     path = "/healthz"
 
-# Persists the SQLite app store + the StatsBomb-derived marts (run the ETL, then
-# upload to the volume). The committed optimization_studies/ is baked into the
-# image, so /optimize works even with an empty volume.
-[mounts]
-  source = "restart_data"
-  destination = "/app/data"
+# No volume: the squad/xG marts and the committed study are baked into the image,
+# and the SQLite app store is ephemeral (a demo recreates the canonical scenario
+# on demand). Add a [mounts] volume at /app/data later if you want persistence.
 
 [[vm]]
   size = "shared-cpu-1x"
