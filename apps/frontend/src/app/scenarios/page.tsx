@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 
 // The canonical seed (doc 07: "empty states teach" - a new scenario opens
 // pre-loaded with a sensible routine vs zonal defense, not a blank pitch).
@@ -25,7 +25,9 @@ export default function ScenariosPage() {
     api
       .scenarios()
       .then(setScenarios)
-      .catch((e: unknown) => setError(String(e)));
+      // A network failure is already explained by the global status banner;
+      // don't repeat "Failed to fetch" here as if it were a page-level bug.
+      .catch((e: unknown) => setError(isNetworkError(e) ? null : String(e)));
   }, []);
 
   // Create the canonical scenario from the first catalog routine vs zonal scheme,
@@ -49,7 +51,9 @@ export default function ScenariosPage() {
       });
       router.push(`/scenarios/${created.scenario_id}`);
     } catch (e) {
-      setError(String(e));
+      setError(
+        isNetworkError(e) ? "The backend isn’t reachable — see the notice above." : String(e),
+      );
       setBusy(false);
     }
   }

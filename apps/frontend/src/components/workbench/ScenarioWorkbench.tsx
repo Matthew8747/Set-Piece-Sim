@@ -9,7 +9,7 @@ import type {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 
 import { BuildPanel } from "./BuildPanel";
 import { ComparePanel } from "./ComparePanel";
@@ -42,7 +42,11 @@ export function ScenarioWorkbench({ scenarioId }: { scenarioId: string }) {
         setSchemes(s);
         setTeams(t);
       })
-      .catch((e: unknown) => setError(String(e)));
+      .catch((e: unknown) =>
+        // Network failures are explained by the global status banner; don't
+        // double up with a raw error string here.
+        setError(isNetworkError(e) ? null : String(e)),
+      );
   }, [scenarioId]);
 
   // Keyboard: B/S/R switch modes (doc 07 §4). Ignore while typing in a field.

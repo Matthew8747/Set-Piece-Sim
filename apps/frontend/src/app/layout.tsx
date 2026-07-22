@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { ApiStatusBanner } from "@/components/shell/ApiStatusBanner";
 import { AppNav } from "@/components/shell/AppNav";
 import { PageTransition } from "@/components/shell/PageTransition";
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-screen flex-col md:flex-row">
           <AppNav />
           <main className="relative flex-1 overflow-x-hidden">
+            <ApiStatusBanner />
             <PageTransition>{children}</PageTransition>
           </main>
         </div>
