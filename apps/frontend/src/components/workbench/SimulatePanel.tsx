@@ -1,6 +1,12 @@
 "use client";
 
-import type { ProportionCI, SimRunResult, SimRunStatus } from "@restart/shared-types";
+import type {
+  ProportionCI,
+  ScenarioCreate,
+  ScenarioDTO,
+  SimRunResult,
+  SimRunStatus,
+} from "@restart/shared-types";
 import { Ecdf, Histogram, KpiCard } from "@restart/pitch-kit";
 import { useState } from "react";
 
@@ -10,6 +16,11 @@ import { DeterminismBanner } from "./DeterminismBanner";
 
 export interface SimulatePanelProps {
   scenarioId: string;
+  /**
+   * The loaded scenario. Its spec rides along on the run request so the backend
+   * can rebuild the scenario if its store lost it while this page was open.
+   */
+  scenario: ScenarioDTO;
   /** Lift the completed run so Replay can fetch its representative trajectories. */
   onComplete: (runId: string, result: SimRunResult) => void;
 }
@@ -31,7 +42,20 @@ const METRICS: { key: keyof SimRunResult; label: string; how: string }[] = [
   },
 ];
 
-export function SimulatePanel({ scenarioId, onComplete }: SimulatePanelProps) {
+/** The four catalog ids a scenario is made of, or null if any are missing. */
+function recoverySpec(scenario: ScenarioDTO): ScenarioCreate | null {
+  const { routine_id, scheme_id, attacking_team_id, defending_team_id } = scenario.spec;
+  if (!routine_id || !scheme_id || !attacking_team_id || !defending_team_id) return null;
+  return {
+    name: scenario.name,
+    routine_id,
+    scheme_id,
+    attacking_team_id,
+    defending_team_id,
+  };
+}
+
+export function SimulatePanel({ scenarioId, scenario, onComplete }: SimulatePanelProps) {
   const [nSims, setNSims] = useState(200);
   const [seed, setSeed] = useState(7);
   const [busy, setBusy] = useState(false);
@@ -49,6 +73,11 @@ export function SimulatePanel({ scenarioId, onComplete }: SimulatePanelProps) {
         scenario_id: scenarioId,
         n_sims: nSims,
         root_seed: seed,
+        // Recovery copy: lets the run survive the store having dropped this
+        // scenario since the page loaded (ephemeral host recycling). Sent only
+        // when complete - a partial spec would fail validation server-side and
+        // turn a recoverable 404 into a confusing 422.
+        ...(recoverySpec(scenario) ? { spec: recoverySpec(scenario) } : {}),
       });
       // An idempotency hit returns 200 + a completed run immediately; otherwise
       // poll the queued/running job to completion (ADR-007 d3/d4).

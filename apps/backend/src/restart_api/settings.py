@@ -64,7 +64,20 @@ class Settings(BaseSettings):
 
     @property
     def app_db_path(self) -> Path:
-        return self.data_dir / "restart_app.sqlite"
+        """Absolute path to the scenarios + sim-runs SQLite file.
+
+        A relative ``data_dir`` resolves against the repository root, not the
+        process CWD, matching how the marts and studies are located. Resolving
+        against CWD meant the same deployment silently used a different store
+        depending on where uvicorn was started from - and a scenario written to
+        one store 404s when read from the other.
+        """
+        data_dir = self.data_dir
+        if not data_dir.is_absolute():
+            from restart_api.deps import repo_root
+
+            data_dir = repo_root() / data_dir
+        return data_dir / "restart_app.sqlite"
 
 
 @lru_cache

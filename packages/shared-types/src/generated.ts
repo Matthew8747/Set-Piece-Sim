@@ -620,6 +620,7 @@ export interface components {
             root_seed?: number;
             /** Scenario Id */
             scenario_id: string;
+            spec?: components["schemas"]["ScenarioCreate"] | null;
         };
         /** SimRunResultDTO */
         SimRunResultDTO: {

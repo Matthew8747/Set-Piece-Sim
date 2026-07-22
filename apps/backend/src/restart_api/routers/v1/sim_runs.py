@@ -23,6 +23,7 @@ from restart_api.repositories.ports import (
     SimRunRecord,
     SimRunRepository,
 )
+from restart_api.routers.v1.scenarios import recreate_scenario
 from restart_api.schemas import SimRunCreate, SimRunResultDTO, SimRunStatusDTO, SimulateResponse
 from restart_api.security import require_write_access
 
@@ -61,6 +62,14 @@ async def create_sim_run(
     queue: JobQueue = Depends(job_queue),  # noqa: B008
 ) -> SimRunStatusDTO:
     scenario = scenarios.get(body.scenario_id)
+    if scenario is None and body.spec is not None:
+        # The store lost the scenario under a client that is still looking at it
+        # - an ephemeral host recycling between page load and Run. A scenario is
+        # only four catalog ids, all of which the client just sent, so rebuild it
+        # under the same id rather than dead-ending a valid request. The spec is
+        # validated against the catalog exactly like a normal create, so this is
+        # not a way to smuggle in an unvalidated scenario.
+        scenario = recreate_scenario(body.scenario_id, body.spec, scenarios)
     if scenario is None:
         raise HTTPException(status_code=404, detail=f"unknown scenario {body.scenario_id!r}")
 

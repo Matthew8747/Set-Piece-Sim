@@ -135,7 +135,11 @@ export function ScenarioWorkbench({ scenarioId }: { scenarioId: string }) {
       {mode === "simulate" && (
         // Stay on Simulate so the distributions render; the completed run is held
         // so Replay (press R) can pull its representative trajectories.
-        <SimulatePanel scenarioId={scenarioId} onComplete={(id) => setRunId(id)} />
+        <SimulatePanel
+          scenarioId={scenarioId}
+          scenario={scenario}
+          onComplete={(id) => setRunId(id)}
+        />
       )}
       {mode === "replay" && <ReplayPanel runId={runId} />}
       {mode === "compare" && <ComparePanel scenarioA={scenario} />}

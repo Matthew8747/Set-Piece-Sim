@@ -224,10 +224,42 @@ class SetPieceEngine:
         # receiver) contest the delivery; decoys and screens do not.
         att_icpt = np.where(att_contests_mask, att_icpt, -1)
 
+        # Defenders only engage a ball that comes to the space they are
+        # defending (G-15). A zonal defender who holds their zone is not a
+        # candidate for a ball 15 m away just because the kinematics say they
+        # could sprint to it - and letting all eleven contest turned the
+        # Gumbel-max into a headcount the attack could never win.
+        def_engages = self._defenders_engaging(program, def_icpt, ball_pos)
+        def_icpt = np.where(def_engages, def_icpt, -1)
+
         # --- 5. contest selection (G-6) + flight window ----------------------
         t_star, contestants = self._select_contest(att_icpt, def_icpt, ball_times)
         t_end = t_star if t_star is not None else float(ball_times[-1])
-        flight = self._sim_window(program, t_apex, 0.0, t_end, att_pos, att_vel, def_pos, def_vel)
+        # Once the ball is up, contesting agents go to the ball rather than
+        # finishing their scripted line (G-14). Without this the contest is
+        # decided from an interception plan nobody executes: measured, the
+        # nearest ATTACK_BALL runner stood 5.8-7.2 m from the ball at the
+        # contest instant, parked on their run target, and attackers took only
+        # 2-15% of first contacts.
+        att_pursue = self._pursuit_points(att_icpt, att_contests_mask, ball_pos)
+        # Same mask the contest uses, so what the replay shows and what the
+        # contest scores are the same thing - a defender who holds their zone
+        # must not appear in the contest, and vice versa.
+        def_pursue = self._pursuit_points(def_icpt, def_engages, ball_pos)
+        flight = self._sim_window(
+            program,
+            t_apex,
+            0.0,
+            t_end,
+            att_pos,
+            att_vel,
+            def_pos,
+            def_vel,
+            att_pursue=att_pursue,
+            def_pursue=def_pursue,
+            att_pursue_from=att_ready,
+            def_pursue_from=def_react,
+        )
         track_times = np.concatenate([pre_times, flight[0]])
         att_tracks = np.concatenate([pre_att, flight[1]])
         def_tracks = np.concatenate([pre_def, flight[2]])
@@ -348,6 +380,7 @@ class SetPieceEngine:
             cfg.elev_max_deg,
             cfg.max_delivery_speed_ms,
             cfg.aim_tolerance_m,
+            cfg.contact_height_m,
             self._phys,
         )
 
@@ -370,6 +403,60 @@ class SetPieceEngine:
         )
         spin = np.array([0.0, 0.0, program.spin_sign * program.delivery_spin_rps * 2.0 * math.pi])
         return BallState(position=kick, velocity=vel, spin=spin)
+
+    def _defenders_engaging(
+        self, program: SimProgram, def_icpt: np.ndarray, ball_pos: FloatArray
+    ) -> np.ndarray:
+        """Which defenders leave their post to attack the delivery (G-15).
+
+        A defender engages when the ball's arrival point falls within
+        ``def_engage_radius_m`` of the position they are responsible for - their
+        zonal point, or the goal-side shadow of the attacker they mark. The
+        keeper gets the larger ``gk_engage_radius_m``, because coming for a cross
+        is the keeper's job.
+
+        Defenders with no feasible interception are excluded regardless: a
+        defender who cannot reach the ball does not contest it.
+        """
+        cfg = self._cfg
+        nd = program.n_defenders
+        landing = np.asarray(ball_pos[-1, :2])
+        out = np.zeros(nd, dtype=bool)
+        for j in range(nd):
+            k = int(def_icpt[j])
+            if k < 0:
+                continue
+            arrival = np.asarray(ball_pos[k, :2]) if k >= 0 else landing
+            post = np.asarray(program.def_start[j])
+            radius = cfg.gk_engage_radius_m if j == program.gk_index else cfg.def_engage_radius_m
+            out[j] = bool(np.linalg.norm(arrival - post) <= radius)
+        return out
+
+    @staticmethod
+    def _pursuit_points(
+        icpt: np.ndarray, contesting: np.ndarray, ball_pos: FloatArray
+    ) -> FloatArray:
+        """Where each agent should run once the ball is in the air (G-14).
+
+        An agent with a feasible interception heads for that point. An agent who
+        is contesting but cannot make any sample still goes for the ball - a
+        striker who is losing the race runs to where it is coming down, they do
+        not stop on a scripted mark - so they take the delivery's landing point
+        (the last flight sample, i.e. first ground contact).
+
+        Non-contesting roles (decoys, screens, second-ball collectors) get NaN
+        and keep running their scripted routine, which is the whole point of
+        those roles.
+        """
+        n = icpt.shape[0]
+        out = np.full((n, 2), np.nan)
+        landing = np.asarray(ball_pos[-1, :2])
+        for i in range(n):
+            if not bool(contesting[i]):
+                continue
+            k = int(icpt[i])
+            out[i] = ball_pos[k, :2] if k >= 0 else landing
+        return out
 
     def _select_contest(
         self,
@@ -436,10 +523,22 @@ class SetPieceEngine:
         att_vel: FloatArray,
         def_pos: FloatArray,
         def_vel: FloatArray,
+        *,
+        att_pursue: FloatArray | None = None,
+        def_pursue: FloatArray | None = None,
+        att_pursue_from: FloatArray | None = None,
+        def_pursue_from: FloatArray | None = None,
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
         """Tick both teams over [t_from, t_to]; returns (times, att_tracks,
         def_tracks, att_pos, att_vel, def_pos, def_vel) - state passes through
-        so windows chain (pre-kick, then flight)."""
+        so windows chain (pre-kick, then flight).
+
+        ``*_pursue`` (n, 2) gives each agent a ball-pursuit point that overrides
+        their scripted target once ``t >= *_pursue_from[i]`` (their reaction
+        instant); NaN rows keep the scripted run. Passed only for the flight
+        window - during the pre-kick window the routine is still developing and
+        nobody has a ball to chase.
+        """
         cfg, ag = self._cfg, self._agents
         dt = cfg.agent_dt_s
         na, nd = program.n_attackers, program.n_defenders
@@ -499,6 +598,18 @@ class SetPieceEngine:
                 to_goal = _GOAL_CENTER - att_pos[m]
                 n = float(np.linalg.norm(to_goal))
                 def_targets[j] = att_pos[m] + (to_goal / max(n, 1e-9)) * 0.7
+
+            # Ball pursuit overrides the scripted target once the agent has
+            # reacted (G-14): contesting agents attack the delivery instead of
+            # running out their choreography while it sails past.
+            if att_pursue is not None and att_pursue_from is not None:
+                for i in range(na):
+                    if t >= att_pursue_from[i] and not np.isnan(att_pursue[i, 0]):
+                        att_targets[i] = att_pursue[i]
+            if def_pursue is not None and def_pursue_from is not None:
+                for j in range(nd):
+                    if t >= def_pursue_from[j] and not np.isnan(def_pursue[j, 0]):
+                        def_targets[j] = def_pursue[j]
 
             att_pos, att_vel = _kernels.step_agents_kernel(
                 att_pos,
