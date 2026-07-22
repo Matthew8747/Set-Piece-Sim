@@ -16,4 +16,4 @@ __version__ = "0.4.0"
 #: 7 attackers with off-ball roles and the optimizer can build basic free kicks,
 #: so a given routine's simulated context - and therefore its results - changes.
 #: (Phase 4 set sim/0.4.0: real-data xG scoring via an injected XGScorer, G-14.)
-ENGINE_VERSION = "sim/0.6.0"
+ENGINE_VERSION = "sim/0.7.0"

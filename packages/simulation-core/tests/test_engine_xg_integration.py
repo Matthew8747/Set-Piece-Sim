@@ -9,7 +9,7 @@ from restart.players.demo import demo_team
 from restart.players.player import PositionGroup
 from restart.simulation.events import SetPieceOutcome, ShotEvent
 from restart.tactics.compile import Scenario, SimProgram, compile_scenario
-from restart.tactics.library import all_corner_routines, all_schemes
+from restart.tactics.library import all_schemes, decoy_overload
 from restart.tactics.routine import RoutineSpec
 from restart.tactics.scheme import DefensiveScheme
 
@@ -50,7 +50,11 @@ def _program(routine: RoutineSpec, scheme: DefensiveScheme) -> SimProgram:
     )
 
 
-PROGRAM = _program(all_corner_routines()[0], all_schemes()[0])
+# decoy_overload against zonal reliably produces shots: it pulls markers to the
+# near post and sends a runner into space, so the contest is winnable. The old
+# near-post inswinger is now legitimately low-yield (aimed onto a guard, G-18),
+# which is a poor fixture for a test about shot -> xG plumbing.
+PROGRAM = _program(decoy_overload(), all_schemes()[0])
 
 
 def _shot_seeds(engine: SetPieceEngine, n: int = 60) -> list[int]:

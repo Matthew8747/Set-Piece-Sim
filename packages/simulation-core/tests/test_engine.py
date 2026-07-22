@@ -118,14 +118,18 @@ class TestOutcomePlausibility:
         assert contested / n > 0.5  # most deliveries get contested
 
     def test_shot_event_features_sane(self) -> None:
-        program = build_program(all_corner_routines()[0], all_schemes()[0])
+        # Swept across every routine, not one matchup: since executed position
+        # feeds the contest (G-18), a delivery aimed onto a stationary near-post
+        # guard is legitimately low-yield, so this asserts shot *mechanics* over
+        # the routines that do create chances, not that a specific one does.
         shots = [
             e
+            for routine in all_corner_routines()
             for seed in range(40)
-            for e in ENGINE.run(program, seed).events
+            for e in ENGINE.run(build_program(routine, all_schemes()[0]), seed).events
             if isinstance(e, ShotEvent)
         ]
-        assert shots, "40 corners must produce at least one shot"
+        assert shots, "the corner library must produce at least one shot"
         for s in shots:
             assert 0.0 < s.distance_m < 40.0
             assert 0.0 < s.angle_rad < np.pi

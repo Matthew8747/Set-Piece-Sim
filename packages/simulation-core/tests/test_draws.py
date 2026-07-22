@@ -24,8 +24,28 @@ class TestStructure:
         assert d.jitter.shape == (na + nd,)
         assert d.contest.shape == (na + nd,)
         assert d.shot_perturb.shape == (2,)
+        assert d.agent_speed.shape == (na + nd,)
+        assert d.agent_read.shape == (na + nd,)
+        assert d.agent_mark.shape == (na + nd, 2)
         for scalar in (d.shot_aim_y, d.shot_aim_z, d.shot_final, d.second_ball):
             assert isinstance(scalar, float)
+
+    def test_adding_agent_category_left_earlier_draws_untouched(self) -> None:
+        """SeedSequence.spawn is append-only: the G-16/G-17 agent sub-stream was
+        added last, so every earlier category is byte-identical to a 5-category
+        plan. This reconstructs the first five children directly and checks the
+        engine's draws match - i.e. the re-baseline is a pure superset."""
+        na, nd = 7, 11
+        n = na + nd
+        d = draw_sim(seed=2024, n_attackers=na, n_defenders=nd)
+        children = np.random.SeedSequence(2024).spawn(5)  # the pre-agent plan
+
+        def gen(c: np.random.SeedSequence) -> np.random.Generator:
+            return np.random.Generator(np.random.Philox(c))
+
+        np.testing.assert_array_equal(d.delivery, gen(children[0]).standard_normal(2))
+        np.testing.assert_array_equal(d.jitter, gen(children[1]).uniform(-1.0, 1.0, n))
+        np.testing.assert_array_equal(d.contest, gen(children[2]).gumbel(0.0, 1.0, n))
 
     def test_arrays_are_float64_readonly(self) -> None:
         d = draw_sim(seed=1, n_attackers=4, n_defenders=6)
