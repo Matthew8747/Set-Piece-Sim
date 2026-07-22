@@ -31,8 +31,11 @@ import numpy as np
 from restart.domain.vectors import FloatArray
 
 # Category sub-stream indices (order is the public draw-plan contract).
-_DELIVERY, _JITTER, _CONTEST, _SHOT, _SECOND = range(5)
-_N_CATEGORIES = 5
+# _AGENT is appended last on purpose: SeedSequence.spawn is append-only, so
+# adding it leaves the draws of every earlier category byte-identical (the
+# re-baseline is a pure superset, not a reshuffle).
+_DELIVERY, _JITTER, _CONTEST, _SHOT, _SECOND, _AGENT = range(6)
+_N_CATEGORIES = 6
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -50,6 +53,9 @@ class SimDraws:
     shot_perturb : (2,)      standard normal - header/volley direction perturbation
     shot_final   : scalar    U(0, 1)         - xG Bernoulli (xG path) OR GK save (placeholder path)
     second_ball  : scalar    U(0, 1)         - near-tie jitter for the loose-ball race
+    agent_speed  : (na+nd,)  standard normal - per-agent pace variation this rep (G-16)
+    agent_read   : (na+nd,)  standard normal - per-agent flight-misjudgment magnitude (G-16)
+    agent_mark   : (na+nd,2) standard normal - per-agent marking positional error (G-17)
     """
 
     delivery: FloatArray
@@ -60,6 +66,9 @@ class SimDraws:
     shot_perturb: FloatArray
     shot_final: float
     second_ball: float
+    agent_speed: FloatArray
+    agent_read: FloatArray
+    agent_mark: FloatArray
 
 
 def _ro(arr: FloatArray) -> FloatArray:
@@ -90,6 +99,7 @@ def draw_sim(seed: int, n_attackers: int, n_defenders: int) -> SimDraws:
     g_con = _gen(children[_CONTEST])
     g_shot = _gen(children[_SHOT])
     g_sec = _gen(children[_SECOND])
+    g_agent = _gen(children[_AGENT])
 
     delivery = g_del.standard_normal(2)
     jitter = g_jit.uniform(-1.0, 1.0, n)
@@ -100,6 +110,10 @@ def draw_sim(seed: int, n_attackers: int, n_defenders: int) -> SimDraws:
     shot_perturb = g_shot.standard_normal(2)
     shot_final = float(g_shot.uniform(0.0, 1.0))
     second_ball = float(g_sec.uniform(0.0, 1.0))
+    # Fixed draw order within the agent sub-stream is part of the contract.
+    agent_speed = g_agent.standard_normal(n)
+    agent_read = g_agent.standard_normal(n)
+    agent_mark = g_agent.standard_normal((n, 2))
 
     return SimDraws(
         delivery=_ro(np.ascontiguousarray(delivery, dtype=np.float64)),
@@ -110,4 +124,7 @@ def draw_sim(seed: int, n_attackers: int, n_defenders: int) -> SimDraws:
         shot_perturb=_ro(np.ascontiguousarray(shot_perturb, dtype=np.float64)),
         shot_final=shot_final,
         second_ball=second_ball,
+        agent_speed=_ro(np.ascontiguousarray(agent_speed, dtype=np.float64)),
+        agent_read=_ro(np.ascontiguousarray(agent_read, dtype=np.float64)),
+        agent_mark=_ro(np.ascontiguousarray(agent_mark, dtype=np.float64)),
     )

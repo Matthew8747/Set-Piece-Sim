@@ -20,7 +20,7 @@ def test_idempotency_key_folds_seed_and_engine_version() -> None:
     k = idempotency_key(spec, seed=7, engine_version="sim/0.4.0")
     assert k == idempotency_key(spec, seed=7, engine_version="sim/0.4.0")
     assert k != idempotency_key(spec, seed=8, engine_version="sim/0.4.0")
-    assert k != idempotency_key(spec, seed=7, engine_version="sim/0.6.0")
+    assert k != idempotency_key(spec, seed=7, engine_version="sim/0.7.0")
     assert len(k) == 64
 
 

@@ -178,6 +178,44 @@ class SetPieceEngine:
             1.0 + frac * draws.jitter[na : na + nd]
         )
 
+        # Per-agent execution + perception noise (G-16). Pace varies per rep, so
+        # effective top speed is scaled by (1 + sigma*z); flight misjudgment adds
+        # an always-positive readiness delay scaled by (1-awareness)*|z|. Both
+        # come from the externalized agent sub-stream, so determinism holds and
+        # two identical players stop moving in lockstep.
+        sig = cfg.move_speed_sigma
+        att_speed = program.att_attr[:, Attr.TOP_SPEED] * np.clip(
+            1.0 + sig * draws.agent_speed[:na], 0.5, 1.5
+        )
+        def_speed = program.def_attr[:, Attr.TOP_SPEED] * np.clip(
+            1.0 + sig * draws.agent_speed[na : na + nd], 0.5, 1.5
+        )
+        att_read_delay = (
+            cfg.read_time_s
+            * (1.0 - program.att_attr[:, Attr.AWARENESS_OFF])
+            * np.abs(draws.agent_read[:na])
+        )
+        def_read_delay = (
+            cfg.read_time_s
+            * (1.0 - program.def_attr[:, Attr.AWARENESS_DEF])
+            * np.abs(draws.agent_read[na : na + nd])
+        )
+
+        # Per-marker positional slack (G-17): a fixed per-rep offset off the ideal
+        # goal-side spot, scaled by (1 - marking) so good markers stay tight. Used
+        # by both windows, so the marker is imperfect as the run develops and once
+        # the ball is up.
+        mark_offset = np.zeros((nd, 2))
+        for j in range(nd):
+            m = int(program.def_mark_target[j])
+            if m >= 0:
+                mark_offset[j] = (
+                    cfg.mark_error_m
+                    * (1.0 - float(program.def_attr[j, Attr.MARKING]))
+                    * draws.agent_mark[na + j]
+                )
+        mark_lag_ticks = round(cfg.mark_lag_s / cfg.agent_dt_s)
+
         # --- 3. pre-kick window: runs develop before the ball moves ---------
         att_pos = program.att_start.copy()
         att_vel = np.zeros_like(att_pos)
@@ -192,18 +230,25 @@ class SetPieceEngine:
             att_vel,
             def_pos,
             def_vel,
+            att_speed,
+            def_speed,
+            mark_offset=mark_offset,
+            mark_lag_ticks=mark_lag_ticks,
         )
         pre_times, pre_att, pre_def, att_pos, att_vel, def_pos, def_vel = pre
 
         # --- 4. interception plans from kick-instant states (G-13) ----------
         # Scripted ball-attackers pre-committed to their runs: no reaction
         # latency gates their plan. Reaction gates agents *reading* the flight.
+        # Scripted ball-attackers have no reaction latency on their run, but they
+        # can still misjudge the flight, so the read delay applies to everyone.
         att_contests_mask = np.isin(np.asarray(program.att_intent), _FIRST_CONTACT_CODES)
-        att_ready = np.where(att_contests_mask, 0.0, att_react)
+        att_ready = np.where(att_contests_mask, 0.0, att_react) + att_read_delay
+        def_ready = def_react + def_read_delay
         att_icpt = earliest_interception(
             att_pos,
             att_vel,
-            program.att_attr[:, Attr.TOP_SPEED],
+            att_speed,
             program.att_attr[:, Attr.ACCEL],
             program.att_attr[:, Attr.JUMP_REACH],
             att_ready,
@@ -213,10 +258,10 @@ class SetPieceEngine:
         def_icpt = earliest_interception(
             def_pos,
             def_vel,
-            program.def_attr[:, Attr.TOP_SPEED],
+            def_speed,
             program.def_attr[:, Attr.ACCEL],
             program.def_attr[:, Attr.JUMP_REACH],
-            def_react,
+            def_ready,
             ball_times,
             ball_pos,
         )
@@ -255,10 +300,14 @@ class SetPieceEngine:
             att_vel,
             def_pos,
             def_vel,
+            att_speed,
+            def_speed,
             att_pursue=att_pursue,
             def_pursue=def_pursue,
             att_pursue_from=att_ready,
-            def_pursue_from=def_react,
+            def_pursue_from=def_ready,
+            mark_offset=mark_offset,
+            mark_lag_ticks=mark_lag_ticks,
         )
         track_times = np.concatenate([pre_times, flight[0]])
         att_tracks = np.concatenate([pre_att, flight[1]])
@@ -270,8 +319,16 @@ class SetPieceEngine:
             )
 
         # --- 6. contest winner (Gumbel-max; fixed contestant order) ---------
+        # Agent positions at the contest instant feed the duel (G-18): being
+        # first to the ball is most of winning it. This is what couples movement,
+        # pace noise, flight-reading and marking to the outcome - without it the
+        # contest was pure attributes + planned arrival, and a defender who
+        # executed 3 m from the ball could still win the header.
+        ti_star = min(int(np.searchsorted(track_times, t_star)), len(track_times) - 1)
+        att_at_star = att_tracks[ti_star]
+        def_at_star = def_tracks[ti_star]
         winner_team, winner_idx = self._contest_winner(
-            program, contestants, ball_times, ball_pos, t_star, draws
+            program, contestants, ball_times, ball_pos, t_star, draws, att_at_star, def_at_star
         )
         ball_at = self._ball_state_at(delivery, t_star)
         contact_h = float(ball_at.position[2])
@@ -487,10 +544,13 @@ class SetPieceEngine:
         ball_pos: FloatArray,
         t_star: float,
         draws: SimDraws,
+        att_at_star: FloatArray,
+        def_at_star: FloatArray,
     ) -> tuple[str, int]:
         cfg = self._cfg
         na = program.n_attackers
         k = int(np.searchsorted(ball_times, t_star))
+        ball_xy = np.asarray(ball_pos[min(k, len(ball_pos) - 1), :2])
         ball_z = float(ball_pos[min(k, len(ball_pos) - 1), 2])
         best_score, best = -np.inf, contestants[0]
         # Externalized draws (ADR-011): each potential contestant has a fixed
@@ -499,11 +559,17 @@ class SetPieceEngine:
         for team, idx, t_arr in contestants:
             attr = program.att_attr[idx] if team == _ATTACK else program.def_attr[idx]
             gumbel = draws.contest[idx] if team == _ATTACK else draws.contest[na + idx]
+            agent_xy = att_at_star[idx] if team == _ATTACK else def_at_star[idx]
+            # How far the agent actually is from the ball at the contest instant
+            # (G-18): the executed position, so pace/reading/marking noise decide
+            # the duel, not just attributes.
+            gap = float(np.hypot(agent_xy[0] - ball_xy[0], agent_xy[1] - ball_xy[1]))
             reach_margin = float(attr[Attr.JUMP_REACH]) - ball_z
             slack = (t_star + cfg.contest_window_s) - t_arr
             score = (
                 cfg.w_reach * reach_margin
                 + cfg.w_time * slack
+                - cfg.w_gap * gap
                 + cfg.w_strength * float(attr[Attr.STRENGTH])
                 + cfg.w_heading * float(attr[Attr.HEADING])
                 + (cfg.gk_claim_bonus if (team == _DEFENSE and idx == program.gk_index) else 0.0)
@@ -523,21 +589,31 @@ class SetPieceEngine:
         att_vel: FloatArray,
         def_pos: FloatArray,
         def_vel: FloatArray,
+        att_speed: FloatArray,
+        def_speed: FloatArray,
         *,
         att_pursue: FloatArray | None = None,
         def_pursue: FloatArray | None = None,
         att_pursue_from: FloatArray | None = None,
         def_pursue_from: FloatArray | None = None,
+        mark_offset: FloatArray | None = None,
+        mark_lag_ticks: int = 0,
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
         """Tick both teams over [t_from, t_to]; returns (times, att_tracks,
         def_tracks, att_pos, att_vel, def_pos, def_vel) - state passes through
         so windows chain (pre-kick, then flight).
 
+        ``att_speed``/``def_speed`` (n,) are the effective top speeds for this rep
+        (base attribute times the G-16 pace draw), used in place of the raw
+        attribute so identical players do not move in lockstep.
+
         ``*_pursue`` (n, 2) gives each agent a ball-pursuit point that overrides
         their scripted target once ``t >= *_pursue_from[i]`` (their reaction
-        instant); NaN rows keep the scripted run. Passed only for the flight
-        window - during the pre-kick window the routine is still developing and
-        nobody has a ball to chase.
+        instant); NaN rows keep the scripted run.
+
+        ``mark_offset`` (nd, 2) is a fixed per-marker positional error, and
+        ``mark_lag_ticks`` makes a marker chase where their man *was* that many
+        ticks ago (G-17) - so a change of direction beats them.
         """
         cfg, ag = self._cfg, self._agents
         dt = cfg.agent_dt_s
@@ -552,15 +628,16 @@ class SetPieceEngine:
         def_pos = np.array(def_pos, dtype=np.float64, order="C")
         def_vel = np.array(def_vel, dtype=np.float64, order="C")
 
-        # Attribute columns are strided views into the (n, N_ATTR) matrix; the
-        # njit kernels want contiguous float64, and hoisting the copies out of
-        # the tick loop keeps this off the per-tick path.
-        att_top = np.ascontiguousarray(program.att_attr[:, Attr.TOP_SPEED])
+        # Effective per-rep top speed (G-16) replaces the raw attribute; accel and
+        # agility stay as attributes. Contiguous float64 for the njit kernel.
+        att_top = np.ascontiguousarray(att_speed, dtype=np.float64)
         att_acc = np.ascontiguousarray(program.att_attr[:, Attr.ACCEL])
         att_agi = np.ascontiguousarray(program.att_attr[:, Attr.AGILITY])
-        def_top = np.ascontiguousarray(program.def_attr[:, Attr.TOP_SPEED])
+        def_top = np.ascontiguousarray(def_speed, dtype=np.float64)
         def_acc = np.ascontiguousarray(program.def_attr[:, Attr.ACCEL])
         def_agi = np.ascontiguousarray(program.def_attr[:, Attr.AGILITY])
+        if mark_offset is None:
+            mark_offset = np.zeros((nd, 2))
 
         trig_time = {_TRIG_KICK_APPROACH: cfg.trigger_kick_approach_s, _TRIG_KICK: 0.0}
         times = np.arange(t_from, t_to + 1e-9, dt)
@@ -584,20 +661,28 @@ class SetPieceEngine:
         att_targets = np.empty((na, 2))
         def_targets = np.empty((nd, 2))
         both = np.empty((na + nd, 2))
+        # Attacker-position history for marker reaction lag (G-17): the marker
+        # chases where their man was, not where they are now.
+        att_history: list[FloatArray] = []
 
         for ti, t in enumerate(times):
+            att_history.append(att_pos.copy())
+            lagged_att = att_history[max(0, ti - mark_lag_ticks)]
+
             # Attacker targets: latest triggered run leg, else start/hold.
             att_targets[:] = program.att_start
             for i in range(na):
                 for leg in range(int(program.att_n_legs[i])):
                     if t >= leg_trig[i, leg]:
                         att_targets[i] = program.att_legs_to[i, leg]
-            # Defender targets: marker -> goal-side of mark; zonal -> start.
+            # Defender targets: marker -> goal-side of the man's lagged position,
+            # plus a fixed positional error; zonal -> start.
             def_targets[:] = program.def_start
             for j, m in zip(marker_js, marker_targets, strict=True):
-                to_goal = _GOAL_CENTER - att_pos[m]
+                man = lagged_att[m]
+                to_goal = _GOAL_CENTER - man
                 n = float(np.linalg.norm(to_goal))
-                def_targets[j] = att_pos[m] + (to_goal / max(n, 1e-9)) * 0.7
+                def_targets[j] = man + (to_goal / max(n, 1e-9)) * 0.7 + mark_offset[j]
 
             # Ball pursuit overrides the scripted target once the agent has
             # reacted (G-14): contesting agents attack the delivery instead of

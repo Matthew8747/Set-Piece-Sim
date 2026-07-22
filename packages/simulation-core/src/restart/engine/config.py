@@ -63,6 +63,11 @@ class EngineConfig(BaseModel):
     contest_window_s: float = Field(default=0.20, ge=0.01, le=0.5)
     w_reach: float = Field(default=1.5, ge=0.0, le=10.0)  # per meter of reach margin
     w_time: float = Field(default=2.0, ge=0.0, le=10.0)  # per second of arrival slack
+    # Per meter the agent's executed position is from the ball at the contest
+    # instant (G-18). This is the seam through which the whole movement model -
+    # pace noise, flight-reading, marking - reaches the outcome: get there or
+    # lose the duel. 0 recovers the old attribute-only contest.
+    w_gap: float = Field(default=0.7, ge=0.0, le=10.0)
     w_strength: float = Field(default=0.8, ge=0.0, le=5.0)
     w_heading: float = Field(default=0.8, ge=0.0, le=5.0)
     gk_claim_bonus: float = Field(default=0.6, ge=0.0, le=5.0)
@@ -86,3 +91,25 @@ class EngineConfig(BaseModel):
 
     # --- second ball (G-10) ---
     second_ball_radius_m: float = Field(default=4.0, ge=1.0, le=10.0)
+
+    # --- agent execution + perception noise (G-16) ---
+    # Two agents with identical attributes used to run byte-identical paths every
+    # seed, which made routines read as scripted. These break that symmetry
+    # through the externalized draw plan (ADR-011), so determinism holds.
+    #
+    # Per-rep pace variation: effective top speed *= (1 + sigma * z). A player is
+    # not metronomic - the same run is a touch quicker or slower each time.
+    move_speed_sigma: float = Field(default=0.06, ge=0.0, le=0.3)
+    # Flight misjudgment as a readiness delay: an agent who misreads the cross
+    # commits late. Always a delay (perfect reading is the best case, never
+    # better), scaled by (1 - awareness) * |z|, capped by this many seconds.
+    read_time_s: float = Field(default=0.30, ge=0.0, le=1.0)
+
+    # --- imperfect marking (G-17) ---
+    # A marker does not track their man with zero latency or pixel precision.
+    # Reaction lag: the marker chases where the attacker *was* this long ago, so
+    # a sharp change of direction beats them.
+    mark_lag_s: float = Field(default=0.18, ge=0.0, le=0.6)
+    # Positional slack: a fixed per-rep offset off the ideal goal-side position,
+    # scaled by (1 - marking) so good markers stay tighter.
+    mark_error_m: float = Field(default=1.1, ge=0.0, le=4.0)
