@@ -21,6 +21,18 @@ const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 // mode it is unset and bounded writes are allowed (ADR-007 d5).
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
+export const API_BASE_URL = BASE;
+
+/**
+ * A failed `fetch` (DNS, connection refused, CORS, TLS) rejects with a
+ * TypeError, distinct from an HTTP error the server actually returned. The
+ * status banner uses this to tell "the backend isn't reachable" (asleep / not
+ * deployed) apart from "the backend answered with an error".
+ */
+export function isNetworkError(e: unknown): boolean {
+  return e instanceof TypeError;
+}
+
 /** Surface RFC 9457 problem-details as a readable error (ADR-007 d5). */
 async function fail(res: Response, method: string, path: string): Promise<never> {
   let detail = `${res.status}`;
@@ -54,6 +66,25 @@ async function post<T>(path: string, body: unknown, write = false): Promise<T> {
 const TERMINAL = new Set(["complete", "failed"]);
 
 export const api = {
+  /**
+   * Liveness probe for the status banner. Resolves true when the backend
+   * answers, false on any network failure or non-200. `timeoutMs` bounds a
+   * cold-start wait so a sleeping Fly machine doesn't hang the check forever;
+   * the banner distinguishes "still waking" from "unreachable".
+   */
+  async health(timeoutMs = 6000): Promise<boolean> {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${BASE}/healthz`, { signal: ctl.signal });
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
   // Set-piece catalog + one-shot simulation (Phase 3 surface).
   routines: () => get<RoutineSummary[]>("/api/v1/setpieces/routines"),
   schemes: () => get<SchemeSummary[]>("/api/v1/setpieces/schemes"),

@@ -4,7 +4,7 @@ import type { OptimizationSummary } from "@restart/shared-types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 
 // Studies library (doc 07 IA): convergence/parallel-coords live on the detail
 // page; here we list the persisted studies with the honest headline - a "beats
@@ -21,7 +21,11 @@ export default function OptimizePage() {
     api
       .optimizations()
       .then(setStudies)
-      .catch((e: unknown) => setError(String(e)));
+      .catch((e: unknown) =>
+        // A network failure is covered by the global status banner; showing the
+        // raw "Failed to fetch" here as well would just read as a second bug.
+        setError(isNetworkError(e) ? null : String(e)),
+      );
   }, []);
 
   const empty = studies !== null && studies.length === 0;
