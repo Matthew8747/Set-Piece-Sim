@@ -88,7 +88,15 @@ async def create_sim_run(
     return _to_status(run)
 
 
+# Exempt from the global read bucket: the client polls this endpoint every
+# 400 ms while a run is in flight (ADR-007 d4), which on its own is 150 req/min -
+# above the 120/min default read limit. Counting a cheap job-record read that is
+# *designed* to be called in a tight loop against the same budget as catalog
+# reads made every run longer than ~48 s self-inflict a 429 mid-poll (and a
+# second browser tab break the first). Compute is still gated at POST
+# (write_limit) and the job-concurrency cap, so this read needs no bucket.
 @router.get("/{run_id}", response_model=SimRunStatusDTO)
+@limiter.exempt  # type: ignore[untyped-decorator]  # slowapi's exempt is untyped
 def get_sim_run(
     run_id: str,
     runs: SimRunRepository = Depends(sim_run_repo),  # noqa: B008

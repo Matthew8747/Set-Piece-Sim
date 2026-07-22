@@ -164,10 +164,205 @@ def _flight_batch(
     return landing_y, landing_t, apex, landed
 
 
+def _aim_probe(
+    y0: FloatArray,
+    dt: float,
+    n_steps: int,
+    ground_z: float,
+    half_len: float,
+    half_wid: float,
+    g: float,
+    k_aero: float,
+    cd_sub: float,
+    cd_super: float,
+    v_crit: float,
+    width: float,
+    r_ball: float,
+    mag_a: float,
+    mag_b: float,
+    s_max: float,
+    tau: float,
+) -> tuple[FloatArray, "BoolArray"]:
+    """Batch flight reporting landing point *and* whether the ball stayed in play.
+
+    ``flight_batch`` knows nothing about pitch boundaries, which makes it unsafe
+    to aim with on its own: a launch that sails over the goal line 0.3 m from
+    the corner flag and lands somewhere beyond it scores as a perfect delivery.
+    This variant carries the same integration but rejects any flight that leaves
+    the field of play first, so the aim solver can only choose launches that are
+    legal deliveries.
+
+    Returns ``(landing_xy, ok)``; ``landing_xy`` is ``(n, 2)`` and NaN where the
+    ball did not land in play, ``ok`` is ``(n,)``.
+    """
+    n = y0.shape[0]
+    landing_xy = np.full((n, 2), np.nan)
+    ok = np.zeros(n, dtype=np.bool_)
+
+    y = np.empty(9)
+    y_new = np.empty(9)
+    yt = np.empty(9)
+    k1 = np.empty(9)
+    k2 = np.empty(9)
+    k3 = np.empty(9)
+    k4 = np.empty(9)
+
+    for i in range(n):
+        for j in range(9):
+            y[j] = y0[i, j]
+
+        for _ in range(n_steps):
+            _derivative_into(
+                y, k1, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+            )
+            for j in range(9):
+                yt[j] = y[j] + (0.5 * dt) * k1[j]
+            _derivative_into(
+                yt, k2, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+            )
+            for j in range(9):
+                yt[j] = y[j] + (0.5 * dt) * k2[j]
+            _derivative_into(
+                yt, k3, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+            )
+            for j in range(9):
+                yt[j] = y[j] + dt * k3[j]
+            _derivative_into(
+                yt, k4, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+            )
+            for j in range(9):
+                y_new[j] = y[j] + (dt / 6.0) * (k1[j] + 2.0 * k2[j] + 2.0 * k3[j] + k4[j])
+
+            # Left the field before landing: not a legal delivery, discard.
+            if y_new[0] > half_len or y_new[0] < -half_len:
+                break
+            if y_new[1] > half_wid or y_new[1] < -half_wid:
+                break
+
+            if y[2] >= ground_z and y_new[2] < ground_z and y_new[5] < 0.0:
+                frac = (y[2] - ground_z) / (y[2] - y_new[2])
+                landing_xy[i, 0] = y[0] + frac * (y_new[0] - y[0])
+                landing_xy[i, 1] = y[1] + frac * (y_new[1] - y[1])
+                ok[i] = True
+                break
+
+            for j in range(9):
+                y[j] = y_new[j]
+
+    return landing_xy, ok
+
+
+def _flight_segment(
+    y0: FloatArray,
+    dt: float,
+    n_steps: int,
+    ground_z: float,
+    half_len: float,
+    half_wid: float,
+    g: float,
+    k_aero: float,
+    cd_sub: float,
+    cd_super: float,
+    v_crit: float,
+    width: float,
+    r_ball: float,
+    mag_a: float,
+    mag_b: float,
+    s_max: float,
+    tau: float,
+) -> tuple[FloatArray, int]:
+    """Integrate one trajectory forward until something the event layer cares about.
+
+    The single-trajectory counterpart of ``_flight_batch``, and the reason it
+    exists: ``TrajectorySimulator`` used to pay Python + NumPy overhead on every
+    5 ms RK4 step (measured ~0.7 ms/step, ~280 ms per delivery), which dominated
+    every Monte Carlo run. Here the whole free-flight arc runs inside one njit
+    call instead.
+
+    "Something the event layer cares about" is exactly the set of end-of-step
+    conditions ``TrajectorySimulator.simulate`` branches on: an apex (vz sign
+    flip), a downward ground crossing, or a goal-line/touchline plane crossing.
+    Detection only - refinement, bounce and event construction stay in Python on
+    the returned ``(y, y_new)`` pair, so the semantics are untouched.
+
+    Returns ``(states, n)`` where ``states[:n]`` are the visited states,
+    ``states[0]`` is ``y0``, and ``states[n - 1]`` is the state that tripped the
+    stop condition (or the horizon).
+    """
+    states = np.empty((n_steps + 1, 9))
+    for j in range(9):
+        states[0, j] = y0[j]
+
+    y = np.empty(9)
+    y_new = np.empty(9)
+    yt = np.empty(9)
+    k1 = np.empty(9)
+    k2 = np.empty(9)
+    k3 = np.empty(9)
+    k4 = np.empty(9)
+    for j in range(9):
+        y[j] = y0[j]
+
+    count = 1
+    for _ in range(n_steps):
+        _derivative_into(
+            y, k1, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+        )
+        for j in range(9):
+            yt[j] = y[j] + (0.5 * dt) * k1[j]
+        _derivative_into(
+            yt, k2, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+        )
+        for j in range(9):
+            yt[j] = y[j] + (0.5 * dt) * k2[j]
+        _derivative_into(
+            yt, k3, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+        )
+        for j in range(9):
+            yt[j] = y[j] + dt * k3[j]
+        _derivative_into(
+            yt, k4, g, k_aero, cd_sub, cd_super, v_crit, width, r_ball, mag_a, mag_b, s_max, tau
+        )
+        for j in range(9):
+            y_new[j] = y[j] + (dt / 6.0) * (k1[j] + 2.0 * k2[j] + 2.0 * k3[j] + k4[j])
+
+        for j in range(9):
+            states[count, j] = y_new[j]
+        count += 1
+
+        # Boundary planes: sign change of (coord - plane) across the step.
+        stop = False
+        if (y[0] - half_len) * (y_new[0] - half_len) < 0.0:
+            stop = True
+        if (y[0] + half_len) * (y_new[0] + half_len) < 0.0:
+            stop = True
+        if (y[1] - half_wid) * (y_new[1] - half_wid) < 0.0:
+            stop = True
+        if (y[1] + half_wid) * (y_new[1] + half_wid) < 0.0:
+            stop = True
+        # Apex: vz crosses from positive to non-positive.
+        if y[5] > 0.0 >= y_new[5]:
+            stop = True
+        # Downward ground contact.
+        if y[2] >= ground_z > y_new[2] and y_new[5] < 0.0:
+            stop = True
+        if stop:
+            break
+
+        for j in range(9):
+            y[j] = y_new[j]
+
+    return states, count
+
+
 if TYPE_CHECKING:
     flight_batch = _flight_batch
+    flight_segment = _flight_segment
+    aim_probe = _aim_probe
 else:  # pragma: no cover - decoration, not logic
     from numba import njit
 
     _derivative_into = njit(cache=True, fastmath=False)(_derivative_into)
     flight_batch = njit(cache=True, fastmath=False)(_flight_batch)
+    flight_segment = njit(cache=True, fastmath=False)(_flight_segment)
+    aim_probe = njit(cache=True, fastmath=False)(_aim_probe)

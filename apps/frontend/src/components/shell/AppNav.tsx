@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { EnvironmentBadge } from "@/components/EnvironmentBadge";
-
 // Persistent app chrome (doc 07: one console, not a set of loose pages). A slim
 // rail on desktop, a top bar on small screens. Active state is derived from the
 // pathname so the analyst always knows where they are.
@@ -117,10 +115,6 @@ export function AppNav() {
             </Link>
           );
         })}
-      </div>
-
-      <div className="ml-auto flex items-center md:mt-auto md:ml-0">
-        <EnvironmentBadge environment="dev" />
       </div>
     </nav>
   );

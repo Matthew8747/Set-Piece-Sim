@@ -22,19 +22,19 @@ class EngineConfig(BaseModel):
     trigger_kick_approach_s: float = Field(default=-1.2, ge=-2.5, le=-0.1)
 
     # --- delivery execution (G-11) ---
-    # Elevation is solved from the drag-free range equation with a carry
-    # correction (drag shortens range): sin(2*theta) = d*g/(speed*carry)^2.
-    carry_factor: float = Field(default=0.82, ge=0.5, le=1.0)
-    elev_floor_cross_deg: float = Field(default=8.0, ge=2.0, le=20.0)
-    elev_floor_driven_deg: float = Field(default=4.0, ge=1.0, le=15.0)
-    elev_floor_floated_deg: float = Field(default=14.0, ge=5.0, le=30.0)
-    elev_floor_short_deg: float = Field(default=2.0, ge=0.0, le=10.0)
-    elev_max_deg: float = Field(default=35.0, ge=15.0, le=45.0)
+    # The launch that puts the ball on target is solved numerically against the
+    # real flight model (engine/aim.py), not from a drag-free approximation, so
+    # the old carry/curl fudge factors are gone. What remains are the bounds the
+    # solver searches within and the execution noise applied on top of it.
+    elev_min_deg: float = Field(default=3.0, ge=0.0, le=20.0)
+    elev_max_deg: float = Field(default=55.0, ge=30.0, le=70.0)
+    # Ceiling on how hard a taker will strike it when the routine's nominal
+    # weight cannot cover the distance. 32 m/s is about an elite dead-ball hit.
+    max_delivery_speed_ms: float = Field(default=32.0, ge=15.0, le=45.0)
+    # Landing accuracy the solver aims for before it stops escalating speed.
+    aim_tolerance_m: float = Field(default=0.35, ge=0.05, le=3.0)
     dir_noise_base_rad: float = Field(default=0.06, ge=0.0, le=0.3)
     speed_noise_frac: float = Field(default=0.06, ge=0.0, le=0.3)
-    # Takers pre-aim against the curl so spin brings the ball back to target:
-    # heading shift = -spin_sign * this * spin_rps (radians per rev/s).
-    curl_compensation_rad_per_rps: float = Field(default=0.014, ge=0.0, le=0.05)
 
     # --- contest resolution (G-6) ---
     # Window after the earliest feasible arrival within which later arrivals
