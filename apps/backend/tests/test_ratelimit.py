@@ -41,6 +41,30 @@ def test_global_read_limit_returns_problem_json(low_read_limit_client: TestClien
     assert body["title"] == "Too Many Requests"
 
 
+def test_sim_run_status_poll_is_exempt_from_read_limit(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Polling a run's status must not exhaust the global read bucket.
+
+    The client polls every 400 ms (150/min), above the 120/min read default; a
+    404 status poll still exercises the same middleware path as a real one, so if
+    the endpoint were counted it would 429 well before a long run finished. A
+    generic read must still be limited, proving the exemption is targeted.
+    """
+    saved = ratelimit._settings
+    cfg = Settings(app_env="test", rate_limit_read="3/minute", data_dir=tmp_path)
+    app = create_app(cfg)
+    ratelimit.reset_for_tests()
+    try:
+        client = TestClient(app, raise_server_exceptions=False)
+        poll_codes = [client.get("/api/v1/sim-runs/does-not-exist").status_code for _ in range(10)]
+        assert poll_codes == [404] * 10, poll_codes  # never 429
+        # A non-exempt read is still bounded by the same 3/minute bucket.
+        read_codes = [client.get("/healthz").status_code for _ in range(5)]
+        assert 429 in read_codes
+    finally:
+        ratelimit._settings = saved
+        ratelimit.reset_for_tests()
+
+
 def test_rate_limit_disabled_allows_unbounded() -> None:
     saved = ratelimit._settings
     cfg = Settings(app_env="test", rate_limit_read="2/minute", rate_limit_enabled=False)

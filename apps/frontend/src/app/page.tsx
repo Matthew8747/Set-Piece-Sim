@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { EnvironmentBadge } from "@/components/EnvironmentBadge";
 import { HeroPitch } from "@/components/shell/HeroPitch";
 
 // Home reads as a product surface: a plain statement of what the tool does,
@@ -44,7 +43,6 @@ export default function Home() {
               <span className="size-1 rounded-full bg-(--color-signal)/70" />
               World Cup 2026
             </span>
-            <EnvironmentBadge environment="dev" />
           </div>
 
           <div className="flex flex-col gap-4">

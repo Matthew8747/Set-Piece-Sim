@@ -1,4 +1,4 @@
-﻿"""Canonical content library: corner routines, FK routines, and defensive schemes.
+"""Canonical content library: corner routines, FK routines, and defensive schemes.
 
 All routines use the attacking-toward-+x coordinate frame. Corners are designed
 for the right-side default (kick from (52.5, -34)); the Scenario constructor
@@ -241,12 +241,16 @@ def near_post_inswinger() -> RoutineSpec:
 
 
 def far_post_outswinger() -> RoutineSpec:
-    """Far-post outswinger corner (4 attackers).
+    """Far-side outswinger corner (4 attackers).
 
-    The outswinger curves away from the near post toward the far post zone,
-    inviting a far-post header. A near-post decoy drags attention away.
+    An outswinger from the right corner bends AWAY from the goal line, so its
+    landing zone is the far side of the six-yard box and the penalty spot - not
+    the far post itself. The earlier (50.5, 5.0) target was 2 m off the goal
+    line, which is inswinger territory: reaching it with 7 rev/s of outswing
+    would require launching the ball beyond the goal line, and 56% of deliveries
+    went out of play. (44.0, 6.0) is where this delivery actually arrives.
 
-    Primary: far-post header at (50.5, 5.0).
+    Primary: far-side header at (44.0, 6.0), attacking the ball as it swings out.
     Secondary: penalty-spot header at (42.0, 0.5) for second ball.
     Decoy: near-post drag run to (49.0, -3.5).
     Edge: recycler at (37.0, -2.0).
@@ -256,8 +260,8 @@ def far_post_outswinger() -> RoutineSpec:
         name="far_post_outswinger",
         delivery=Delivery(
             type=DeliveryType.OUTSWINGER,
-            target=PitchPoint(x=50.5, y=5.0),
-            speed_ms=23.0,
+            target=PitchPoint(x=44.0, y=6.0),
+            speed_ms=24.0,
             spin_rps=7.0,
         ),
         assignments=(
@@ -266,7 +270,7 @@ def far_post_outswinger() -> RoutineSpec:
                 start=PitchPoint(x=39.0, y=9.0),
                 runs=(
                     RunLeg(
-                        to=PitchPoint(x=50.5, y=5.0),
+                        to=PitchPoint(x=44.0, y=6.0),
                         trigger=Trigger.KICK_APPROACH,
                         delay_s=0.1,
                     ),
@@ -459,12 +463,16 @@ def edge_of_box_pullback() -> RoutineSpec:
 
 
 def decoy_overload() -> RoutineSpec:
-    """Decoy overload: two decoys drag near-post, one late far-post run (5 attackers).
+    """Decoy overload: two decoys drag near-post, one late far-side run (5 attackers).
 
     Two decoys storm the near post early to drag all man-markers that side;
-    one ATTACK_BALL runner makes a late diagonal run to the far post, arriving
-    as defenders have committed. A fifth player holds the penalty spot for
-    second ball.
+    one ATTACK_BALL runner makes a late diagonal run into the space they vacate,
+    arriving as defenders have committed. A fifth player holds the penalty spot
+    for second ball.
+
+    Target moved from (50.0, 5.5) to (43.0, 7.5) for the same reason as
+    far_post_outswinger: an outswinger bends off the goal line, so a target
+    almost on it is unreachable in play.
 
     The late runner gets a delay of 0.4 s to time the run correctly.
     """
@@ -473,8 +481,8 @@ def decoy_overload() -> RoutineSpec:
         name="decoy_overload",
         delivery=Delivery(
             type=DeliveryType.OUTSWINGER,
-            target=PitchPoint(x=50.0, y=5.5),
-            speed_ms=23.0,
+            target=PitchPoint(x=43.0, y=7.5),
+            speed_ms=24.0,
             spin_rps=6.0,
         ),
         assignments=(
@@ -507,7 +515,7 @@ def decoy_overload() -> RoutineSpec:
                 start=PitchPoint(x=38.0, y=8.0),
                 runs=(
                     RunLeg(
-                        to=PitchPoint(x=50.0, y=5.5),
+                        to=PitchPoint(x=43.0, y=7.5),
                         trigger=Trigger.KICK_APPROACH,
                         delay_s=0.4,
                     ),

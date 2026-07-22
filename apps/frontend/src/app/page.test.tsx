@@ -8,7 +8,8 @@ test("landing page renders the product name", () => {
   expect(screen.getByRole("heading", { level: 1, name: "Restart Lab" })).toBeDefined();
 });
 
-test("landing page shows the environment badge from shared types", () => {
+test("landing page does not leak a build-environment badge into the UI", () => {
   render(<Home />);
-  expect(screen.getByText("dev")).toBeDefined();
+  // The badge was hardcoded to "dev", so production shipped a DEV chip.
+  expect(screen.queryByText("dev")).toBeNull();
 });

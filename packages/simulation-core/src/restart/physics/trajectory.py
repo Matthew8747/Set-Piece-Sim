@@ -21,6 +21,7 @@ import numpy as np
 
 from restart.domain import pitch
 from restart.domain.vectors import FloatArray
+from restart.physics import _kernels
 from restart.physics.bounce import bounce, energy_retained
 from restart.physics.config import PhysicsConfig
 from restart.physics.forces import default_force_system
@@ -87,6 +88,27 @@ class TrajectorySimulator:
             else default_force_system(self._cfg.ball, self._cfg.environment)
         )
         self._derivative = make_derivative(self._force, self._cfg.ball.spin_decay_tau_s)
+        # Free-flight fast path: only the default gravity+drag+Magnus system is
+        # fused in the kernel, so a caller-supplied force model keeps the
+        # readable per-step NumPy loop (same contract as physics.batch).
+        self._fused_params = None if force is not None else self._build_fused_params()
+
+    def _build_fused_params(self) -> tuple[float, ...]:
+        """Scalar force constants in the order ``_kernels.flight_segment`` wants."""
+        ball, env = self._cfg.ball, self._cfg.environment
+        return (
+            env.gravity_ms2,
+            0.5 * env.air_density_kgm3 * ball.cross_section_m2 / ball.mass_kg,
+            ball.drag.cd_subcritical,
+            ball.drag.cd_supercritical,
+            ball.drag.v_critical_ms,
+            ball.drag.transition_width_ms,
+            ball.radius_m,
+            ball.magnus.coeff_a,
+            ball.magnus.coeff_b,
+            ball.magnus.spin_parameter_max,
+            ball.spin_decay_tau_s,
+        )
 
     @property
     def config(self) -> PhysicsConfig:
@@ -115,8 +137,34 @@ class TrajectorySimulator:
         final_y, final_t = y, t
 
         max_t = initial.time_s + cfg.integrator.max_flight_time_s
+        # Pre-integrated free-flight block from the fused kernel, consumed one
+        # step at a time so the event logic below is unchanged. Invalidated
+        # (set to None) whenever the loop moves ``y`` off the block - i.e. at a
+        # ground contact - so the next iteration re-enters the kernel.
+        seg: FloatArray | None = None
+        seg_i = 0
+        seg_n = 0
+
         while termination is None and t < max_t:
-            y_new = self._step_rolling(y, dt) if rolling else rk4_step(y, dt, self._derivative)
+            if rolling:
+                y_new = self._step_rolling(y, dt)
+            elif self._fused_params is None:
+                y_new = rk4_step(y, dt, self._derivative)
+            else:
+                if seg is None or seg_i + 1 >= seg_n:
+                    remaining = max(1, int(np.ceil((max_t - t) / dt)))
+                    seg, seg_n = _kernels.flight_segment(
+                        np.ascontiguousarray(y),
+                        dt,
+                        remaining,
+                        cfg.ball.radius_m,
+                        pitch.HALF_LENGTH_M,
+                        pitch.HALF_WIDTH_M,
+                        *self._fused_params,
+                    )
+                    seg_i = 0
+                seg_i += 1
+                y_new = seg[seg_i]
             t_new = t + dt
 
             # --- terminal crossings (earliest within the step wins) ---------
@@ -169,6 +217,7 @@ class TrajectorySimulator:
                     states.append(y_land.copy())
                     y, t = y_land, t_land
                     final_y, final_t = y, t
+                    seg = None  # y left the pre-integrated block (bounce/roll)
                     continue
             elif float(np.linalg.norm(y_new[3:5])) < cfg.bounce.rest_speed_ms:
                 # --- rolling rest ---------------------------------------------
@@ -199,7 +248,8 @@ class TrajectorySimulator:
             samples=samples,
             events=tuple(events),
             termination=termination,
-            final_state=BallState.from_vector(final_y, time_s=final_t),
+            # copy: final_y may be a row view into the kernel's segment buffer.
+            final_state=BallState.from_vector(np.array(final_y), time_s=final_t),
         )
 
     def _step_rolling(self, y: FloatArray, dt: float) -> FloatArray:

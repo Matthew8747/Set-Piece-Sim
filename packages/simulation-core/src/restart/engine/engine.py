@@ -24,10 +24,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from restart.agents import _kernels
 from restart.agents.config import AgentConfig
 from restart.agents.interception import earliest_interception
-from restart.agents.kinematics import separate, step_agents
 from restart.domain.vectors import FloatArray
+from restart.engine.aim import solve_aim
 from restart.engine.config import EngineConfig
 from restart.engine.draws import SimDraws, draw_sim
 from restart.engine.xg import ShotContext, XGScorer
@@ -58,6 +59,12 @@ _DEFENSE = "defense"
 
 _CODE_ATTACK_BALL = INTENT_CODES[Intent.ATTACK_BALL]
 _CODE_SECOND_BALL = INTENT_CODES[Intent.SECOND_BALL]
+_CODE_SHORT_OPTION = INTENT_CODES[Intent.SHORT_OPTION]
+# Who may take the first contact. SHORT_OPTION belongs here: a short corner is
+# played *to* that runner, so excluding them meant nobody on either side could
+# ever reach the ball and every short corner resolved as untouched (measured:
+# 99/100 out of play).
+_FIRST_CONTACT_CODES = (_CODE_ATTACK_BALL, _CODE_SHORT_OPTION)
 _TRIG_KICK_APPROACH = TRIGGER_CODES[Trigger.KICK_APPROACH]
 _TRIG_KICK = TRIGGER_CODES[Trigger.KICK]
 _TRIG_APEX = TRIGGER_CODES[Trigger.BALL_APEX]
@@ -191,7 +198,7 @@ class SetPieceEngine:
         # --- 4. interception plans from kick-instant states (G-13) ----------
         # Scripted ball-attackers pre-committed to their runs: no reaction
         # latency gates their plan. Reaction gates agents *reading* the flight.
-        att_contests_mask = np.asarray(program.att_intent) == _CODE_ATTACK_BALL
+        att_contests_mask = np.isin(np.asarray(program.att_intent), _FIRST_CONTACT_CODES)
         att_ready = np.where(att_contests_mask, 0.0, att_react)
         att_icpt = earliest_interception(
             att_pos,
@@ -213,9 +220,9 @@ class SetPieceEngine:
             ball_times,
             ball_pos,
         )
-        # Only ball-attacking attackers contest the first ball.
-        att_contests = np.asarray(program.att_intent) == _CODE_ATTACK_BALL
-        att_icpt = np.where(att_contests, att_icpt, -1)
+        # Only first-contact attackers (aerial threats, and the short-corner
+        # receiver) contest the delivery; decoys and screens do not.
+        att_icpt = np.where(att_contests_mask, att_icpt, -1)
 
         # --- 5. contest selection (G-6) + flight window ----------------------
         t_star, contestants = self._select_contest(att_icpt, def_icpt, ball_times)
@@ -282,6 +289,31 @@ class SetPieceEngine:
                 None,
             )
 
+        # A short-corner receiver collects the ball, they do not shoot it: the
+        # lay-off target stands out near the touchline, and routing them through
+        # the shot model produced 77% off-target efforts from ~28 m wide.
+        # Retaining possession is the honest terminal state for this model - the
+        # phase that follows a short corner is open play, which is out of scope.
+        if int(program.att_intent[winner_idx]) == _CODE_SHORT_OPTION:
+            events.append(
+                SecondBallEvent(
+                    time_s=t_star,
+                    position=ball_at.position,
+                    player_id=winner_id,
+                    team=_ATTACK,
+                )
+            )
+            return self._finish(
+                SetPieceOutcome.SECOND_BALL_ATTACK,
+                events,
+                seed,
+                track_times,
+                att_tracks,
+                def_tracks,
+                delivery,
+                None,
+            )
+
         # Attacker first contact: header/volley at goal.
         return self._resolve_shot(
             program,
@@ -301,39 +333,34 @@ class SetPieceEngine:
     def _execute_delivery(self, program: SimProgram, draws: SimDraws) -> BallState:
         cfg = self._cfg
         kick = np.array([program.kick_pos[0], program.kick_pos[1], 0.11])
-        aim = program.delivery_target - program.kick_pos
-        dist = float(np.linalg.norm(aim))
-        heading = math.atan2(float(aim[1]), float(aim[0]))
 
+        # Intended launch: solved against the real flight model so the ball
+        # actually lands on the routine's target, curl included (engine/aim.py).
+        # Cached on its scalar arguments, so a Monte Carlo batch solves once.
+        speed0, elev, heading = solve_aim(
+            float(program.kick_pos[0]),
+            float(program.kick_pos[1]),
+            float(program.delivery_target[0]),
+            float(program.delivery_target[1]),
+            float(program.delivery_speed_ms),
+            float(program.spin_sign * program.delivery_spin_rps),
+            cfg.elev_min_deg,
+            cfg.elev_max_deg,
+            cfg.max_delivery_speed_ms,
+            cfg.aim_tolerance_m,
+            self._phys,
+        )
+
+        # Execution noise on top of the intent (G-11). Externalized draws
+        # (ADR-011): delivery[0]=direction error, [1]=speed multiplier, both
+        # standard normal scaled by the kicker's skill. Elevation is left on the
+        # solved value - a taker's leg action repeats; what varies shot to shot
+        # is contact quality (speed) and the line off the boot (heading).
         skill = float(program.kicker_attr[Attr.DELIVERY])
-        # Pre-aim against the curl (G-11): spin will bend the ball back.
-        heading += (
-            -program.spin_sign * cfg.curl_compensation_rad_per_rps * program.delivery_spin_rps
-        )
-        # Externalized draws (ADR-011): delivery[0]=dir error, [1]=speed mult,
-        # both standard normal scaled by the skill-dependent sigma.
         heading += cfg.dir_noise_base_rad * (1.2 - skill) * float(draws.delivery[0])
-        speed = program.delivery_speed_ms * (
-            1.0 + cfg.speed_noise_frac * (1.2 - skill) * float(draws.delivery[1])
-        )
+        speed = speed0 * (1.0 + cfg.speed_noise_frac * (1.2 - skill) * float(draws.delivery[1]))
         speed = max(6.0, speed)
 
-        # Elevation solved from drag-free range with carry correction (G-11):
-        # sin(2*theta) = d*g / v_eff^2 with v_eff = speed * carry_factor, then
-        # clamped by per-type floors (a floated ball is lofted by definition).
-        g = self._phys.environment.gravity_ms2
-        v_eff = speed * cfg.carry_factor
-        arg = min(1.0, dist * g / max(v_eff * v_eff, 1e-9))
-        theta = 0.5 * math.asin(arg)
-        floor_by_code = {
-            0: cfg.elev_floor_cross_deg,  # inswinger
-            1: cfg.elev_floor_cross_deg,  # outswinger
-            2: cfg.elev_floor_driven_deg,  # driven
-            3: cfg.elev_floor_floated_deg,  # floated
-            4: cfg.elev_floor_short_deg,  # short
-        }
-        floor_deg = floor_by_code.get(program.delivery_type, cfg.elev_floor_cross_deg)
-        elev = min(max(theta, math.radians(floor_deg)), math.radians(cfg.elev_max_deg))
         vel = np.array(
             [
                 speed * math.cos(elev) * math.cos(heading),
@@ -417,62 +444,90 @@ class SetPieceEngine:
         dt = cfg.agent_dt_s
         na, nd = program.n_attackers, program.n_defenders
 
-        att_pos = att_pos.copy()
-        att_vel = att_vel.copy()
-        def_pos = def_pos.copy()
-        def_vel = def_vel.copy()
+        # np.array (not ascontiguousarray) on purpose: this must both guarantee
+        # the C-contiguous float64 the njit kernels need *and* keep the caller's
+        # arrays untouched. ascontiguousarray returns the input unchanged when it
+        # is already contiguous, which would silently drop that defensive copy.
+        att_pos = np.array(att_pos, dtype=np.float64, order="C")
+        att_vel = np.array(att_vel, dtype=np.float64, order="C")
+        def_pos = np.array(def_pos, dtype=np.float64, order="C")
+        def_vel = np.array(def_vel, dtype=np.float64, order="C")
+
+        # Attribute columns are strided views into the (n, N_ATTR) matrix; the
+        # njit kernels want contiguous float64, and hoisting the copies out of
+        # the tick loop keeps this off the per-tick path.
+        att_top = np.ascontiguousarray(program.att_attr[:, Attr.TOP_SPEED])
+        att_acc = np.ascontiguousarray(program.att_attr[:, Attr.ACCEL])
+        att_agi = np.ascontiguousarray(program.att_attr[:, Attr.AGILITY])
+        def_top = np.ascontiguousarray(program.def_attr[:, Attr.TOP_SPEED])
+        def_acc = np.ascontiguousarray(program.def_attr[:, Attr.ACCEL])
+        def_agi = np.ascontiguousarray(program.def_attr[:, Attr.AGILITY])
 
         trig_time = {_TRIG_KICK_APPROACH: cfg.trigger_kick_approach_s, _TRIG_KICK: 0.0}
         times = np.arange(t_from, t_to + 1e-9, dt)
         att_tracks = np.empty((len(times), na, 2))
         def_tracks = np.empty((len(times), nd, 2))
 
+        # Leg trigger instants do not depend on t - resolve them once instead of
+        # re-deriving them for every attacker on every one of ~135 ticks.
+        leg_trig = np.full((na, 3), np.inf)
+        for i in range(na):
+            for leg in range(int(program.att_n_legs[i])):
+                code = int(program.att_legs_trigger[i, leg])
+                leg_trig[i, leg] = trig_time.get(code, t_apex) + float(
+                    program.att_legs_delay[i, leg]
+                )
+
+        # Marker indices, hoisted: def_mark_target is fixed for the window.
+        marker_js = [j for j in range(nd) if int(program.def_mark_target[j]) >= 0]
+        marker_targets = [int(program.def_mark_target[j]) for j in marker_js]
+
+        att_targets = np.empty((na, 2))
+        def_targets = np.empty((nd, 2))
+        both = np.empty((na + nd, 2))
+
         for ti, t in enumerate(times):
             # Attacker targets: latest triggered run leg, else start/hold.
-            att_targets = att_pos.copy()
+            att_targets[:] = program.att_start
             for i in range(na):
-                target = program.att_start[i]
                 for leg in range(int(program.att_n_legs[i])):
-                    code = int(program.att_legs_trigger[i, leg])
-                    t_trig = trig_time.get(code, t_apex) + float(program.att_legs_delay[i, leg])
-                    if t >= t_trig:
-                        target = program.att_legs_to[i, leg]
-                att_targets[i] = target
+                    if t >= leg_trig[i, leg]:
+                        att_targets[i] = program.att_legs_to[i, leg]
             # Defender targets: marker -> goal-side of mark; zonal -> start.
-            def_targets = program.def_start.copy()
-            for j in range(nd):
-                m = int(program.def_mark_target[j])
-                if m >= 0:
-                    to_goal = _GOAL_CENTER - att_pos[m]
-                    n = float(np.linalg.norm(to_goal))
-                    def_targets[j] = att_pos[m] + (to_goal / max(n, 1e-9)) * 0.7
+            def_targets[:] = program.def_start
+            for j, m in zip(marker_js, marker_targets, strict=True):
+                to_goal = _GOAL_CENTER - att_pos[m]
+                n = float(np.linalg.norm(to_goal))
+                def_targets[j] = att_pos[m] + (to_goal / max(n, 1e-9)) * 0.7
 
-            att_pos, att_vel = step_agents(
+            att_pos, att_vel = _kernels.step_agents_kernel(
                 att_pos,
                 att_vel,
                 att_targets,
-                program.att_attr[:, Attr.TOP_SPEED],
-                program.att_attr[:, Attr.ACCEL],
-                program.att_attr[:, Attr.AGILITY],
+                att_top,
+                att_acc,
+                att_agi,
                 dt,
-                turn_rate_base=ag.turn_rate_base_rads,
-                speed_ref=ag.turn_speed_ref_ms,
-                arrival_radius=ag.arrival_radius_m,
+                ag.turn_rate_base_rads,
+                ag.turn_speed_ref_ms,
+                ag.arrival_radius_m,
             )
-            def_pos, def_vel = step_agents(
+            def_pos, def_vel = _kernels.step_agents_kernel(
                 def_pos,
                 def_vel,
                 def_targets,
-                program.def_attr[:, Attr.TOP_SPEED],
-                program.def_attr[:, Attr.ACCEL],
-                program.def_attr[:, Attr.AGILITY],
+                def_top,
+                def_acc,
+                def_agi,
                 dt,
-                turn_rate_base=ag.turn_rate_base_rads,
-                speed_ref=ag.turn_speed_ref_ms,
-                arrival_radius=ag.arrival_radius_m,
+                ag.turn_rate_base_rads,
+                ag.turn_speed_ref_ms,
+                ag.arrival_radius_m,
             )
-            both = separate(np.vstack([att_pos, def_pos]), ag.separation_radius_m)
-            att_pos, def_pos = both[:na].copy(), both[na:].copy()
+            both[:na] = att_pos
+            both[na:] = def_pos
+            separated = _kernels.separate_kernel(both, ag.separation_radius_m, 4)
+            att_pos, def_pos = separated[:na].copy(), separated[na:].copy()
             att_tracks[ti], def_tracks[ti] = att_pos, def_pos
 
         return times, att_tracks, def_tracks, att_pos, att_vel, def_pos, def_vel
