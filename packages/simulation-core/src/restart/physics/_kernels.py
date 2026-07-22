@@ -171,6 +171,7 @@ def _aim_probe(
     ground_z: float,
     half_len: float,
     half_wid: float,
+    probe_z: float,
     g: float,
     k_aero: float,
     cd_sub: float,
@@ -183,7 +184,7 @@ def _aim_probe(
     s_max: float,
     tau: float,
 ) -> tuple[FloatArray, "BoolArray"]:
-    """Batch flight reporting landing point *and* whether the ball stayed in play.
+    """Batch flight reporting the *arrival point* and whether the ball stayed in play.
 
     ``flight_batch`` knows nothing about pitch boundaries, which makes it unsafe
     to aim with on its own: a launch that sails over the goal line 0.3 m from
@@ -192,8 +193,16 @@ def _aim_probe(
     the field of play first, so the aim solver can only choose launches that are
     legal deliveries.
 
-    Returns ``(landing_xy, ok)``; ``landing_xy`` is ``(n, 2)`` and NaN where the
-    ball did not land in play, ``ok`` is ``(n,)``.
+    The arrival point is where the ball first *descends* through ``probe_z`` -
+    heading height - not where it lands. Aiming the landing point puts the
+    contest systematically short of the runner: measured on the stock near-post
+    inswinger, the ball dropped into heading range at y = -7.9 while landing at
+    y = -2.5, so the scripted runner was 5 m behind the only contact that
+    mattered. A ball that never climbs above ``probe_z`` (a short corner) falls
+    back to its landing point, which is the only arrival it has.
+
+    Returns ``(arrival_xy, ok)``; ``arrival_xy`` is ``(n, 2)`` and NaN where the
+    ball never arrived in play, ``ok`` is ``(n,)``.
     """
     n = y0.shape[0]
     landing_xy = np.full((n, 2), np.nan)
@@ -233,12 +242,22 @@ def _aim_probe(
             for j in range(9):
                 y_new[j] = y[j] + (dt / 6.0) * (k1[j] + 2.0 * k2[j] + 2.0 * k3[j] + k4[j])
 
-            # Left the field before landing: not a legal delivery, discard.
+            # Left the field before arriving: not a legal delivery, discard.
             if y_new[0] > half_len or y_new[0] < -half_len:
                 break
             if y_new[1] > half_wid or y_new[1] < -half_wid:
                 break
 
+            # Descending through heading height: this is the arrival point.
+            if y[2] >= probe_z and y_new[2] < probe_z and y_new[5] < 0.0:
+                frac = (y[2] - probe_z) / (y[2] - y_new[2])
+                landing_xy[i, 0] = y[0] + frac * (y_new[0] - y[0])
+                landing_xy[i, 1] = y[1] + frac * (y_new[1] - y[1])
+                ok[i] = True
+                break
+
+            # Ground contact without ever reaching probe_z (a low, short
+            # delivery): the landing point is the only arrival it has.
             if y[2] >= ground_z and y_new[2] < ground_z and y_new[5] < 0.0:
                 frac = (y[2] - ground_z) / (y[2] - y_new[2])
                 landing_xy[i, 0] = y[0] + frac * (y_new[0] - y[0])

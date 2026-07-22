@@ -1,49 +1,51 @@
-# Fly.io deploy config for the Restart Lab API (FastAPI backend).
+# fly.toml app configuration file generated for restart-lab-api on 2026-07-17T17:43:58+01:00
 #
-# Chosen host: Fly.io — first-class Docker (we ship apps/backend/Dockerfile),
-# a free allowance, global regions, and persistent volumes for the marts +
-# SQLite store. The frontend deploys separately to Vercel; Postgres (the scaled
-# path) is Neon. See the README "Deploying" section.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-#   flyctl auth login                                  # one-time, interactive
-#   flyctl launch --no-deploy --copy-config --name restart-lab-api --region lhr
-#   flyctl secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
-#   flyctl deploy
-#
-# Server-free by default (SQLite + in-process queue, marts baked into the image).
-# To scale out, set RESTART_DATABASE_URL (Neon) and RESTART_REDIS_URL (Upstash).
 
-app = "restart-lab-api"
-primary_region = "lhr"
+app = 'restart-lab-api'
+primary_region = 'lhr'
 
 [build]
-  dockerfile = "apps/backend/Dockerfile"
+  dockerfile = 'apps/backend/Dockerfile'
 
 [env]
-  RESTART_APP_ENV = "prod"
-  RESTART_DEBUG = "false"
-  # Non-secret; override with `fly secrets set` to the real frontend origin(s).
+  RESTART_APP_ENV = 'prod'
   RESTART_CORS_ORIGINS = '["http://localhost:3000"]'
+  RESTART_DEBUG = 'false'
+  # Scenarios and sim-runs live on the mounted volume, NOT in the image.
+  # Absolute on purpose, and deliberately not /app/data: the squad/xG marts are
+  # baked in at /app/data/marts, so mounting a volume over /app/data would hide
+  # them and empty out /scenarios.
+  RESTART_DATA_DIR = '/data'
+
+# Durable store for scenarios + sim runs. Without this the SQLite file lives on
+# the machine's ephemeral disk, so every scenario you create is destroyed the
+# next time the machine stops - which with auto_stop_machines is whenever the
+# app goes idle. The symptom is a 404 "unknown scenario" on a scenario the UI
+# just showed you.
+#
+# One-time setup before the next deploy:
+#   fly volumes create restart_data --size 1 --region lhr
+[mounts]
+  source = 'restart_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "20s"
-    method = "GET"
-    path = "/healthz"
-
-# No volume: the squad/xG marts and the committed study are baked into the image,
-# and the SQLite app store is ephemeral (a demo recreates the canonical scenario
-# on demand). Add a [mounts] volume at /app/data later if you want persistence.
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/healthz'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+  size = 'shared-cpu-1x'
+  memory = '1gb'

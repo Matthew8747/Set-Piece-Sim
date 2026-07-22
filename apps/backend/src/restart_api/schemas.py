@@ -297,6 +297,12 @@ class SimRunCreate(BaseModel):
     # Hard upper bound = cost-bomb protection (security checklist doc 02 §9).
     n_sims: int = Field(default=1000, ge=1, le=2000)
     root_seed: int = Field(default=0, ge=0, le=2**31 - 1)
+    # Optional recovery copy of the scenario. A scenario is only four ids, and a
+    # client that is looking at one already knows them; sending them lets a run
+    # survive the store having lost the scenario underneath it (an ephemeral
+    # host recycling between page load and Run). When the id is already known
+    # this is ignored - the stored scenario always wins.
+    spec: ScenarioCreate | None = None
 
 
 class SimRunResultDTO(MonteCarloResponse):

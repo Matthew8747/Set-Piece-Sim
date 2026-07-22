@@ -42,6 +42,38 @@ def _validate(body: ScenarioCreate) -> None:
             raise HTTPException(status_code=404, detail=f"unknown team {tid!r}")
 
 
+def _spec_of(body: ScenarioCreate) -> dict[str, str]:
+    return {
+        "routine_id": body.routine_id,
+        "scheme_id": body.scheme_id,
+        "attacking_team_id": body.attacking_team_id,
+        "defending_team_id": body.defending_team_id,
+    }
+
+
+def recreate_scenario(
+    scenario_id: str, body: ScenarioCreate, repo: ScenarioRepository
+) -> ScenarioRecord:
+    """Re-persist a scenario under a caller-supplied id (store-loss recovery).
+
+    Used by the sim-run endpoint when a client references a scenario the store
+    no longer has. Validation is identical to a normal create, so a recreated
+    scenario is exactly as trustworthy as an originally created one; only the id
+    is caller-chosen, and an id is not a privilege.
+    """
+    _validate(body)
+    spec = _spec_of(body)
+    return repo.create(
+        ScenarioRecord(
+            scenario_id=scenario_id,
+            name=body.name,
+            spec=spec,
+            scenario_hash=scenario_hash(spec),
+            created_at=datetime.now(UTC).isoformat(),
+        )
+    )
+
+
 @router.post(
     "", response_model=ScenarioDTO, status_code=201, dependencies=[Depends(require_write_access)]
 )
@@ -52,12 +84,7 @@ def create_scenario(
     repo: ScenarioRepository = Depends(scenario_repo),  # noqa: B008
 ) -> ScenarioDTO:
     _validate(body)
-    spec = {
-        "routine_id": body.routine_id,
-        "scheme_id": body.scheme_id,
-        "attacking_team_id": body.attacking_team_id,
-        "defending_team_id": body.defending_team_id,
-    }
+    spec = _spec_of(body)
     rec = ScenarioRecord(
         scenario_id=str(uuid4()),
         name=body.name,

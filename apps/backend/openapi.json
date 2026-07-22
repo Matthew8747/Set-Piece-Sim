@@ -876,6 +876,16 @@
           "scenario_id": {
             "title": "Scenario Id",
             "type": "string"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [

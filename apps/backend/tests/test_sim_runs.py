@@ -110,3 +110,50 @@ def test_replay_events_before_complete_is_409(tmp_path: Path) -> None:
         # yields 409. We assert the 404 path here (deterministic, no timing).
         r = client.get("/api/v1/sim-runs/does-not-exist/events")
         assert r.status_code == 404
+
+
+def test_sim_run_recreates_a_scenario_the_store_lost(tmp_path: Path) -> None:
+    """A run survives the scenario vanishing from under an open page.
+
+    On an ephemeral host the machine can recycle between loading a scenario and
+    pressing Run, taking the SQLite store with it - the user then gets
+    "unknown scenario <uuid>" for a scenario the UI had just shown them. The
+    client sends the spec alongside, so the backend rebuilds it under the same
+    id instead of dead-ending a valid request.
+    """
+    with _client(tmp_path) as client:
+        scenario_id = _make_scenario(client)
+        spec = client.get(f"/api/v1/scenarios/{scenario_id}").json()["spec"]
+
+        # Simulate the store loss: drop the scenario, keep the id the client holds.
+        import sqlite3
+
+        con = sqlite3.connect(tmp_path / "restart_app.sqlite")
+        con.execute("DELETE FROM scenarios WHERE scenario_id = ?", (scenario_id,))
+        con.commit()
+        con.close()
+        assert client.get(f"/api/v1/scenarios/{scenario_id}").status_code == 404
+
+        r = client.post(
+            "/api/v1/sim-runs",
+            json={
+                "scenario_id": scenario_id,
+                "n_sims": 4,
+                "root_seed": 1,
+                "spec": {"name": "recovered", **spec},
+            },
+        )
+        assert r.status_code == 202, r.text
+        assert r.json()["scenario_id"] == scenario_id
+        # And it is durable again for the next request.
+        assert client.get(f"/api/v1/scenarios/{scenario_id}").status_code == 200
+        assert _poll(client, r.json()["run_id"])["status"] == "complete"
+
+
+def test_sim_run_still_404s_without_a_recovery_spec(tmp_path: Path) -> None:
+    """No spec, no recreation - an unknown id is still an error."""
+    with _client(tmp_path) as client:
+        r = client.post(
+            "/api/v1/sim-runs", json={"scenario_id": "does-not-exist", "n_sims": 2, "root_seed": 0}
+        )
+        assert r.status_code == 404

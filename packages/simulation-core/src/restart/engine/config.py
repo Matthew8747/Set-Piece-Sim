@@ -33,8 +33,28 @@ class EngineConfig(BaseModel):
     max_delivery_speed_ms: float = Field(default=32.0, ge=15.0, le=45.0)
     # Landing accuracy the solver aims for before it stops escalating speed.
     aim_tolerance_m: float = Field(default=0.35, ge=0.05, le=3.0)
+    # The delivery target is where the ball should be at *heading height*, not
+    # where it should land. Aiming the landing point drops the ball into contact
+    # range ~5 m before the runner's mark, handing the first contact to whoever
+    # is already standing there - normally a defender.
+    #
+    # 2.6 m is a jumping header's contact height, and the contest fires when the
+    # ball enters jump reach, so this is also where the target and the contact
+    # point coincide. Swept 2.0-2.8: below it the delivery arrives late and
+    # creates fewer shots, above it the ball starts sailing out (8% at 2.8).
+    contact_height_m: float = Field(default=2.6, ge=0.5, le=3.0)
     dir_noise_base_rad: float = Field(default=0.06, ge=0.0, le=0.3)
     speed_noise_frac: float = Field(default=0.06, ge=0.0, le=0.3)
+
+    # --- defensive engagement (G-15) ---
+    # How far a defender will leave the position they are defending to attack the
+    # delivery. This is what makes zonal marking zonal: without it every
+    # outfielder converges on the ball, and since the contest is a Gumbel-max the
+    # side with more bodies in it wins on sheer count - measured, attackers took
+    # 2-15% of first contacts against 11 engaged defenders.
+    def_engage_radius_m: float = Field(default=5.0, ge=1.0, le=20.0)
+    # The keeper comes for crosses from further out than an outfielder moves.
+    gk_engage_radius_m: float = Field(default=8.0, ge=1.0, le=25.0)
 
     # --- contest resolution (G-6) ---
     # Window after the earliest feasible arrival within which later arrivals

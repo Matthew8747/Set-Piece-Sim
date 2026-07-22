@@ -39,12 +39,17 @@ def team_repository() -> MartTeamRepository:
 
 
 @lru_cache
-def _repo_root() -> Path:
+def repo_root() -> Path:
+    """Repository root, located by walking up from this file (CWD-independent)."""
     here = Path(__file__).resolve()
     for parent in here.parents:
         if (parent / "pyproject.toml").is_file() and (parent / _STUDIES_REL).is_dir():
             return parent
     return here.parents[4]
+
+
+# Back-compat alias for the private name used before the settings layer needed it.
+_repo_root = repo_root
 
 
 def study_loader() -> StudyLoader:

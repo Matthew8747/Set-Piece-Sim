@@ -85,15 +85,24 @@ export const api = {
   /**
    * Poll a sim run to a terminal state (the single progress seam - polling, not
    * SSE, per ADR-007 d4). Calls onProgress on each tick; resolves with the final
-   * status; rejects if the run fails or the deadline passes.
+   * status; rejects if the run fails or stops making progress.
+   *
+   * The deadline is on *stalled* time, not total time. A fixed total budget gets
+   * the trade-off backwards: a large batch on a slow host is healthy but slow,
+   * and a wedged job is fast to detect - the old flat 120 s killed legitimate
+   * 500-2000 sim runs while still waiting two minutes on a genuinely stuck one.
+   * `stallMs` restarts on every observed progress tick; `maxMs` is a backstop.
    */
   async pollSimRun(
     id: string,
     onProgress?: (status: SimRunStatus) => void,
     intervalMs = 400,
-    timeoutMs = 120_000,
+    stallMs = 90_000,
+    maxMs = 900_000,
   ): Promise<SimRunStatus> {
-    const deadline = Date.now() + timeoutMs;
+    const start = Date.now();
+    let lastProgress = -1;
+    let lastMovedAt = Date.now();
     for (;;) {
       const status = await this.getSimRun(id);
       onProgress?.(status);
@@ -104,7 +113,16 @@ export const api = {
         }
         return status;
       }
-      if (Date.now() > deadline) throw new Error(`sim run ${id} timed out`);
+      if (status.progress !== lastProgress) {
+        lastProgress = status.progress;
+        lastMovedAt = Date.now();
+      }
+      if (Date.now() - lastMovedAt > stallMs) {
+        throw new Error(
+          `sim run ${id} stalled at ${Math.round(lastProgress * 100)}% for ${Math.round(stallMs / 1000)}s`,
+        );
+      }
+      if (Date.now() - start > maxMs) throw new Error(`sim run ${id} exceeded ${maxMs / 1000}s`);
       await new Promise((r) => setTimeout(r, intervalMs));
     }
   },

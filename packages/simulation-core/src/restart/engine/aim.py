@@ -18,11 +18,17 @@ routine collapsed to the same "ball never arrives" behaviour, which is why
 routines did not diverge from one another.
 
 So aim numerically instead. Search launch (speed, elevation, heading) whose
-*landing point* under the real gravity+drag+Magnus model is the routine's
-delivery target, using the same fused kernel the batch path uses. Landing-point
-aiming (rather than aiming a point in mid-air) is what the content library was
-authored against and keeps the ball inside the pitch: runners meet the delivery
-on its descending branch a few tenths before it lands, at ~2-2.5 m.
+*arrival point* under the real gravity+drag+Magnus model is the routine's
+delivery target, using the same fused kernel the batch path uses.
+
+"Arrival" is where the ball descends through heading height, not where it lands.
+That distinction decides who gets to the ball first. Aiming the landing point
+put the ball into contact range about 5 m before the runner's mark - measured on
+the near-post inswinger, contact happened at y = -7.9 while the ball landed at
+y = -2.5 - so the delivery was always cut out by whichever defender already
+stood in that space, and attackers won only 2-15% of first contacts. A delivery
+that never climbs to heading height (a short corner) falls back to its landing
+point, the only arrival it has.
 
 The solve is deterministic and depends only on scalars, so it is cached and
 costs nothing per simulation - see ``solve_aim``.
@@ -53,6 +59,7 @@ def _best(
     elevs: FloatArray,
     headings: FloatArray,
     spin_signed_rps: float,
+    contact_height_m: float,
     physics: PhysicsConfig,
 ) -> tuple[float, float, float]:
     """Best (error, elevation, heading) over the ``elevs`` x ``headings`` grid.
@@ -82,6 +89,7 @@ def _best(
         ball.radius_m,
         pitch.HALF_LENGTH_M,
         pitch.HALF_WIDTH_M,
+        contact_height_m,
         env.gravity_ms2,
         0.5 * env.air_density_kgm3 * ball.cross_section_m2 / ball.mass_kg,
         ball.drag.cd_subcritical,
@@ -113,6 +121,7 @@ def solve_aim(
     elev_max_deg: float,
     max_speed_ms: float,
     tolerance_m: float,
+    contact_height_m: float,
     physics: PhysicsConfig,
 ) -> tuple[float, float, float]:
     """Return the launch ``(speed_ms, elevation_rad, heading_rad)`` that lands on target.
@@ -155,7 +164,14 @@ def solve_aim(
     )
     for speed in speeds:
         err, elev, head = _best(
-            kick_xy, target_xy, speed, coarse_elev, base + coarse_off, spin_signed_rps, physics
+            kick_xy,
+            target_xy,
+            speed,
+            coarse_elev,
+            base + coarse_off,
+            spin_signed_rps,
+            contact_height_m,
+            physics,
         )
         if err < best[0]:
             best = (err, elev, head, speed)
@@ -175,7 +191,14 @@ def solve_aim(
         )
         fine_head = np.linspace(head0 - span_h, head0 + span_h, 17)
         err, elev0, head0 = _best(
-            kick_xy, target_xy, speed0, fine_elev, fine_head, spin_signed_rps, physics
+            kick_xy,
+            target_xy,
+            speed0,
+            fine_elev,
+            fine_head,
+            spin_signed_rps,
+            contact_height_m,
+            physics,
         )
         span_e *= 0.25
         span_h *= 0.25

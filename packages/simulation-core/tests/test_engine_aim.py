@@ -14,10 +14,12 @@ from collections import Counter
 import numpy as np
 import pytest
 
+from restart.domain import pitch
 from restart.engine import SetPieceEngine
 from restart.engine.aim import solve_aim
 from restart.engine.config import EngineConfig
 from restart.montecarlo.runner import MonteCarloRunner
+from restart.physics import _kernels
 from restart.physics.config import PhysicsConfig
 from restart.players.demo import demo_team
 from restart.players.player import PositionGroup
@@ -52,19 +54,62 @@ def _program(routine: RoutineSpec) -> SimProgram:
     )
 
 
-@pytest.mark.parametrize("routine", all_corner_routines(), ids=lambda r: r.name)
-def test_solved_launch_lands_on_target(routine: RoutineSpec) -> None:
-    """The solved launch puts the ball on the routine's delivery target.
+def _arrival_xy(
+    routine: RoutineSpec, speed: float, elev: float, heading: float, contact_height_m: float
+) -> tuple[float, float] | None:
+    """Where the solved launch descends through heading height, by integration."""
+    spin, rps = _spin_of(routine)
+    y0 = np.zeros((1, 9))
+    y0[0, 0], y0[0, 1], y0[0, 2] = KICK_X, KICK_Y, 0.11
+    y0[0, 3] = speed * math.cos(elev) * math.cos(heading)
+    y0[0, 4] = speed * math.cos(elev) * math.sin(heading)
+    y0[0, 5] = speed * math.sin(elev)
+    y0[0, 8] = spin * rps * 2.0 * math.pi
 
-    This is the property the old range-equation heuristic did not have: it was
-    wrong by 3.3-6.8 m on the stock library.
-    """
-    cfg, phys = EngineConfig(), PhysicsConfig.default()
-    target = (routine.delivery.target.x, routine.delivery.target.y)
-    spin = {"inswinger": -1.0, "outswinger": 1.0}.get(routine.delivery.type.value, 0.0)
+    phys = PhysicsConfig.default()
+    ball, env = phys.ball, phys.environment
+    xy, ok = _kernels.aim_probe(
+        np.ascontiguousarray(y0),
+        phys.integrator.dt_s,
+        1200,
+        ball.radius_m,
+        pitch.HALF_LENGTH_M,
+        pitch.HALF_WIDTH_M,
+        contact_height_m,
+        env.gravity_ms2,
+        0.5 * env.air_density_kgm3 * ball.cross_section_m2 / ball.mass_kg,
+        ball.drag.cd_subcritical,
+        ball.drag.cd_supercritical,
+        ball.drag.v_critical_ms,
+        ball.drag.transition_width_ms,
+        ball.radius_m,
+        ball.magnus.coeff_a,
+        ball.magnus.coeff_b,
+        ball.magnus.spin_parameter_max,
+        ball.spin_decay_tau_s,
+    )
+    return (float(xy[0, 0]), float(xy[0, 1])) if bool(ok[0]) else None
+
+
+def _spin_of(routine: RoutineSpec) -> tuple[float, float]:
+    sign = {"inswinger": -1.0, "outswinger": 1.0}.get(routine.delivery.type.value, 0.0)
     rps = {"driven": 2.0, "floated": 1.0, "short": 0.0}.get(
         routine.delivery.type.value, routine.delivery.spin_rps
     )
+    return sign, rps
+
+
+@pytest.mark.parametrize("routine", all_corner_routines(), ids=lambda r: r.name)
+def test_solved_launch_arrives_on_target(routine: RoutineSpec) -> None:
+    """The solved launch puts the ball on target *at heading height*.
+
+    Two properties the old range-equation heuristic lacked: it was wrong by
+    3.3-6.8 m, and it aimed the landing point, which drops the ball into contest
+    range ~5 m short of the runner's mark.
+    """
+    cfg = EngineConfig()
+    target = (routine.delivery.target.x, routine.delivery.target.y)
+    sign, rps = _spin_of(routine)
 
     speed, elev, heading = solve_aim(
         KICK_X,
@@ -72,28 +117,19 @@ def test_solved_launch_lands_on_target(routine: RoutineSpec) -> None:
         target[0],
         target[1],
         routine.delivery.speed_ms,
-        spin * rps,
+        sign * rps,
         cfg.elev_min_deg,
         cfg.elev_max_deg,
         cfg.max_delivery_speed_ms,
         cfg.aim_tolerance_m,
-        phys,
+        cfg.contact_height_m,
+        PhysicsConfig.default(),
     )
 
-    from restart.physics.batch import simulate_flights
-
-    y0 = np.zeros((1, 9))
-    y0[0, 0], y0[0, 1], y0[0, 2] = KICK_X, KICK_Y, 0.11
-    y0[0, 3] = speed * math.cos(elev) * math.cos(heading)
-    y0[0, 4] = speed * math.cos(elev) * math.sin(heading)
-    y0[0, 5] = speed * math.sin(elev)
-    y0[0, 8] = spin * rps * 2.0 * math.pi
-    res = simulate_flights(y0, phys)
-
-    assert bool(res.landed[0]), "solved delivery never lands"
-    landing = res.landing_position[0]
-    miss = math.hypot(landing[0] - target[0], landing[1] - target[1])
-    assert miss < 1.5, f"{routine.name}: lands {miss:.2f} m from target"
+    arrival = _arrival_xy(routine, speed, elev, heading, cfg.contact_height_m)
+    assert arrival is not None, f"{routine.name}: solved delivery never arrives in play"
+    miss = math.hypot(arrival[0] - target[0], arrival[1] - target[1])
+    assert miss < 1.5, f"{routine.name}: arrives {miss:.2f} m from target"
 
 
 def test_solve_aim_is_deterministic() -> None:
@@ -110,6 +146,7 @@ def test_solve_aim_is_deterministic() -> None:
         cfg.elev_max_deg,
         cfg.max_delivery_speed_ms,
         cfg.aim_tolerance_m,
+        cfg.contact_height_m,
         phys,
     )
     solve_aim.cache_clear()
@@ -140,6 +177,7 @@ def test_solver_never_aims_out_of_play() -> None:
         cfg.elev_max_deg,
         cfg.max_delivery_speed_ms,
         cfg.aim_tolerance_m,
+        cfg.contact_height_m,
         phys,
     )
     # Fly it and check the whole path, not a straight-line extrapolation: an
@@ -207,3 +245,67 @@ def test_routines_produce_distinct_outcome_profiles() -> None:
 
     assert len(set(goal_rates.values())) > 1, f"all routines identical: {goal_rates}"
     assert max(goal_rates.values()) - min(goal_rates.values()) > 0.03, goal_rates
+
+
+def test_contesting_attackers_go_to_the_ball() -> None:
+    """ATTACK_BALL runners must attack the delivery, not run out their script.
+
+    The contest used to be resolved from an interception plan nobody executed:
+    agents ticked toward their scripted RunLeg target while the contest maths
+    assumed they had chased the ball. Measured, the nearest ATTACK_BALL runner
+    stood 6.05 m from the ball at the contest instant on the near-post
+    inswinger - it went past them.
+    """
+    from restart.simulation.events import FirstContactEvent
+    from restart.tactics.routine import INTENT_CODES, Intent
+
+    attack_ball = INTENT_CODES[Intent.ATTACK_BALL]
+    routine = next(r for r in all_corner_routines() if r.name == "near_post_inswinger")
+    program = _program(routine)
+    engine = SetPieceEngine()
+
+    gaps = []
+    for result in MonteCarloRunner(engine).run(program, 40, root_seed=0).results:
+        contact = next((e for e in result.events if isinstance(e, FirstContactEvent)), None)
+        if contact is None:
+            continue
+        k = min(
+            int(np.searchsorted(result.track_times_s, contact.time_s)),
+            len(result.track_times_s) - 1,
+        )
+        runners = [
+            i for i in range(program.n_attackers) if int(program.att_intent[i]) == attack_ball
+        ]
+        ball_xy = np.asarray(contact.position[:2])
+        gaps.append(min(float(np.linalg.norm(result.att_tracks[k, i] - ball_xy)) for i in runners))
+
+    assert gaps, "no first contact in any sim"
+    assert float(np.mean(gaps)) < 4.0, f"runners average {np.mean(gaps):.2f} m from the ball"
+
+
+def test_zonal_defenders_do_not_all_charge_the_ball() -> None:
+    """Defenders only leave their post for a ball that comes near it (G-15).
+
+    The contest is a Gumbel-max, so it is decided partly by headcount. Letting
+    every outfielder contest made the attack structurally unable to win a
+    delivery: attackers took 2-15% of first contacts. A zonal defender holding a
+    zone 15 m from the ball must not be in the contest.
+    """
+    from restart.simulation.events import FirstContactEvent
+
+    engine = SetPieceEngine()
+    attack_contacts, total = 0, 0
+    for routine in all_corner_routines():
+        program = _program(routine)
+        for result in MonteCarloRunner(engine).run(program, 40, root_seed=0).results:
+            contact = next((e for e in result.events if isinstance(e, FirstContactEvent)), None)
+            if contact is None:
+                continue
+            total += 1
+            attack_contacts += contact.team == "attack"
+
+    assert total > 0
+    share = attack_contacts / total
+    # Real corners are contested, not conceded: the attack should win a
+    # meaningful share of first contacts, well above the old 2-15%.
+    assert 0.25 <= share <= 0.75, f"attacking first-contact share {share:.0%}"

@@ -50,7 +50,21 @@ test("running surfaces the determinism banner, KPI CIs, and distributions", asyn
   );
 
   const onComplete = vi.fn();
-  const { container } = render(<SimulatePanel scenarioId="abc" onComplete={onComplete} />);
+  const scenario = {
+    scenario_id: "abc",
+    name: "test",
+    spec: {
+      routine_id: "near_post_inswinger",
+      scheme_id: "zonal_six_two",
+      attacking_team_id: "england",
+      defending_team_id: "argentina",
+    },
+    scenario_hash: "h",
+    created_at: "2026-01-01T00:00:00Z",
+  };
+  const { container } = render(
+    <SimulatePanel scenarioId="abc" scenario={scenario} onComplete={onComplete} />,
+  );
 
   fireEvent.click(screen.getByRole("button", { name: /Run 200/i }));
 
