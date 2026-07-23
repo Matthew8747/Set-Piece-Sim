@@ -68,3 +68,5 @@ Thumbs.db
 # Phase 8 re-baseline ops artifacts (not committed)
 optimization_studies/_rebaseline_status.log
 .tmp_rebaseline/
+
+.vercel

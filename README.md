@@ -123,17 +123,19 @@ past the server-free default). The backend is a standard container and runs anyw
 Cloud Run). A full runbook, including whether to host at all, is in [docs/GO-LIVE.md](docs/GO-LIVE.md).
 
 A [`fly.toml`](fly.toml) and a lean [backend Dockerfile](apps/backend/Dockerfile) (backend plus
-simulation core only, no optimizer or ML stack) are provided:
+simulation core only, no optimizer or ML stack) are provided. The image bakes in the study, the
+marts, and the xG model, so the server-free default needs **no volume, no database, and no ETL**:
 
 ```bash
-fly launch --no-deploy                                    # create the app (edit the name in fly.toml)
-fly volumes create restart_data --size 1 --region lhr     # persists the marts + SQLite store
-fly secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]'
-fly deploy
+fly launch --no-deploy --copy-config    # create the app from the existing fly.toml
+fly deploy                              # run locally so the git-ignored marts get baked in
 ```
 
-The frontend deploys to Vercel with zero config: set the project root directory to `apps/frontend` and
-`NEXT_PUBLIC_API_BASE_URL` to the backend URL. Liveness and readiness are at `/healthz` and `/readyz`.
+The frontend deploys to Vercel with zero config: set the project root directory to `apps/frontend`
+and `NEXT_PUBLIC_API_BASE_URL` to the backend URL. After both are up, point the backend's CORS at
+the Vercel URL (`fly secrets set RESTART_CORS_ORIGINS='["https://YOUR-APP.vercel.app"]' && fly
+deploy`). Liveness and readiness are at `/healthz` and `/readyz`. The full step-by-step, including
+the two gotchas that cause "Failed to fetch", is in **[docs/GO-LIVE.md](docs/GO-LIVE.md)**.
 
 ## Key design decisions
 
