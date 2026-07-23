@@ -70,6 +70,21 @@ export default function Home() {
               Browse optimizations
             </Link>
           </div>
+
+          {/* Set expectations up front: the simulation runs on a separate
+              free-tier backend that sleeps when idle, so a first click can lag
+              while it wakes. Said here so it reads as "by design", not "broken". */}
+          <p className="mt-1 flex items-start gap-2 text-xs text-(--color-line)/45">
+            <span
+              aria-hidden
+              className="mt-1.5 size-1 shrink-0 rounded-full bg-(--color-signal)/60"
+            />
+            <span>
+              Free portfolio demo. The physics backend is a separate service that sleeps when idle —
+              the first simulation after a quiet spell takes a few seconds to wake it, then
+              it&apos;s fast. A banner tells you when it&apos;s waking.
+            </span>
+          </p>
         </div>
 
         <div className="hidden lg:block">
