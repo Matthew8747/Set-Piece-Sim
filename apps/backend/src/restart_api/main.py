@@ -8,6 +8,10 @@ Run locally:
     uv run uvicorn restart_api.main:app --reload --app-dir apps/backend/src
 """
 
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -16,7 +20,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from restart_api import __version__
 from restart_api.errors import install_error_handlers
 from restart_api.jobs.queue import InProcessJobQueue
-from restart_api.programs import default_executor
+from restart_api.programs import default_executor, warmup
 from restart_api.ratelimit import configure as configure_rate_limits
 from restart_api.ratelimit import limiter, rate_limit_handler
 from restart_api.repositories.file import SqliteScenarioRepository, SqliteSimRunRepository
@@ -57,6 +61,16 @@ def _configure_stores_and_queue(app: FastAPI, cfg: Settings) -> None:
 def create_app(settings: Settings | None = None) -> FastAPI:
     cfg = settings if settings is not None else get_settings()
 
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # Prod only: warm the Numba JIT in the background so a cold-started
+        # machine doesn't compile kernels inside the first user's request.
+        # Non-blocking, so readiness is immediate; dev/test skip it entirely so
+        # the suite is unaffected. Task kept on app.state so it is not GC'd.
+        if cfg.app_env == "prod":
+            app.state.warmup_task = asyncio.create_task(asyncio.to_thread(warmup))
+        yield
+
     app = FastAPI(
         title=cfg.api_title,
         version=__version__,
@@ -66,6 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
         servers=[{"url": "/", "description": "This deployment"}],
+        lifespan=lifespan,
     )
 
     # One error contract for the whole surface (RFC 9457 problem-details).

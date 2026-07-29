@@ -20,13 +20,13 @@ timescales; throughput gain is large (one (n,m) solve per sim).
 """
 
 import math
+from collections import deque
 from dataclasses import dataclass
 
 import numpy as np
 
 from restart.agents import _kernels
 from restart.agents.config import AgentConfig
-from restart.agents.interception import earliest_interception
 from restart.domain.vectors import FloatArray
 from restart.engine.aim import solve_aim
 from restart.engine.config import EngineConfig
@@ -245,22 +245,27 @@ class SetPieceEngine:
         att_contests_mask = np.isin(np.asarray(program.att_intent), _FIRST_CONTACT_CODES)
         att_ready = np.where(att_contests_mask, 0.0, att_react) + att_read_delay
         def_ready = def_react + def_read_delay
-        att_icpt = earliest_interception(
+        # njit kernel (early-exits at first feasible sample per agent) over the
+        # NumPy broadcast path, which built the whole (n*m) feasibility matrix
+        # every sim. Equivalence to the reference is enforced to 1e-9 by
+        # tests/test_agents_kernels.py. Strided attribute columns are made
+        # contiguous for the kernel; the rest already are (window returns copies).
+        att_icpt = _kernels.earliest_interception_kernel(
             att_pos,
             att_vel,
             att_speed,
-            program.att_attr[:, Attr.ACCEL],
-            program.att_attr[:, Attr.JUMP_REACH],
+            np.ascontiguousarray(program.att_attr[:, Attr.ACCEL]),
+            np.ascontiguousarray(program.att_attr[:, Attr.JUMP_REACH]),
             att_ready,
             ball_times,
             ball_pos,
         )
-        def_icpt = earliest_interception(
+        def_icpt = _kernels.earliest_interception_kernel(
             def_pos,
             def_vel,
             def_speed,
-            program.def_attr[:, Attr.ACCEL],
-            program.def_attr[:, Attr.JUMP_REACH],
+            np.ascontiguousarray(program.def_attr[:, Attr.ACCEL]),
+            np.ascontiguousarray(program.def_attr[:, Attr.JUMP_REACH]),
             def_ready,
             ball_times,
             ball_pos,
@@ -658,31 +663,55 @@ class SetPieceEngine:
         marker_js = [j for j in range(nd) if int(program.def_mark_target[j]) >= 0]
         marker_targets = [int(program.def_mark_target[j]) for j in marker_js]
 
-        att_targets = np.empty((na, 2))
-        def_targets = np.empty((nd, 2))
-        both = np.empty((na + nd, 2))
+        # Attackers and defenders step as one stacked (na+nd) array. The agent
+        # and separation kernels treat every row independently, so a single
+        # dispatch over the combined state is bit-identical to two calls (rows
+        # 0..na-1 attackers, na.. defenders) while paying the njit boundary and
+        # buffer reassembly once per tick instead of twice. Per-agent constants
+        # are stacked once here; targets are filled in place through views.
+        both_top = np.ascontiguousarray(np.concatenate([att_top, def_top]))
+        both_acc = np.ascontiguousarray(np.concatenate([att_acc, def_acc]))
+        both_agi = np.ascontiguousarray(np.concatenate([att_agi, def_agi]))
+        pos = np.empty((na + nd, 2))
+        vel = np.empty((na + nd, 2))
+        pos[:na], pos[na:] = att_pos, def_pos
+        vel[:na], vel[na:] = att_vel, def_vel
+        targets = np.empty((na + nd, 2))
+        att_t, def_t = targets[:na], targets[na:]  # views: fill in place per tick
+
         # Attacker-position history for marker reaction lag (G-17): the marker
-        # chases where their man was, not where they are now.
-        att_history: list[FloatArray] = []
+        # chases where their man was, not where they are now. Only the tick
+        # ``mark_lag_ticks`` back is ever read, so a bounded ring buffer holds
+        # exactly that window - its left end (deque[0]) is that lagged tick -
+        # instead of a full per-tick copy retained for the whole window.
+        att_history: deque[FloatArray] = deque(maxlen=mark_lag_ticks + 1)
 
         for ti, t in enumerate(times):
-            att_history.append(att_pos.copy())
-            lagged_att = att_history[max(0, ti - mark_lag_ticks)]
+            att_history.append(pos[:na].copy())
+            lagged_att = att_history[0]
 
             # Attacker targets: latest triggered run leg, else start/hold.
-            att_targets[:] = program.att_start
+            att_t[:] = program.att_start
             for i in range(na):
                 for leg in range(int(program.att_n_legs[i])):
                     if t >= leg_trig[i, leg]:
-                        att_targets[i] = program.att_legs_to[i, leg]
+                        att_t[i] = program.att_legs_to[i, leg]
             # Defender targets: marker -> goal-side of the man's lagged position,
             # plus a fixed positional error; zonal -> start.
-            def_targets[:] = program.def_start
+            def_t[:] = program.def_start
             for j, m in zip(marker_js, marker_targets, strict=True):
                 man = lagged_att[m]
-                to_goal = _GOAL_CENTER - man
-                n = float(np.linalg.norm(to_goal))
-                def_targets[j] = man + (to_goal / max(n, 1e-9)) * 0.7 + mark_offset[j]
+                # Scalar form of ``man + (to_goal/|to_goal|)*0.7 + mark_offset``.
+                # np.linalg.norm on a 2-vector is sqrt(dot(x,x)); the same float
+                # ops in the same order as below, but this drops ~350 norm calls
+                # per sim (each dragging atleast_2d/dot/ravel dispatch) - measured
+                # the single biggest call-count in the tick loop. Op order is kept
+                # verbatim so outcomes stay bit-identical.
+                gx = _GOAL_CENTER[0] - man[0]
+                gy = _GOAL_CENTER[1] - man[1]
+                d = max(math.sqrt(gx * gx + gy * gy), 1e-9)
+                def_t[j, 0] = man[0] + (gx / d) * 0.7 + mark_offset[j, 0]
+                def_t[j, 1] = man[1] + (gy / d) * 0.7 + mark_offset[j, 1]
 
             # Ball pursuit overrides the scripted target once the agent has
             # reacted (G-14): contesting agents attack the delivery instead of
@@ -690,43 +719,36 @@ class SetPieceEngine:
             if att_pursue is not None and att_pursue_from is not None:
                 for i in range(na):
                     if t >= att_pursue_from[i] and not np.isnan(att_pursue[i, 0]):
-                        att_targets[i] = att_pursue[i]
+                        att_t[i] = att_pursue[i]
             if def_pursue is not None and def_pursue_from is not None:
                 for j in range(nd):
                     if t >= def_pursue_from[j] and not np.isnan(def_pursue[j, 0]):
-                        def_targets[j] = def_pursue[j]
+                        def_t[j] = def_pursue[j]
 
-            att_pos, att_vel = _kernels.step_agents_kernel(
-                att_pos,
-                att_vel,
-                att_targets,
-                att_top,
-                att_acc,
-                att_agi,
+            pos, vel = _kernels.step_agents_kernel(
+                pos,
+                vel,
+                targets,
+                both_top,
+                both_acc,
+                both_agi,
                 dt,
                 ag.turn_rate_base_rads,
                 ag.turn_speed_ref_ms,
                 ag.arrival_radius_m,
             )
-            def_pos, def_vel = _kernels.step_agents_kernel(
-                def_pos,
-                def_vel,
-                def_targets,
-                def_top,
-                def_acc,
-                def_agi,
-                dt,
-                ag.turn_rate_base_rads,
-                ag.turn_speed_ref_ms,
-                ag.arrival_radius_m,
-            )
-            both[:na] = att_pos
-            both[na:] = def_pos
-            separated = _kernels.separate_kernel(both, ag.separation_radius_m, 4)
-            att_pos, def_pos = separated[:na].copy(), separated[na:].copy()
-            att_tracks[ti], def_tracks[ti] = att_pos, def_pos
+            pos = _kernels.separate_kernel(pos, ag.separation_radius_m, 4)
+            att_tracks[ti], def_tracks[ti] = pos[:na], pos[na:]
 
-        return times, att_tracks, def_tracks, att_pos, att_vel, def_pos, def_vel
+        return (
+            times,
+            att_tracks,
+            def_tracks,
+            pos[:na].copy(),
+            vel[:na].copy(),
+            pos[na:].copy(),
+            vel[na:].copy(),
+        )
 
     def _ball_state_at(self, traj: Trajectory, t: float) -> BallState:
         s_t = np.asarray(traj.samples.times_s)

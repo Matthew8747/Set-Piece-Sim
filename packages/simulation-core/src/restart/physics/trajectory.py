@@ -146,6 +146,15 @@ class TrajectorySimulator:
         seg_n = 0
 
         while termination is None and t < max_t:
+            # ``interior`` marks a step drawn from the middle of a pre-integrated
+            # fused segment. ``flight_segment`` stops the instant any condition the
+            # event logic below branches on (apex / ground contact / boundary
+            # crossing) would trip, using the *same* comparisons - so on interior
+            # steps all of those checks are provably false and re-evaluating them
+            # (a per-step list alloc in ``_earliest_crossing`` over a ~100-step
+            # arc) is dead work. The stop step (seg_i == seg_n - 1) still runs the
+            # full logic; the rolling and custom-force paths never set it.
+            interior = False
             if rolling:
                 y_new = self._step_rolling(y, dt)
             elif self._fused_params is None:
@@ -165,7 +174,16 @@ class TrajectorySimulator:
                     seg_i = 0
                 seg_i += 1
                 y_new = seg[seg_i]
+                interior = seg_i < seg_n - 1
             t_new = t + dt
+
+            if interior:
+                # No event can fire here (see above): record and advance only.
+                times.append(t_new)
+                states.append(y_new.copy())
+                y, t = y_new, t_new
+                final_y, final_t = y, t
+                continue
 
             # --- terminal crossings (earliest within the step wins) ---------
             crossing = self._earliest_crossing(y, y_new, t, dt)

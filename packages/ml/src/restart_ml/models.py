@@ -36,8 +36,13 @@ def make_hist_gbm() -> Any:
 
 
 def make_random_forest() -> Any:
+    # n_jobs=-1: forest training parallelizes across cores. Bit-reproducible
+    # regardless of core count because random_state is fixed and trees are grown
+    # independently (the winner of the offline calibration bake-off is unchanged;
+    # this only cuts the sweep's wall time). Boosters stay single-threaded - their
+    # float reductions are thread-count sensitive, which would move the artifact.
     return RandomForestClassifier(
-        n_estimators=300, max_depth=6, min_samples_leaf=20, n_jobs=1, random_state=0
+        n_estimators=300, max_depth=6, min_samples_leaf=20, n_jobs=-1, random_state=0
     )
 
 
