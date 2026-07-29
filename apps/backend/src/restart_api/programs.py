@@ -104,6 +104,51 @@ def to_simulate_response(result: SetPieceResult) -> SimulateResponse:
     )
 
 
+def warmup() -> None:
+    """Compile / cache-load the Numba kernels off the request path.
+
+    A cold fly.io machine (``auto_stop_machines``) otherwise pays multi-second
+    JIT compilation *inside* the first user's request, which reads as "the API is
+    slow". Running one tiny demo simulation plus a batch flight forces every
+    fused kernel - aim probe, flight segment/batch, agent step/separate/
+    interception - ready ahead of real traffic. Best-effort: any failure is
+    swallowed so warmup can never break startup.
+    """
+    try:
+        import numpy as np
+
+        from restart.physics.batch import simulate_flights
+        from restart.players.demo import demo_team
+
+        att = demo_team("ENG", "England", 1)
+        dfn = demo_team("ARG", "Argentina", 2)
+        routine = all_corner_routines()[0]
+        kicker = max(att.players, key=lambda p: p.attributes.delivery).player_id
+        outfield = [
+            p.player_id
+            for p in att.players
+            if p.position_group is not PositionGroup.GK and p.player_id != kicker
+        ]
+        roles = {a.role: outfield[i] for i, a in enumerate(routine.assignments)}
+        program = compile_scenario(
+            Scenario(
+                routine=routine,
+                attacking_team=att,
+                defending_team=dfn,
+                kicker_id=kicker,
+                role_assignments=roles,
+                scheme=all_schemes()[0],
+            )
+        )
+        ENGINE.run(program, 0)
+        y0 = np.zeros((2, 9))
+        y0[:, 2] = 5.0
+        y0[:, 5] = -1.0
+        simulate_flights(y0)
+    except Exception:  # pragma: no cover - warmup is best-effort, never fatal
+        pass
+
+
 def default_executor(run: SimRunRecord, progress: ProgressFn) -> dict[str, Any]:
     """The production job body: compile the run's scenario and execute the batch."""
     program = program_from_spec(run.spec)
